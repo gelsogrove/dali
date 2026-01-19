@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mariadb:10.6
+    container_name: dalila-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-dalila_db}
+      MYSQL_USER: ${MYSQL_USER:-dalila_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-dalila_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./BE/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - dalila-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # PHP Backend API
+  backend:
+    build:
+      context: ./BE
+      dockerfile: Dockerfile
+    container_name: dalila-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_NAME: ${MYSQL_DATABASE:-dalila_db}
+      DB_USER: ${MYSQL_USER:-dalila_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-dalila_password}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      UPLOAD_DIR: /var/www/html/uploads
+      ENVIRONMENT: development
+    ports:
+      - "8080:80"
+    volumes:
+      - ./BE:/var/www/html
+      - backend_uploads:/var/www/html/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - dalila-network
+
+  # React Admin Panel (for development)
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.dev
+    container_name: dalila-admin
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:8080/api
+    ports:
+      - "5174:5173"
+    volumes:
+      - ./admin:/app
+      - /app/node_modules
+    networks:
+      - dalila-network
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+    driver: local
+  backend_uploads:
+    driver: local
+
+networks:
+  dalila-network:
+    driver: bridge

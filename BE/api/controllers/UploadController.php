@@ -1,0 +1,323 @@
+<?php
+
+class UploadController {
+    private $uploadDir;
+    
+    // Configurazioni upload - definite direttamente nel codice
+    private $allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    private $allowedVideoTypes = ['video/mp4', 'video/mpeg', 'video/quicktime'];
+    private $maxImageSize = 10485760; // 10MB (10 * 1024 * 1024 bytes)
+    private $maxVideoSize = 104857600; // 100MB (100 * 1024 * 1024 bytes)
+
+    public function __construct() {
+        $this->uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/../uploads';
+        
+        // Create upload directories if they don't exist
+        $dirs = ['properties', 'videos', 'galleries', 'temp'];
+        foreach ($dirs as $dir) {
+            $path = $this->uploadDir . '/' . $dir;
+            if (!is_dir($path)) {
+                mkdir($path, 0755, true);
+            }
+        }
+    }
+
+    /**
+     * Upload property image with optimization
+     * @param array $file Uploaded file
+     * @return array
+     */
+    public function uploadPropertyImage($file) {
+        try {
+            // Validate file
+            $validation = $this->validateImageUpload($file);
+            if (!$validation['success']) {
+                return $validation;
+            }
+
+            $originalName = $file['name'];
+            $tempPath = $file['tmp_name'];
+            $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            
+            // Generate unique filename
+            $filename = $this->generateUniqueFilename($extension);
+            $basePath = $this->uploadDir . '/properties';
+
+            // Create image versions
+            $versions = [
+                'original' => ['width' => 1920, 'quality' => 90],
+                'large' => ['width' => 1200, 'quality' => 85],
+                'medium' => ['width' => 800, 'quality' => 80],
+                'thumbnail' => ['width' => 400, 'quality' => 75]
+            ];
+
+            $urls = [];
+            
+            foreach ($versions as $version => $settings) {
+                $versionFilename = $version === 'original' 
+                    ? $filename 
+                    : str_replace(".{$extension}", "_{$version}.{$extension}", $filename);
+                
+                $destinationPath = $basePath . '/' . $versionFilename;
+                
+                // Resize and optimize image
+                $result = $this->resizeImage(
+                    $tempPath,
+                    $destinationPath,
+                    $settings['width'],
+                    $settings['quality']
+                );
+
+                if (!$result) {
+                    // Cleanup on failure
+                    $this->cleanupFiles($urls);
+                    return $this->errorResponse('Failed to process image');
+                }
+
+                $urls[$version] = '/uploads/properties/' . $versionFilename;
+            }
+
+            return $this->successResponse([
+                'filename' => $filename,
+                'urls' => $urls,
+                'size' => filesize($basePath . '/' . $filename),
+                'dimensions' => getimagesize($basePath . '/' . $filename)
+            ], 201);
+
+        } catch (Exception $e) {
+            error_log("Upload error: " . $e->getMessage());
+            return $this->errorResponse('An error occurred during upload');
+        }
+    }
+
+    /**
+     * Upload video file
+     * @param array $file Uploaded file
+     * @return array
+     */
+    public function uploadVideo($file) {
+        try {
+            // Validate file
+            if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+                return $this->errorResponse('No file uploaded or upload error occurred');
+            }
+
+            if (!in_array($file['type'], $this->allowedVideoTypes)) {
+                return $this->errorResponse('Invalid video file type. Allowed: MP4, MPEG, MOV');
+            }
+
+            if ($file['size'] > $this->maxVideoSize) {
+                return $this->errorResponse('Video file is too large. Maximum size: 100MB');
+            }
+
+            $originalName = $file['name'];
+            $tempPath = $file['tmp_name'];
+            $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            
+            // Generate unique filename
+            $filename = $this->generateUniqueFilename($extension);
+            $destinationPath = $this->uploadDir . '/videos/' . $filename;
+
+            // Move uploaded file
+            if (!move_uploaded_file($tempPath, $destinationPath)) {
+                return $this->errorResponse('Failed to save video file');
+            }
+
+            // Generate thumbnail from video (requires FFmpeg - optional)
+            $thumbnailUrl = null;
+            if (function_exists('exec')) {
+                $thumbnailUrl = $this->generateVideoThumbnail($destinationPath);
+            }
+
+            return $this->successResponse([
+                'filename' => $filename,
+                'url' => '/uploads/videos/' . $filename,
+                'thumbnail_url' => $thumbnailUrl,
+                'size' => filesize($destinationPath)
+            ], 201);
+
+        } catch (Exception $e) {
+            error_log("Video upload error: " . $e->getMessage());
+            return $this->errorResponse('An error occurred during video upload');
+        }
+    }
+
+    /**
+     * Validate image upload
+     * @param array $file Uploaded file
+     * @return array
+     */
+    private function validateImageUpload($file) {
+        if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+            return $this->errorResponse('No file uploaded or upload error occurred');
+        }
+
+        // Check file type
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($mimeType, $this->allowedImageTypes)) {
+            return $this->errorResponse('Invalid image file type. Allowed: JPEG, PNG, WebP');
+        }
+
+        // Check file size
+        if ($file['size'] > $this->maxImageSize) {
+            return $this->errorResponse('Image file is too large. Maximum size: 10MB');
+        }
+
+        // Verify it's actually an image
+        $imageInfo = getimagesize($file['tmp_name']);
+        if (!$imageInfo) {
+            return $this->errorResponse('File is not a valid image');
+        }
+
+        return ['success' => true];
+    }
+
+    /**
+     * Resize and optimize image
+     * @param string $sourcePath Source file path
+     * @param string $destinationPath Destination file path
+     * @param int $maxWidth Maximum width
+     * @param int $quality JPEG quality
+     * @return bool
+     */
+    private function resizeImage($sourcePath, $destinationPath, $maxWidth, $quality) {
+        $imageInfo = getimagesize($sourcePath);
+        if (!$imageInfo) {
+            return false;
+        }
+
+        list($originalWidth, $originalHeight, $imageType) = $imageInfo;
+
+        // Calculate new dimensions
+        if ($originalWidth <= $maxWidth) {
+            $newWidth = $originalWidth;
+            $newHeight = $originalHeight;
+        } else {
+            $newWidth = $maxWidth;
+            $newHeight = ($originalHeight / $originalWidth) * $maxWidth;
+        }
+
+        // Create source image
+        switch ($imageType) {
+            case IMAGETYPE_JPEG:
+                $sourceImage = imagecreatefromjpeg($sourcePath);
+                break;
+            case IMAGETYPE_PNG:
+                $sourceImage = imagecreatefrompng($sourcePath);
+                break;
+            case IMAGETYPE_WEBP:
+                $sourceImage = imagecreatefromwebp($sourcePath);
+                break;
+            default:
+                return false;
+        }
+
+        if (!$sourceImage) {
+            return false;
+        }
+
+        // Create new image
+        $newImage = imagecreatetruecolor($newWidth, $newHeight);
+
+        // Preserve transparency for PNG and WebP
+        if ($imageType === IMAGETYPE_PNG || $imageType === IMAGETYPE_WEBP) {
+            imagealphablending($newImage, false);
+            imagesavealpha($newImage, true);
+            $transparent = imagecolorallocatealpha($newImage, 255, 255, 255, 127);
+            imagefilledrectangle($newImage, 0, 0, $newWidth, $newHeight, $transparent);
+        }
+
+        // Resize image
+        imagecopyresampled(
+            $newImage, $sourceImage,
+            0, 0, 0, 0,
+            $newWidth, $newHeight,
+            $originalWidth, $originalHeight
+        );
+
+        // Save image
+        $result = false;
+        $extension = pathinfo($destinationPath, PATHINFO_EXTENSION);
+        
+        switch (strtolower($extension)) {
+            case 'jpg':
+            case 'jpeg':
+                $result = imagejpeg($newImage, $destinationPath, $quality);
+                break;
+            case 'png':
+                $result = imagepng($newImage, $destinationPath, 9 - floor($quality / 10));
+                break;
+            case 'webp':
+                $result = imagewebp($newImage, $destinationPath, $quality);
+                break;
+        }
+
+        // Free memory
+        imagedestroy($sourceImage);
+        imagedestroy($newImage);
+
+        return $result;
+    }
+
+    /**
+     * Generate unique filename
+     * @param string $extension File extension
+     * @return string
+     */
+    private function generateUniqueFilename($extension) {
+        return uniqid('img_', true) . '_' . time() . '.' . $extension;
+    }
+
+    /**
+     * Generate video thumbnail (requires FFmpeg)
+     * @param string $videoPath Video file path
+     * @return string|null Thumbnail URL
+     */
+    private function generateVideoThumbnail($videoPath) {
+        $thumbnailFilename = pathinfo($videoPath, PATHINFO_FILENAME) . '_thumb.jpg';
+        $thumbnailPath = $this->uploadDir . '/videos/' . $thumbnailFilename;
+
+        // Use FFmpeg to generate thumbnail at 2 seconds
+        $command = "ffmpeg -i " . escapeshellarg($videoPath) . " -ss 00:00:02 -vframes 1 -q:v 2 " . escapeshellarg($thumbnailPath) . " 2>&1";
+        
+        exec($command, $output, $returnCode);
+
+        if ($returnCode === 0 && file_exists($thumbnailPath)) {
+            return '/uploads/videos/' . $thumbnailFilename;
+        }
+
+        return null;
+    }
+
+    /**
+     * Cleanup files on error
+     * @param array $urls Array of file URLs to delete
+     */
+    private function cleanupFiles($urls) {
+        foreach ($urls as $url) {
+            $path = $_SERVER['DOCUMENT_ROOT'] . '/..' . $url;
+            if (file_exists($path)) {
+                unlink($path);
+            }
+        }
+    }
+
+    /**
+     * Success response
+     */
+    private function successResponse($data, $code = 200) {
+        http_response_code($code);
+        return ['success' => true, 'data' => $data];
+    }
+
+    /**
+     * Error response
+     */
+    private function errorResponse($message, $code = 400) {
+        http_response_code($code);
+        return ['success' => false, 'error' => $message];
+    }
+}

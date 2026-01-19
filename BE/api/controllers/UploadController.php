@@ -13,7 +13,7 @@ class UploadController {
         $this->uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/../uploads';
         
         // Create upload directories if they don't exist
-        $dirs = ['properties', 'videos', 'galleries', 'temp'];
+        $dirs = ['properties', 'videos', 'galleries', 'temp', 'blogs'];
         foreach ($dirs as $dir) {
             $path = $this->uploadDir . '/' . $dir;
             if (!is_dir($path)) {
@@ -302,6 +302,115 @@ class UploadController {
             if (file_exists($path)) {
                 unlink($path);
             }
+        }
+    }
+
+    /**
+     * Upload blog image
+     * @param array $file Uploaded file
+     * @return array
+     */
+    public function uploadBlogImage($file) {
+        try {
+            // Validate file
+            $validation = $this->validateImageUpload($file);
+            if (!$validation['success']) {
+                return $validation;
+            }
+
+            $originalName = $file['name'];
+            $tempPath = $file['tmp_name'];
+            $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+            
+            // Generate unique filename
+            $filename = uniqid('blog_', true) . '_' . time() . '.' . $extension;
+            $basePath = $this->uploadDir . '/blogs';
+
+            // Create image versions for blog
+            $versions = [
+                'original' => ['width' => 1920, 'quality' => 90],
+                'medium' => ['width' => 800, 'quality' => 80],
+                'thumbnail' => ['width' => 400, 'quality' => 75]
+            ];
+
+            $urls = [];
+            
+            foreach ($versions as $version => $settings) {
+                $versionFilename = $version === 'original' 
+                    ? $filename 
+                    : str_replace(".{$extension}", "_{$version}.{$extension}", $filename);
+                
+                $destinationPath = $basePath . '/' . $versionFilename;
+                
+                // Resize and optimize image
+                $result = $this->resizeImage(
+                    $tempPath,
+                    $destinationPath,
+                    $settings['width'],
+                    $settings['quality']
+                );
+
+                if (!$result) {
+                    // Cleanup on failure
+                    $this->cleanupFiles($urls);
+                    return $this->errorResponse('Failed to process image');
+                }
+
+                $urls[$version] = '/uploads/blogs/' . $versionFilename;
+            }
+
+            return $this->successResponse([
+                'filename' => $filename,
+                'url' => $urls['original'],
+                'urls' => $urls,
+                'size' => filesize($basePath . '/' . $filename)
+            ], 201);
+
+        } catch (Exception $e) {
+            error_log("Upload blog image error: " . $e->getMessage());
+            return $this->errorResponse('An error occurred during upload');
+        }
+    }
+
+    /**
+     * Delete uploaded file
+     * @param string $url File URL
+     * @return array
+     */
+    public function deleteFile($url) {
+        try {
+            // Remove leading slash if present
+            $url = ltrim($url, '/');
+            $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/../' . $url;
+
+            if (!file_exists($fullPath)) {
+                return $this->errorResponse('File not found', 404);
+            }
+
+            // Get file info
+            $pathInfo = pathinfo($fullPath);
+            $extension = strtolower($pathInfo['extension']);
+            $filename = $pathInfo['filename'];
+            $directory = $pathInfo['dirname'];
+
+            // Delete original file
+            if (!unlink($fullPath)) {
+                return $this->errorResponse('Failed to delete file');
+            }
+
+            // Delete related versions (thumbnail, medium, etc.)
+            $relatedFiles = glob($directory . '/' . $filename . '_*.' . $extension);
+            foreach ($relatedFiles as $relatedFile) {
+                if (file_exists($relatedFile)) {
+                    unlink($relatedFile);
+                }
+            }
+
+            return $this->successResponse(['message' => 'File deleted successfully']);
+
+        } catch (Exception $e) {
+            error_log("Delete file error: " . $e->getMessage());
+            return $this->errorResponse('An error occurred during deletion');
         }
     }
 

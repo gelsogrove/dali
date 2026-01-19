@@ -18,9 +18,22 @@ class PropertyController {
      */
     public function getAll($filters = []) {
         try {
-            $where = ["status = 'active'"];
+            $where = [];
             $params = [];
             $types = '';
+
+            // Status filter - if not specified and not admin context, default to active
+            // Admin can pass 'all' to see all properties, or specific status
+            if (isset($filters['status'])) {
+                if ($filters['status'] !== 'all') {
+                    $where[] = "status = ?";
+                    $params[] = $filters['status'];
+                    $types .= 's';
+                }
+            } else {
+                // Default for public frontend - only show active properties
+                $where[] = "status = 'active'";
+            }
 
             // Apply filters
             if (!empty($filters['city'])) {
@@ -58,7 +71,7 @@ class PropertyController {
             }
 
             // Build query
-            $whereClause = implode(' AND ', $where);
+            $whereClause = empty($where) ? '1=1' : implode(' AND ', $where);
             $query = "SELECT id, title, slug, description, price, bedrooms, bathrooms, square_feet, 
                      property_type, status, address, city, state, zip_code, featured, featured_image,
                      created_at, updated_at 
@@ -219,7 +232,11 @@ class PropertyController {
                 $userId
             ];
 
-            $types = 'sssdidissssssssddiisi';
+            // Types: s=string, i=integer, d=decimal
+            // title, slug, description, price(decimal), bedrooms(int), bathrooms(decimal), square_feet(int),
+            // lot_size, year_built(int), property_type, status, address, city, state, zip_code,
+            // latitude(decimal), longitude(decimal), featured(int), featured_image, mls_number, created_by(int)
+            $types = 'sssdiidisisssssddissi';
 
             $result = $this->db->executePrepared($query, $params, $types);
 
@@ -240,7 +257,7 @@ class PropertyController {
 
         } catch (Exception $e) {
             error_log("Error creating property: " . $e->getMessage());
-            return $this->errorResponse('An error occurred');
+            return $this->errorResponse('An error occurred: ' . $e->getMessage());
         }
     }
 

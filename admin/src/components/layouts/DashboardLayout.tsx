@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/button'
-import { Home, FileText, LogOut, Menu } from 'lucide-react'
+import { Home, FileText, LogOut, Menu, BookOpen } from 'lucide-react'
 import { useState } from 'react'
 
 export default function DashboardLayout() {
@@ -18,6 +18,7 @@ export default function DashboardLayout() {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Properties', href: '/properties', icon: FileText },
+    { name: 'Blogs', href: '/blogs', icon: BookOpen },
   ]
 
   return (

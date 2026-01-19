@@ -58,23 +58,37 @@ class Database {
         $stmt = $this->conn->prepare($query);
         
         if (!$stmt) {
-            error_log("Prepare failed: " . $this->conn->error);
-            return false;
+            $error = "Prepare failed: " . $this->conn->error;
+            error_log($error);
+            throw new Exception($error);
         }
 
         if (!empty($params)) {
-            $stmt->bind_param($types, ...$params);
+            if (!$stmt->bind_param($types, ...$params)) {
+                $error = "Bind failed: " . $stmt->error;
+                error_log($error);
+                $stmt->close();
+                throw new Exception($error);
+            }
         }
 
         if (!$stmt->execute()) {
-            error_log("Execute failed: " . $stmt->error);
+            $error = "Execute failed: " . $stmt->error;
+            error_log($error);
             $stmt->close();
-            return false;
+            throw new Exception($error);
         }
 
+        // For INSERT/UPDATE/DELETE queries, get_result() returns false
+        // We return true to indicate success
         $result = $stmt->get_result();
-        $stmt->close();
+        if ($result === false && $stmt->affected_rows >= 0) {
+            // This is an INSERT/UPDATE/DELETE query
+            $stmt->close();
+            return true;
+        }
         
+        $stmt->close();
         return $result;
     }
 

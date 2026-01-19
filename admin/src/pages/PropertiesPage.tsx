@@ -10,7 +10,7 @@ export default function PropertiesPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['properties'],
     queryFn: async () => {
-      const response = await api.get('/properties')
+      const response = await api.get('/properties?status=all')
       return response.data.data
     },
   })
@@ -108,9 +108,17 @@ export default function PropertiesPage() {
               
               <CardHeader>
                 <CardTitle className="line-clamp-1">{property.title}</CardTitle>
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-sm flex-wrap">
                   <span className="font-semibold text-primary">
                     {formatCurrency(property.price)}
+                  </span>
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    property.status === 'active' ? 'bg-green-100 text-green-700' :
+                    property.status === 'draft' ? 'bg-gray-100 text-gray-700' :
+                    property.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-red-100 text-red-700'
+                  }`}>
+                    {property.status}
                   </span>
                   {property.featured && (
                     <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded">

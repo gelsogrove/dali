@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Info } from 'lucide-react'
 
 export default function PropertyFormPage() {
   const { id } = useParams()
@@ -168,20 +168,31 @@ export default function PropertyFormPage() {
 
               <div className="space-y-2">
                 <label htmlFor="status" className="text-sm font-medium">
-                  Status
+                  Status *
                 </label>
                 <select
                   id="status"
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-10 w-full rounded-md border-2 border-input bg-background px-3 py-2 text-sm font-medium focus:border-primary focus:outline-none"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="pending">Pending</option>
-                  <option value="sold">Sold</option>
+                  <option value="draft">📝 Draft (Not Visible)</option>
+                  <option value="active">✅ Active (Visible on Website)</option>
+                  <option value="pending">⏳ Pending</option>
+                  <option value="sold">🏷️ Sold</option>
                 </select>
+                <div className="flex items-start gap-2 mt-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md text-sm">
+                  <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-blue-800 dark:text-blue-200">
+                    <strong>Status Info:</strong>
+                    <ul className="mt-1 space-y-1 text-xs">
+                      <li>• <strong>Active:</strong> Visible on public website</li>
+                      <li>• <strong>Draft:</strong> Hidden from public, work in progress</li>
+                      <li>• <strong>Pending/Sold:</strong> Marked but still visible</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2 flex items-end">

@@ -1,9 +1,9 @@
 <?php
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-CSRF-Token');
+
+// CORS headers are set in Apache config (apache-config.conf)
+// to avoid duplication and conflicts
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -21,6 +21,7 @@ require_once __DIR__ . '/controllers/AuthController.php';
 require_once __DIR__ . '/controllers/PropertyController.php';
 require_once __DIR__ . '/controllers/UploadController.php';
 require_once __DIR__ . '/controllers/HomeController.php';
+require_once __DIR__ . '/controllers/BlogController.php';
 require_once __DIR__ . '/middleware/AuthMiddleware.php';
 
 // Get request method and path
@@ -47,6 +48,14 @@ try {
         
         case 'home':
             handleHomeRoutes($segments, $method);
+            break;
+        
+        case 'blogs':
+            handleBlogRoutes($segments, $method);
+            break;
+        
+        case 'photogallery':
+            handlePhotoGalleryRoutes($segments, $method);
             break;
         
         case 'health':
@@ -192,10 +201,20 @@ function handleUploadRoutes($segments, $method) {
                 echo json_encode($result);
                 break;
             
+            case 'blog-image':
+                $result = $controller->uploadBlogImage($_FILES['image'] ?? null);
+                echo json_encode($result);
+                break;
+            
             default:
                 http_response_code(404);
                 echo json_encode(['success' => false, 'error' => 'Upload endpoint not found']);
         }
+    } elseif ($method === 'DELETE' && isset($segments[1]) && $segments[1] === 'file') {
+        // DELETE /api/upload/file?url=/uploads/blogs/image.jpg
+        $url = $_GET['url'] ?? '';
+        $result = $controller->deleteFile($url);
+        echo json_encode($result);
     } else {
         http_response_code(405);
         echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -225,5 +244,159 @@ function handleHomeRoutes($segments, $method) {
     } else {
         http_response_code(404);
         echo json_encode(['success' => false, 'error' => 'Home endpoint not found']);
+    }
+}
+
+/**
+ * Handle blog routes
+ */
+function handleBlogRoutes($segments, $method) {
+    $controller = new BlogController();
+    
+    // Public routes (no auth)
+    if ($method === 'GET' && empty($segments[1])) {
+        // GET /api/blogs - Get all blogs
+        $filters = $_GET;
+        $result = $controller->getAll($filters);
+        echo json_encode($result);
+        return;
+    }
+    
+    if ($method === 'GET' && !empty($segments[1]) && empty($segments[2])) {
+        // GET /api/blogs/:id or /api/blogs/slug/:slug
+        if ($segments[1] === 'slug' && !empty($segments[2])) {
+            // GET /api/blogs/slug/:slug
+            $result = $controller->getBySlug($segments[2]);
+        } else {
+            // GET /api/blogs/:id
+            $result = $controller->getById($segments[1]);
+        }
+        echo json_encode($result);
+        return;
+    }
+    
+    // Protected routes (require auth)
+    $auth = new AuthMiddleware();
+    $user = $auth->verifyToken();
+    
+    if (!$user) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+        return;
+    }
+    
+    switch ($method) {
+        case 'POST':
+            // POST /api/blogs - Create new blog
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->create($data, $user['user_id']);
+            echo json_encode($result);
+            break;
+            
+        case 'PUT':
+            // PUT /api/blogs/:id - Update blog
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Blog ID required']);
+                return;
+            }
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->update($segments[1], $data, $user['user_id']);
+            echo json_encode($result);
+            break;
+            
+        case 'DELETE':
+            // DELETE /api/blogs/:id - Delete blog
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Blog ID required']);
+                return;
+            }
+            $result = $controller->delete($segments[1], $user['user_id']);
+            echo json_encode($result);
+            break;
+            
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+}
+
+/**
+ * Handle photogallery routes
+ */
+function handlePhotoGalleryRoutes($segments, $method) {
+    $controller = new PhotoGalleryController();
+    
+    // Public route - get photos for a property
+    if ($method === 'GET' && !empty($segments[1]) && $segments[1] === 'property' && !empty($segments[2])) {
+        // GET /api/photogallery/property/:propertyId
+        $result = $controller->getByPropertyId($segments[2]);
+        echo json_encode($result);
+        return;
+    }
+    
+    // Protected routes - require authentication
+    $auth = new AuthMiddleware();
+    $user = $auth->authenticate();
+    
+    if (!$user) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+        return;
+    }
+    
+    switch ($method) {
+        case 'GET':
+            if (!empty($segments[1]) && is_numeric($segments[1])) {
+                // GET /api/photogallery/:id - Get single photo
+                $result = $controller->getById($segments[1]);
+                echo json_encode($result);
+            } else {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Invalid request']);
+            }
+            break;
+            
+        case 'POST':
+            if (!empty($segments[1]) && $segments[1] === 'reorder') {
+                // POST /api/photogallery/reorder - Update display order
+                $data = json_decode(file_get_contents('php://input'), true);
+                $result = $controller->updateOrder($data['orders'] ?? []);
+                echo json_encode($result);
+            } else {
+                // POST /api/photogallery - Create new photo
+                $data = json_decode(file_get_contents('php://input'), true);
+                $result = $controller->create($data);
+                echo json_encode($result);
+            }
+            break;
+            
+        case 'PUT':
+            // PUT /api/photogallery/:id - Update photo
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Photo ID required']);
+                return;
+            }
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->update($segments[1], $data);
+            echo json_encode($result);
+            break;
+            
+        case 'DELETE':
+            // DELETE /api/photogallery/:id - Delete photo
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Photo ID required']);
+                return;
+            }
+            $result = $controller->delete($segments[1]);
+            echo json_encode($result);
+            break;
+            
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
     }
 }

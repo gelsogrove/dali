@@ -11,7 +11,7 @@ export default function BlogsPage() {
 
       <section className="blog-listing">
         <div className="blog-listing-inner">
-          <TitlePage kicker="Our" title="Blog" />
+          <TitlePage kicker="Our" title="Blog" className="blog-title-center" />
           {blogPosts.map((post, index) => (
             <article className="blog-row" key={post.id}>
               <div className="blog-row-media">

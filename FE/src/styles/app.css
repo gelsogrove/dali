@@ -3433,6 +3433,13 @@ body {
   text-align: left;
 }
 
+.blog-title-center {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0 auto;
+}
+
 .blog-row {
   display: grid;
   grid-template-columns: 380px 1fr;
@@ -3446,11 +3453,22 @@ body {
   overflow: hidden;
 }
 
+.blog-row-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .blog-row-media canvas {
   width: 100%;
   height: 100%;
   object-fit: fill;
   display: block;
+}
+
+.blog-row-body {
+  text-align: left;
 }
 
 .blog-row-body h2 {

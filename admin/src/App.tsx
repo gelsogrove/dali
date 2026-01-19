@@ -5,6 +5,8 @@ import DashboardLayout from './components/layouts/DashboardLayout'
 import DashboardPage from './pages/DashboardPage'
 import PropertiesPage from './pages/PropertiesPage'
 import PropertyFormPage from './pages/PropertyFormPage'
+import BlogsPage from './pages/BlogsPage'
+import BlogFormPage from './pages/BlogFormPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -33,6 +35,9 @@ function App() {
         <Route path="properties" element={<PropertiesPage />} />
         <Route path="properties/new" element={<PropertyFormPage />} />
         <Route path="properties/:id/edit" element={<PropertyFormPage />} />
+        <Route path="blogs" element={<BlogsPage />} />
+        <Route path="blogs/new" element={<BlogFormPage />} />
+        <Route path="blogs/:id/edit" element={<BlogFormPage />} />
       </Route>
     </Routes>
   )

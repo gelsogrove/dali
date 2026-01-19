@@ -45,6 +45,8 @@ public/fonts/
 dist/
 build/
 *.sql.backup
+FE/dist/
+admin/dist/
 
 # Uploads (keep directory, ignore contents)
 uploads/*

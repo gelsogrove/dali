@@ -7,6 +7,8 @@ import PropertiesPage from './pages/PropertiesPage'
 import PropertyFormPage from './pages/PropertyFormPage'
 import BlogsPage from './pages/BlogsPage'
 import BlogFormPage from './pages/BlogFormPage'
+import PhotoGalleryPage from './pages/PhotoGalleryPage'
+import PhotoGalleryFormPage from './pages/PhotoGalleryFormPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -38,6 +40,9 @@ function App() {
         <Route path="blogs" element={<BlogsPage />} />
         <Route path="blogs/new" element={<BlogFormPage />} />
         <Route path="blogs/:id/edit" element={<BlogFormPage />} />
+        <Route path="photogallery" element={<PhotoGalleryPage />} />
+        <Route path="photogallery/upload" element={<PhotoGalleryFormPage />} />
+        <Route path="photogallery/:id/edit" element={<PhotoGalleryFormPage />} />
       </Route>
     </Routes>
   )

@@ -1,5 +1,10 @@
 <?php
 
+// Load environment variables FIRST
+if (file_exists(__DIR__ . '/load-env.php')) {
+    require_once __DIR__ . '/load-env.php';
+}
+
 header('Content-Type: application/json');
 
 // CORS headers are set in Apache config (apache-config.conf)
@@ -22,6 +27,7 @@ require_once __DIR__ . '/controllers/PropertyController.php';
 require_once __DIR__ . '/controllers/UploadController.php';
 require_once __DIR__ . '/controllers/HomeController.php';
 require_once __DIR__ . '/controllers/BlogController.php';
+require_once __DIR__ . '/controllers/PhotoGalleryController.php';
 require_once __DIR__ . '/middleware/AuthMiddleware.php';
 
 // Get request method and path

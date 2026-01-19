@@ -34,7 +34,7 @@ echo ""
 echo -e "${BLUE}📦 Step 1/5: Building Frontend e Admin...${NC}"
 npm run build
 
-if [ ! -d "FE/dist" ] || [ ! -d "admin/dist" ]; then
+if [ ! -d "fe/dist" ] || [ ! -d "admin/dist" ]; then
     echo -e "${RED}✗ Errore: Build fallito. Controlla gli errori sopra.${NC}"
     exit 1
 fi
@@ -46,8 +46,8 @@ echo ""
 echo -e "${BLUE}📋 Step 2/5: Copiando file...${NC}"
 
 # Frontend
-echo "  → FE/dist/ → deploy/FE/"
-cp -r FE/dist/* "$DEPLOY_DIR/FE/"
+echo "  → fe/dist/ → deploy/fe/"
+cp -r fe/dist/* "$DEPLOY_DIR/fe/"
 
 # Admin
 echo "  → admin/dist/ → deploy/admin/"
@@ -79,16 +79,16 @@ echo ""
 echo -e "${BLUE}⚙️  Step 4/5: Creando file .htaccess...${NC}"
 
 # .htaccess per FE (SPA routing)
-cat > "$DEPLOY_DIR/FE/.htaccess" << 'EOF'
+cat > "$DEPLOY_DIR/fe/.htaccess" << 'EOF'
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /new-site/FE/
+  RewriteBase /new-site/fe/
   
   # Redirect tutte le richieste a index.html (React Router)
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /new-site/FE/index.html [L]
+  RewriteRule . /new-site/fe/index.html [L]
 </IfModule>
 
 # Security headers
@@ -175,7 +175,7 @@ cat > "$DEPLOY_DIR/DEPLOY-INSTRUCTIONS.txt" << 'EOF'
 Carica le cartelle in questa struttura sul server:
 
 new-site/
-├── FE/          → Frontend pubblico React
+├── fe/          → Frontend pubblico React
 ├── admin/       → Pannello amministrazione React  
 ├── BE/          → API PHP e uploads
 └── .env         → Configurazione (DA CONFIGURARE!)
@@ -193,7 +193,7 @@ new-site/
 3. Crea cartella: new-site/
 
 4. Upload questi file/cartelle:
-   - FE/      → new-site/FE/
+   - fe/      → new-site/fe/
    - admin/   → new-site/admin/
    - BE/      → new-site/BE/
    - .env     → new-site/.env
@@ -234,7 +234,7 @@ new-site/
 =============
 Dopo il deploy:
 
-- Sito pubblico: https://yourdomain.com/new-site/FE/
+- Sito pubblico: https://yourdomain.com/new-site/fe/
 - Admin panel:   https://yourdomain.com/new-site/admin/
 - API:           https://yourdomain.com/new-site/BE/api/
 
@@ -261,7 +261,7 @@ Dopo il deploy:
 ==================
 - 500 Error: Controlla permissions (uploads 755, .env 600)
 - DB Error: Verifica credenziali in .env
-- 404 su routes: Verifica .htaccess in FE/ e admin/
+- 404 su routes: Verifica .htaccess in fe/ e admin/
 - Immagini non caricano: Verifica BE/uploads/ permissions
 
 

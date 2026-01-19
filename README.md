@@ -22,6 +22,11 @@ cp .env.example .env
 
 # 3. Avvia tutti i servizi
 npm run dev
+# oppure usa lo script rapido
+./scripts/start.sh
+
+# Sezioni admin/API
+- Le credenziali di default non sono più mostrate nell'interfaccia: imposta le tue nel backend.
 ```
 
 Servizi disponibili:
@@ -76,6 +81,9 @@ mysql -h127.0.0.1 -P3306 -udalila_user -p dalila_db
 docker-compose down -v
 docker-compose up -d
 ```
+
+### Script SQL
+- `init.sql` — init schema/dati base e dati di esempio (blogs inclusi)
 
 ## 🔌 API Endpoints
 
@@ -141,9 +149,9 @@ GET /api/health
 
 ⚠️ **Due cartelle separate per la sicurezza del repository pubblico:**
 
-### 1. FE/public/images/ (Design, IN GIT)
+### 1. fe/public/images/ (Design, IN GIT)
 ```
-FE/public/images/
+fe/public/images/
 ├── logo.svg           # Logo sito
 ├── hero-home.jpg      # Banner homepage
 ├── about-hero.jpg     # Banner pagina About
@@ -237,7 +245,7 @@ Dalila/
 │   │   └── migrate.php      # Import WordPress
 │   └── uploads/             # User content (escluso da git)
 │
-├── FE/                      # Frontend pubblico React
+├── fe/                      # Frontend pubblico React
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/

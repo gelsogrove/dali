@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tantml/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,12 @@ export default function BlogFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const isEdit = Boolean(id)
+  const API_BASE = import.meta.env.VITE_API_URL || '/api'
+  const assetBase = API_BASE.replace(/\/api$/, '')
+  const toAbsoluteUrl = (url: string) => {
+    if (!url) return ''
+    return url.startsWith('http') ? url : `${assetBase}${url}`
+  }
 
   const [formData, setFormData] = useState({
     title: '',
@@ -20,7 +26,6 @@ export default function BlogFormPage() {
     content: '',
     featured_image: '',
     is_active: true,
-    display_order: 0,
     published_date: new Date().toISOString().split('T')[0],
   })
 
@@ -39,11 +44,10 @@ export default function BlogFormPage() {
         content: blog.content || '',
         featured_image: blog.featured_image || '',
         is_active: blog.is_active,
-        display_order: blog.display_order || 0,
         published_date: blog.published_date || new Date().toISOString().split('T')[0],
       })
       if (blog.featured_image) {
-        setImagePreview(blog.featured_image)
+        setImagePreview(toAbsoluteUrl(blog.featured_image))
       }
       return blog
     },
@@ -109,7 +113,7 @@ export default function BlogFormPage() {
 
       const imageUrl = response.data.data.url
       setFormData((prev) => ({ ...prev, featured_image: imageUrl }))
-      setImagePreview(imageUrl)
+      setImagePreview(toAbsoluteUrl(imageUrl))
     } catch (error) {
       console.error('Upload failed:', error)
       alert('Failed to upload image')
@@ -185,19 +189,6 @@ export default function BlogFormPage() {
                   name="published_date"
                   type="date"
                   value={formData.published_date}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="display_order" className="text-sm font-medium">
-                  Display Order
-                </label>
-                <Input
-                  id="display_order"
-                  name="display_order"
-                  type="number"
-                  value={formData.display_order}
                   onChange={handleChange}
                 />
               </div>

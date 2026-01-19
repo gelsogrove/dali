@@ -5,22 +5,23 @@
   "private": true,
   "scripts": {
     "dev": "npm run docker:up && concurrently \"npm run dev:fe\" \"npm run dev:admin\"",
-    "dev:fe": "cd FE && npm run dev",
+    "dev:fe": "cd fe && npm run dev",
     "dev:admin": "cd admin && npm run dev",
     "docker:up": "docker-compose up -d && echo '⏳ Waiting for services...' && sleep 10",
     "docker:down": "docker-compose down",
     "docker:restart": "docker-compose restart",
     "docker:logs": "docker-compose logs -f",
-    "build": "npm run build:fe && npm run build:admin",
-    "build:fe": "cd FE && npm run build",
+    "build": "bash scripts/build-production.sh",
+    "build:fe": "cd fe && npm run build",
     "build:admin": "cd admin && npm run build",
+    "deploy": "bash scripts/prepare-deploy.sh",
     "seed": "docker exec -it dalila-backend php /var/www/html/database/migrate.php",
     "db:init": "docker exec -it dalila-mysql mysql -udalila_user -p${MYSQL_PASSWORD} dalila_db < BE/database/init.sql",
     "db:reset": "npm run docker:restart && sleep 5 && npm run db:init",
     "logs:backend": "docker-compose logs -f backend",
     "logs:mysql": "docker-compose logs -f mysql",
     "logs:admin": "docker-compose logs -f admin",
-    "deploy:prepare": "npm run build && echo '\n✅ Build completato! Carica questi file su FTP:\n\n  FE/dist/ → new-site/FE/\n  admin/dist/ → new-site/admin/\n  BE/ → new-site/BE/\n  .env.example → new-site/.env (configuralo sul server!)\n'"
+    "deploy:prepare": "npm run build && echo '\n✅ Build completato! Carica questi file su FTP:\n\n  fe/dist/ → new-site/fe/\n  admin/dist/ → new-site/admin/\n  api/ → new-site/api/\n  .env.example → new-site/.env (configuralo sul server!)\n'"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

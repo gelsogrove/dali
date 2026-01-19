@@ -1,29 +1,47 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { blogPosts } from "../data/blogPosts";
+import { api, endpoints } from "../config/api";
 import ContactSection from "../components/ContactSection";
-import PageHero from "../components/PageHero";
 
 const BlogDetailPage = () => {
   const { slug } = useParams();
-  const [currentPost, setCurrentPost] = useState(null);
+  const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Find post by slug
-  const post = useMemo(() => {
-    return blogPosts.find(p => p.slug === slug);
-  }, [slug]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (post) {
-      setCurrentPost(post);
-      setLoading(false);
-      // Update page title
-      document.title = `${post.title} - Buy with Dalila`;
-    } else {
-      setLoading(false);
-    }
-  }, [post]);
+    const fetchBlog = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await api.get(`/blogs/slug/${slug}`);
+        
+        if (response.success) {
+          setBlog(response.data);
+          // Update page title
+          document.title = `${response.data.title} - Buy with Dalila`;
+        } else {
+          setError('Blog not found');
+        }
+      } catch (err) {
+        console.error('Error fetching blog:', err);
+        setError('Failed to load blog');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBlog();
+  }, [slug]);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
 
   if (loading) {
     return (
@@ -33,7 +51,7 @@ const BlogDetailPage = () => {
     );
   }
 
-  if (!currentPost) {
+  if (error || !blog) {
     return (
       <div style={{ padding: "100px 5%", textAlign: "center" }}>
         <h1>Post not found</h1>
@@ -50,31 +68,35 @@ const BlogDetailPage = () => {
       </section>
       <div className="page-breadcrumbs-wrap">
         <div className="page-breadcrumbs">
-          <Link to="/">Home</Link> <span>»</span> <Link to="/category/blog">Blog</Link> <span>» <em style={{fontStyle: 'italic', opacity: 0.7}}>{currentPost.title}</em></span>
+          <Link to="/">Home</Link> <span>»</span> <Link to="/category/blog">Blog</Link> <span>» <em style={{fontStyle: 'italic', opacity: 0.7}}>{blog.title}</em></span>
         </div>
       </div>
 
       <section className="blog-detail-section">
         <div className="blog-detail-container">
           <div className="blog-detail-header">
-            <h1 className="blog-detail-title">{currentPost.title}</h1>
+            <h1 className="blog-detail-title">{blog.title}</h1>
+            
+            {blog.subtitle && (
+              <h2 className="blog-detail-subtitle">{blog.subtitle}</h2>
+            )}
             
             <div className="blog-detail-meta">
-              {currentPost.date} {currentPost.author && `by ${currentPost.author}`}
+              {formatDate(blog.published_date || blog.created_at)}
             </div>
           </div>
 
         {/* Featured Image */}
-        {currentPost.image && (
+        {blog.featured_image && (
           <div className="blog-detail-image">
-            <img src={currentPost.image} alt={currentPost.title} />
+            <img src={blog.featured_image} alt={blog.title} />
           </div>
         )}
 
         {/* Content */}
         <div 
           className="blog-detail-content"
-          dangerouslySetInnerHTML={{ __html: currentPost.content }}
+          dangerouslySetInnerHTML={{ __html: blog.content }}
         />
 
           {/* Navigation */}

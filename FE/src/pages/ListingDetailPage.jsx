@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import CanvasImage from '../components/CanvasImage';
 import ContactSection from '../components/ContactSection';
-import { properties } from '../data/propertiesData';
+import { api } from '../config/api';
 import { listingDetails } from '../data/listingDetails';
 import { listingContent } from '../data/listingContent';
 
@@ -15,6 +15,8 @@ export default function ListingDetailPage() {
   const [expandedAmenities, setExpandedAmenities] = useState(false);
   const [expandedAdditional, setExpandedAdditional] = useState(false);
   const [expandedSection, setExpandedSection] = useState(null);
+  const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
   const slug = useMemo(() => {
@@ -22,19 +24,36 @@ export default function ListingDetailPage() {
     return parts[1] || '';
   }, [pathname]);
 
-  const property = properties.find((p) => p.slug === slug) || {};
-  const detail =
-    listingDetails[slug] ||
-    (property.title
-      ? {
-          title: property.title,
-          location: property.location || property.city || '',
-          priceLabel: property.price || 'Contact for pricing',
-          heroImage: property.image,
-          highlights: [],
-          content: listingContent[slug] || '<p>Contact us to learn more about this property.</p>',
+  useEffect(() => {
+    const fetchProperty = async () => {
+      if (!slug) return;
+      
+      try {
+        setLoading(true);
+        const response = await api.get(`/properties/slug/${slug}`);
+        if (response.success) {
+          setProperty(response.data);
         }
-      : null);
+      } catch (err) {
+        console.error('Error fetching property:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperty();
+  }, [slug]);
+
+  const detail = property
+    ? {
+        title: property.title,
+        location: property.location || property.city || '',
+        priceLabel: property.price ? `$${Number(property.price).toLocaleString()}` : 'Contact for pricing',
+        heroImage: property.featured_image,
+        highlights: [],
+        content: property.description || listingContent[slug] || '<p>Contact us to learn more about this property.</p>',
+      }
+    : listingDetails[slug];
 
   useEffect(() => {
     if (detail?.title) {
@@ -50,6 +69,16 @@ export default function ListingDetailPage() {
       });
     }
   }, []);
+
+  if (loading) {
+    return (
+      <section className="listing-loading">
+        <div className="container" style={{ padding: '100px 5%', textAlign: 'center' }}>
+          <p>Loading property...</p>
+        </div>
+      </section>
+    );
+  }
 
   if (!detail) {
     return (

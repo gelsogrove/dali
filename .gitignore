@@ -45,12 +45,15 @@ public/fonts/
 dist/
 build/
 *.sql.backup
-FE/dist/
+fe/dist/
 admin/dist/
 
-# Uploads (keep directory, ignore contents)
-uploads/*
-!uploads/.gitkeep
+# Uploads (keep directory structure, ignore uploaded files)
+api/uploads/*
+!api/uploads/.gitkeep
+!api/uploads/README.md
+!api/uploads/*/
+!api/uploads/*/.gitkeep
 
 # Temporary files
 *.tmp

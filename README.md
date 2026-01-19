@@ -1,426 +1,384 @@
-# Dalila Property Management System
+# Dalila - Buy With Dali
 
-Sistema completo per la gestione di proprietà immobiliari con frontend React, pannello amministrativo e API PHP.
+Sistema di gestione proprietà immobiliari full-stack con React frontend, API PHP backend e pannello di amministrazione.
 
-## 📖 Cosa Stiamo Facendo?
+## 🚀 Quick Start
 
-### 🎯 Obiettivo del Progetto
+### Requisiti
+- Docker & Docker Compose
+- Node.js 20+ (per sviluppo frontend)
+- Git
 
-1. **Frontend Pubblico (FE/)**: Sito React responsive **attualmente statico** che verrà dinamizzato con le API del backend
-2. **Pannello Admin (admin/)**: Interfaccia React + TypeScript per gestire contenuti (proprietà, blog, gallerie) con **massima sicurezza**
-3. **Backend API (BE/)**: API PHP RESTful con JWT authentication per servire i dati al frontend e gestire upload
-4. **Database**: Inizializzato con **migrazione da WordPress** (non parte vuoto, importiamo i dati esistenti)
-
-### 📊 Entità Gestite
-
-- ✅ **Properties**: Proprietà immobiliari (titolo, prezzo, camere, bagni, descrizione, etc.)
-- ✅ **Photo Galleries**: Gallerie fotografiche delle proprietà (4 size automatiche)
-- ✅ **Blog Posts**: Articoli del blog (TODO - da implementare)
-- ✅ **Videos**: Video delle proprietà (TODO - da completare)
-
-### 🔒 Sicurezza
-
-**⚠️ REPOSITORY PUBBLICO SU GITHUB**
-- ❌ **ZERO password nel codice**
-- ❌ File `.env` contiene **SOLO placeholder vuoti**
-- ✅ Password configurate **SOLO sul server** (GoDaddy/cPanel)
-- ✅ Vedi [SECURITY.md](SECURITY.md) per dettagli completi
-
-### 🖼️ Gestione Immagini
-
-**Immagini del Sito (design/UI)** - `FE/public/images/`
-- Logo, icone, banner, immagini statiche del design
-- ✅ **COMMITTATE nel repository Git**
-- Fanno parte del codice sorgente
-
-**Immagini dei Contenuti (proprietà/blog)** - `BE/uploads/`
-- Foto proprietà, video, immagini caricate via admin panel
-- ❌ **NON committate nel repository Git**
-- Generate dagli utenti, dinamiche
-- Gestite dall'API PHP (upload, resize, serve)
-
-## 📋 Prerequisiti
-
-- **Node.js** 18+ e npm 9+
-- **Docker Desktop** (macOS/Windows) o Docker Engine (Linux)
-- **Docker Compose** v2.0+
-- **Git**
-
-## 🛠️ Quick Start
-
-### ⚠️ IMPORTANTE - Sicurezza
-
-**Questo repository è pubblico su GitHub.**
-- Il file `.env` NON contiene password reali
-- Le password vanno configurate SOLO sul server
-- Vedi [SECURITY.md](SECURITY.md) per dettagli
-
-### 1. Clone and Setup
+### Installazione
 
 ```bash
-# Navigate to project directory
-cd /Users/gelso/workspace/Dalila
+# 1. Clone repository
+git clone https://github.com/gelsogrove/dali.git
+cd dali
 
-# Il file .env è già presente ma VUOTO
-# Le password vanno configurate sul server (vedi SECURITY.md)
+# 2. Configura ambiente (primo avvio)
+cp .env.example .env
+# Modifica .env con le tue credenziali
 
-# Per sviluppo locale con Docker, configurare .env con password di test:
-# (MAI committare queste password!)
+# 3. Avvia tutti i servizi
+npm run dev
 ```
 
-### 2. Configurare Password (Solo Locale)
-
-**ATTENZIONE**: Queste password sono SOLO per sviluppo locale!
-
-Editare `.env` e aggiungere password di test:
-```env
-MYSQL_ROOT_PASSWORD=test_root_password
-MYSQL_PASSWORD=test_dalila_password
-JWT_SECRET=test-jwt-secret-min-32-characters-for-local-dev-only
-```
-
-**NON committare questo file modificato!**
-
-### 2. Start Docker Containers
-
-```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Check status
-docker-compose ps
-```
-
-### 3. Install Admin Panel Dependencies
-
-```bash
-# Install Node.js dependencies
-cd admin
-npm install
-
-# Note: Docker will handle this automatically, but you can run locally too
-```
-
-### 4. Access Applications
-
-- **Backend API**: http://localhost:8080/api
+Servizi disponibili:
+- **Frontend**: http://localhost:5173
 - **Admin Panel**: http://localhost:5174
+- **API Backend**: http://localhost:8080/api
 - **MySQL**: localhost:3306
 
-### 5. Default Login Credentials
+## 📦 Comandi NPM
 
+```bash
+npm run dev          # Avvia Docker + FE + Admin in sviluppo
+npm run build        # Build produzione di FE e Admin
+npm run seed         # Esegue seed database (migrazione WordPress)
+npm run docker:up    # Solo Docker (MySQL + Backend)
+npm run docker:down  # Ferma tutti i container
+npm run docker:logs  # Visualizza log container
 ```
-Email: admin@dalila.com
-Password: Admin@123
+
+## 🗄️ Database
+
+### Struttura
+Il database `dalila_db` include 7 tabelle:
+
+- **properties** - Annunci immobiliari
+- **photogallery** - Immagini proprietà (4 dimensioni)
+- **videos** - Video proprietà
+- **property_amenities** - Caratteristiche (piscina, garage, etc.)
+- **admin_users** - Utenti amministratori
+- **sessions** - Token JWT
+- **activity_log** - Log audit
+
+### Sample Data
+Il database viene inizializzato con:
+- 3 proprietà di esempio
+- 1 utente admin (admin@dalila.com)
+
+### Accesso Database
+
+```bash
+# Via Docker
+docker exec -it dalila-mysql mysql -udalila_user -p dalila_db
+
+# Via MySQL client
+mysql -h127.0.0.1 -P3306 -udalila_user -p dalila_db
 ```
 
-**⚠️ CHANGE THESE IN PRODUCTION!**
+### Reset Database
 
-## 📁 Project Structure
-
-```
-Dalila/
-├── docker-compose.yml          # Docker orchestration
-├── .env.example                # Environment variables template
-├── BE/                         # PHP Backend
-│   ├── Dockerfile
-│   ├── apache-config.conf
-│   ├── .htaccess
-│   ├── api/
-│   │   ├── index.php          # API router
-│   │   ├── controllers/       # Business logic
-│   │   └── middleware/        # Auth & CSRF
-│   ├── config/
-│   │   ├── database.php       # Database connection
-│   │   ├── jwt.php            # JWT handler
-│   │   └── csrf.php           # CSRF protection
-│   └── database/
-│       └── init.sql           # Database schema
-├── admin/                # React Admin Panel
-│   ├── Dockerfile.dev
-│   ├── src/
-│   │   ├── components/        # React components
-│   │   ├── pages/             # Page components
-│   │   ├── lib/               # Utilities & API
-│   │   └── store/             # Zustand stores
-│   ├── package.json
-│   └── vite.config.ts
-└── FE/                         # Public website (existing)
+```bash
+# Cancella volumi e ricrea
+docker-compose down -v
+docker-compose up -d
 ```
 
 ## 🔌 API Endpoints
 
-### Authentication
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/verify` - Verify JWT token
+### Home (Public, No Auth)
+```bash
+# Get homepage data (featured properties + videos)
+GET /api/home
+
+# Get only featured videos
+GET /api/home/videos
+```
 
 ### Properties
-- `GET /api/properties` - List properties (public)
-- `GET /api/properties/{id}` - Get property details (public)
-- `POST /api/properties` - Create property (auth required)
-- `PUT /api/properties/{id}` - Update property (auth required)
-- `DELETE /api/properties/{id}` - Delete property (admin only)
+```bash
+# Lista tutte le proprietà
+GET /api/properties
 
-### Uploads
-- `POST /api/upload/property-image` - Upload property image
-- `POST /api/upload/video` - Upload video file
+# Singola proprietà
+GET /api/properties/{id}
+
+# Crea proprietà (richiede auth)
+POST /api/properties
+
+# Aggiorna proprietà (richiede auth)
+PUT /api/properties/{id}
+
+# Elimina proprietà (richiede auth)
+DELETE /api/properties/{id}
+```
+
+### Authentication
+```bash
+# Login
+POST /api/auth/login
+Body: {"email": "admin@dalila.com", "password": "Admin@123"}
+
+# Logout
+POST /api/auth/logout
+Headers: Authorization: Bearer {token}
+
+# Verifica token
+GET /api/auth/me
+Headers: Authorization: Bearer {token}
+```
+
+### Upload
+```bash
+# Upload immagine (genera 4 dimensioni)
+POST /api/upload/image
+Body: multipart/form-data con file
+
+# Upload video
+POST /api/upload/video
+Body: multipart/form-data con file
+```
 
 ### Health Check
-- `GET /api/health` - API status check
-
-## 🗄️ Database Schema
-
-### Tables
-- `admin_users` - Admin accounts with roles
-- `properties` - Property listings
-- `photogallery` - Property images (multiple sizes)
-- `videos` - Property videos
-- `property_amenities` - Property features
-- `sessions` - JWT session management
-- `activity_log` - Audit trail
-
-## 🐳 Docker Commands
-
 ```bash
-# Start services
-docker-compose up -d
-
-# Stop services
-docker-compose down
-
-# Restart services
-docker-compose restart
-
-# View logs
-docker-compose logs -f [service-name]
-
-# Rebuild containers
-docker-compose up -d --build
-
-# Access MySQL
-docker-compose exec mysql mysql -u dalila_user -p dalila_db
-
-# Access backend shell
-docker-compose exec backend bash
-
-# Clean up (removes volumes - WARNING: deletes data)
-docker-compose down -v
+GET /api/health
 ```
 
-## 💻 Development
+## 🖼️ Gestione Immagini
 
-### Backend Development
-```bash
-# Watch backend logs
-docker-compose logs -f backend
+⚠️ **Due cartelle separate per la sicurezza del repository pubblico:**
 
-# Access PHP container
-docker-compose exec backend bash
+### 1. FE/public/images/ (Design, IN GIT)
+```
+FE/public/images/
+├── logo.svg           # Logo sito
+├── hero-home.jpg      # Banner homepage
+├── about-hero.jpg     # Banner pagina About
+└── ...                # Altre immagini di design
+```
+✅ **Incluse in Git** - Immagini di design e layout
 
-# Test API endpoint
-curl http://localhost:8080/api/health
+### 2. BE/uploads/ (User Content, NOT IN GIT)
+```
+BE/uploads/
+├── properties/
+│   ├── original/      # Immagini originali
+│   ├── large/         # 1200x800px
+│   ├── medium/        # 800x600px
+│   └── thumbnail/     # 300x200px
+└── videos/
+```
+❌ **Escluse da Git** (.gitignore) - Content caricato dagli utenti
+
+## 🔒 Sicurezza
+
+⚠️ **Repository pubblico su GitHub**
+
+### File Sensibili (`.gitignore`)
+```
+.env                    # Credenziali database
+BE/uploads/            # Contenuti utenti
+old/                   # WordPress vecchio
+**/dist/               # Build artifacts
 ```
 
-### Frontend Development
+### Prima di ogni commit
 ```bash
-cd admin
+# Verifica che .env non sia incluso
+git status
 
-# Install dependencies
-npm install
+# Se .env è tracciato per errore
+git rm --cached .env
+```
 
-# Run development server (outside Docker)
-npm run dev
+### Credenziali Produzione
+- ❌ Mai committare password reali
+- ✅ Usare `.env.example` come template
+- ✅ Password produzione solo su server (GoDaddy)
 
-# Build for production
+## 🚢 Deploy su GoDaddy
+
+Vedi documentazione completa in `FTP-DEPLOY.md`.
+
+### Quick Deploy
+```bash
+# 1. Build produzione
 npm run build
 
-# Lint code
-npm run lint
+# 2. Prepara file per upload
+npm run deploy:prepare
+
+# 3. Upload via FTP (manuale o script)
+# Vedi FTP-DEPLOY.md per dettagli
 ```
 
-## 🔒 Security Features
+### Configurazione Server
+- PHP 8.0+
+- MySQL 5.7+
+- Estensioni: PDO, GD, OpenSSL
+- Vedi `GODADDY-SETUP.md` per setup completo
 
-- SQL injection prevention (prepared statements)
-- CSRF token validation
-- JWT token authentication with expiration
-- Password hashing with bcrypt
-- File upload validation and sanitization
-- XSS protection headers
-- Role-based access control (admin, editor, viewer)
-- Activity logging for audit trail
-- Secure session management
+## 📚 Documentazione
 
-## 🚀 Production Deployment
+- **MIGRATION.md** - Migrazione da WordPress
+- **FTP-DEPLOY.md** - Deploy su GoDaddy
+- **SECURITY.md** - Best practice sicurezza
+- **GODADDY-SETUP.md** - Configurazione hosting
+- **LOCAL-SETUP.md** - Sviluppo locale
+- **TESTING.md** - Test API
 
-### cPanel Deployment
+## 🏗️ Struttura Progetto
 
-1. **Prepare Files**
-   ```bash
-   # Build frontend
-   cd admin
-   npm run build
-   
-   # Copy BE folder to cPanel public_html/api
-   # Copy admin/dist to public_html/admin
-   ```
-
-2. **Database Setup**
-   - Create MySQL database in cPanel
-   - Import `BE/database/init.sql`
-   - Update credentials in production
-
-3. **Configuration**
-   - Create `.env` file with production values
-   - Change JWT secret
-   - Update database credentials
-   - Set proper file permissions (755 for directories, 644 for files)
-   - Enable HTTPS
-   - Configure CORS for production domain
-
-4. **Security Checklist**
-   - [ ] Change default admin password
-   - [ ] Update JWT secret key (32+ characters)
-   - [ ] Enable HTTPS
-   - [ ] Configure firewall rules
-   - [ ] Set up regular backups
-   - [ ] Enable rate limiting
-   - [ ] Disable error display in production
-   - [ ] Set secure file permissions
-   - [ ] Configure CORS properly
-   - [ ] Enable PHP OPcache
+```
+Dalila/
+├── BE/                      # Backend PHP
+│   ├── api/
+│   │   ├── controllers/     # Logic business
+│   │   ├── middleware/      # Auth JWT
+│   │   └── index.php        # Router
+│   ├── config/
+│   │   ├── database.php     # Connessione DB
+│   │   └── jwt.php          # JWT Handler
+│   ├── database/
+│   │   ├── init.sql         # Schema + seed
+│   │   └── migrate.php      # Import WordPress
+│   └── uploads/             # User content (escluso da git)
+│
+├── FE/                      # Frontend pubblico React
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── App.jsx
+│   └── public/
+│       └── images/          # Immagini design (in git)
+│
+├── admin/                   # Admin panel React
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── App.tsx
+│   └── public/
+│
+├── docker-compose.yml       # Orchestrazione servizi
+├── package.json             # Script NPM unificati
+└── .env                     # Config locale (escluso da git)
+```
 
 ## 🧪 Testing
 
-### Test Backend API
+### Test API manualmente
 ```bash
 # Health check
 curl http://localhost:8080/api/health
 
-# Login
+# Lista proprietà
+curl http://localhost:8080/api/properties
+
+# Singola proprietà
+curl http://localhost:8080/api/properties/1
+
+# Login admin
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@dalila.com","password":"Admin@123"}'
-
-# Get properties (with token)
-curl http://localhost:8080/api/properties \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
-### Test Admin Panel
-1. Open http://localhost:5174
-2. Login with default credentials
-3. Navigate to Properties
-4. Create a new property
-5. Upload images
-6. View dashboard statistics
+Vedi `TESTING.md` per test completi.
 
-## 📝 Environment Variables
+## 🛠️ Sviluppo
 
-**IMPORTANTE**: Il file `.env` nel repository NON contiene password reali!
-
-### Configurazioni Statiche (nel codice)
-
-Le seguenti configurazioni sono definite direttamente in `BE/api/controllers/UploadController.php`:
-
-```php
-private $maxImageSize = 10485760;      // 10MB
-private $maxVideoSize = 104857600;     // 100MB
-private $allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
-private $allowedVideoTypes = ['video/mp4', 'video/mpeg', 'video/quicktime'];
-```
-
-### Configurazioni Server (Sensibili)
-
-Queste vanno impostate sul server (GoDaddy/cPanel):
-
+### Workflow tipico
 ```bash
-# Database (configurare in cPanel)
-MYSQL_DATABASE=dalila_db
-MYSQL_USER=dalila_user
-MYSQL_PASSWORD=<password-sicura-qui>
+# 1. Pull ultimi cambiamenti
+git pull origin main
 
-# JWT Secret (generare con: openssl rand -base64 32)
-JWT_SECRET=<chiave-sicura-32-caratteri>
+# 2. Avvia ambiente sviluppo
+npm run dev
 
-# Environment
-ENVIRONMENT=production
+# 3. Sviluppa su branch
+git checkout -b feature/nome-feature
+
+# 4. Commit e push
+git add .
+git commit -m "feat: descrizione"
+git push origin feature/nome-feature
+
+# 5. Crea Pull Request su GitHub
 ```
 
-**Vedi [SECURITY.md](SECURITY.md) per istruzioni complete.**
-
-## 🐛 Troubleshooting
-
-### Database Connection Issues
+### Logs
 ```bash
-# Check if MySQL is running
-docker-compose ps
+# Backend PHP
+docker logs dalila-backend
 
-# View MySQL logs
-docker-compose logs mysql
+# MySQL
+docker logs dalila-mysql
 
-# Restart MySQL
-docker-compose restart mysql
+# Frontend (in terminal npm run dev)
+# Admin (in terminal npm run dev)
 ```
 
-### Backend Errors
+## 🔧 Troubleshooting
+
+### Database non si connette
 ```bash
-# Check backend logs
-docker-compose logs backend
-
-# Access backend container
-docker-compose exec backend bash
-
-# Check PHP error log
-docker-compose exec backend tail -f /var/log/apache2/error.log
+# Reset completo volumi
+docker-compose down -v
+docker-compose up -d
+# Attendi 30s per init.sql
 ```
 
-### Frontend Issues
+### API ritorna 500
 ```bash
-# Check admin panel logs
-docker-compose logs admin
+# Controlla log PHP
+docker logs dalila-backend | grep "Fatal error"
 
-# Rebuild node_modules
-cd admin
-rm -rf node_modules
-npm install
+# Verifica path config
+docker exec dalila-backend ls -la /var/www/html/config/
 ```
 
-### Password e Sicurezza
+### Frontend non vede API
+```bash
+# Verifica CORS in BE/api/index.php
+# Controlla che API_URL in FE sia corretta
+```
 
-### 📖 Documentation
-- [SECURITY.md](SECURITY.md) - **LEGGI PRIMA!** Sicurezza e password
-- [LOCAL-SETUP.md](LOCAL-SETUP.md) - Setup sviluppo locale veloce
-- [GODADDY-SETUP.md](GODADDY-SETUP.md) - Configurazione password in GoDaddy/cPanel
-- [DEPLOYMENT.md](DEPLOYMENT.md) - Deploy completo su cPanel
-- [TESTING.md](TESTING.md) - Testing e troubleshooting
+### Immagini non si caricano
+```bash
+# Verifica permessi uploads
+docker exec dalila-backend ls -la /var/www/html/uploads/
+docker exec dalila-backend chmod -R 777 /var/www/html/uploads/
+```
 
-### 🔗 External Resources
-Vedi la documentazione completa:
-- [SECURITY.md](SECURITY.md) - Best practices sicurezza
-- [LOCAL-SETUP.md](LOCAL-SETUP.md) - Setup sviluppo locale
-- [GODADDY-SETUP.md](GODADDY-SETUP.md) - Configurazione password server
+## 📝 TODO
 
-## 📚 Additional Resources
+### Backend
+- [ ] Implement blog posts API
+- [ ] Complete video upload processing
+- [ ] Add property search/filter endpoints
+- [ ] Implement email notifications
 
-- [PHP Documentation](https://www.php.net/docs.php)
-- [React Documentation](https://react.dev/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [shadcn/ui](https://ui.shadcn.com/)
-- [Docker Documentation](https://docs.docker.com/)
-- [MariaDB Documentation](https://mariadb.org/documentation/)
+### Frontend
+- [x] ~~Convertire da dati statici a API~~ (da fare)
+- [ ] Add property search/filters
+- [ ] Implement contact forms
+- [ ] Add map integration
+- [ ] SEO optimization
 
-## 📄 License
+### Admin Panel
+- [ ] Property bulk operations
+- [ ] Analytics dashboard
+- [ ] User management interface
+- [ ] Image gallery editor
 
-Proprietary - All rights reserved
+### DevOps
+- [ ] CI/CD pipeline (GitHub Actions)
+- [ ] Automated backups
+- [ ] Monitoring/logging
+- [ ] SSL certificate automation
 
-## 👥 Support
+## 📄 Licenza
 
-For support, please contact the development team.
+Proprietario - Buy With Dali © 2026
+
+## 👥 Contatti
+
+- **Website**: https://buywithdali.com
+- **GitHub**: https://github.com/gelsogrove/dali
 
 ---
 
-**Built with ❤️ for Dalila Property Management**
+**Nota**: Questo è un repository **pubblico**. Non committare mai credenziali, password o dati sensibili.

@@ -20,6 +20,7 @@ ini_set('log_errors', 1);
 require_once __DIR__ . '/controllers/AuthController.php';
 require_once __DIR__ . '/controllers/PropertyController.php';
 require_once __DIR__ . '/controllers/UploadController.php';
+require_once __DIR__ . '/controllers/HomeController.php';
 require_once __DIR__ . '/middleware/AuthMiddleware.php';
 
 // Get request method and path
@@ -42,6 +43,10 @@ try {
         
         case 'upload':
             handleUploadRoutes($segments, $method);
+            break;
+        
+        case 'home':
+            handleHomeRoutes($segments, $method);
             break;
         
         case 'health':
@@ -194,5 +199,31 @@ function handleUploadRoutes($segments, $method) {
     } else {
         http_response_code(405);
         echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+}
+
+/**
+ * Handle home routes (public, no auth)
+ */
+function handleHomeRoutes($segments, $method) {
+    if ($method !== 'GET') {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+        return;
+    }
+    
+    $controller = new HomeController();
+    
+    if (empty($segments[1])) {
+        // GET /api/home - Get all homepage data
+        $result = $controller->getHomeData();
+        echo json_encode($result);
+    } elseif ($segments[1] === 'videos') {
+        // GET /api/home/videos - Get featured videos only
+        $result = $controller->getFeaturedVideos();
+        echo json_encode($result);
+    } else {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'error' => 'Home endpoint not found']);
     }
 }

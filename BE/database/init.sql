@@ -178,4 +178,13 @@ INSERT INTO `properties` (`title`, `slug`, `description`, `price`, `bedrooms`, `
 ('Charming Family Home', 'charming-family-home', 'Beautifully maintained family home in quiet neighborhood. Large backyard perfect for entertaining.', 485000.00, 4, 3.0, 2600, 'Single Family', 'active', '789 Oak Avenue', 'Coral Gables', 'FL', '33134', 0, 1)
 ON DUPLICATE KEY UPDATE `slug` = `slug`;
 
+-- =============================================
+-- Sample Videos Data (for homepage)
+-- =============================================
+INSERT INTO `videos` (`property_id`, `title`, `description`, `video_url`, `video_type`, `thumbnail_url`, `display_order`, `is_featured`) VALUES
+(1, 'Luxury Villa Tour', 'Complete walkthrough of the stunning waterfront villa', 'https://player.vimeo.com/video/1042515673', 'vimeo', '/uploads/videos/thumbnails/villa-tour.jpg', 1, 1),
+(2, 'Downtown Condo Showcase', 'Modern living in the heart of Miami', 'https://player.vimeo.com/video/1042515674', 'vimeo', '/uploads/videos/thumbnails/condo-tour.jpg', 2, 1),
+(3, 'Family Home Experience', 'Discover this perfect family property', 'https://player.vimeo.com/video/1042515675', 'vimeo', '/uploads/videos/thumbnails/home-tour.jpg', 3, 1)
+ON DUPLICATE KEY UPDATE `title` = `title`;
+
 SET FOREIGN_KEY_CHECKS = 1;

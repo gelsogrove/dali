@@ -34,15 +34,15 @@ class BlogController {
 
             // Search filter
             if (!empty($filters['q'])) {
-                $where[] = "(title LIKE ? OR subtitle LIKE ? OR description LIKE ? OR content LIKE ?)";
+                $where[] = "(title LIKE ? OR description LIKE ? OR content LIKE ?)";
                 $searchTerm = '%' . $filters['q'] . '%';
-                array_push($params, $searchTerm, $searchTerm, $searchTerm, $searchTerm);
-                $types .= 'ssss';
+                array_push($params, $searchTerm, $searchTerm, $searchTerm);
+                $types .= 'sss';
             }
 
             // Build query
             $whereClause = empty($where) ? '1=1' : implode(' AND ', $where);
-            $query = "SELECT id, title, slug, subtitle, description, featured_image, is_active, 
+            $query = "SELECT id, title, slug, description, content, featured_image, content_image, is_active, 
                      display_order, published_date, created_at, updated_at 
                      FROM blogs 
                      WHERE $whereClause 
@@ -148,17 +148,17 @@ class BlogController {
             $slug = $this->generateSlug($slugSource);
 
             // Insert blog
-            $query = "INSERT INTO blogs (title, slug, subtitle, description, content, featured_image, 
+            $query = "INSERT INTO blogs (title, slug, description, content, featured_image, content_image,
                      is_active, display_order, published_date, created_by) 
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $params = [
                 $data['title'],
                 $slug,
-                $data['subtitle'] ?? null,
                 $data['description'] ?? null,
                 $data['content'] ?? null,
                 $data['featured_image'] ?? null,
+                $data['content_image'] ?? null,
                 $data['is_active'] ?? 1,
                 $data['display_order'] ?? 0,
                 $data['published_date'] ?? date('Y-m-d'),
@@ -166,7 +166,7 @@ class BlogController {
             ];
 
             // Types: s=string, i=integer
-            $types = 'ssssssiisi';
+            $types = 'sssssssiis';
 
             $result = $this->db->executePrepared($query, $params, $types);
 
@@ -209,7 +209,7 @@ class BlogController {
             $params = [];
             $types = '';
 
-            $allowedFields = ['title', 'subtitle', 'description', 'content', 'featured_image', 
+            $allowedFields = ['title', 'description', 'content', 'featured_image', 'content_image',
                             'is_active', 'display_order', 'published_date', 'slug'];
 
             foreach ($allowedFields as $field) {
@@ -367,10 +367,10 @@ class BlogController {
             'id' => $blog['id'],
             'title' => $blog['title'],
             'slug' => $blog['slug'],
-            'subtitle' => $blog['subtitle'],
             'description' => $blog['description'],
             'content' => $blog['content'] ?? null,
             'featured_image' => $blog['featured_image'],
+            'content_image' => $blog['content_image'] ?? null,
             'is_active' => (bool)$blog['is_active'],
             'display_order' => (int)$blog['display_order'],
             'published_date' => $blog['published_date'],

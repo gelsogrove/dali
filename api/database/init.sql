@@ -98,7 +98,6 @@ CREATE TABLE `blogs` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   `slug` varchar(255) NOT NULL,
-  `subtitle` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
   `content` longtext DEFAULT NULL,
   `featured_image` varchar(255) DEFAULT NULL,

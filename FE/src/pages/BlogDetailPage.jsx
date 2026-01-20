@@ -91,33 +91,37 @@ const BlogDetailPage = () => {
 
       <section className="blog-detail-section">
         <div className="blog-detail-container">
-          <div className="blog-detail-header">
-            <h1 className="blog-detail-title">{blog.title}</h1>
-            
-            {blog.subtitle && (
-              <h2 className="blog-detail-subtitle">{blog.subtitle}</h2>
-            )}
-            
-            <div className="blog-detail-meta">
-              {formatDate(blog.published_date || blog.created_at)}
+          <div className="blog-detail-card">
+            <div className="blog-detail-header">
+              <h1 className="blog-detail-title">{blog.title}</h1>
+              
+              {blog.subtitle && (
+                <h2 className="blog-detail-subtitle">{blog.subtitle}</h2>
+              )}
+              
+              <div className="blog-detail-meta">
+                {formatDate(blog.published_date || blog.created_at)}
+              </div>
             </div>
-          </div>
 
         {/* Content with floating image */}
-        <div className="blog-detail-content">
-          {/* Featured Image inline */}
-          {blog.featured_image ? (
-            <div className="blog-detail-image-inline">
-              <img src={toAbsoluteUrl(blog.featured_image)} alt={blog.title} />
+            <div className="blog-detail-content">
+              {blog.content_image ? (
+                <div className="blog-detail-image-large">
+                  <img src={toAbsoluteUrl(blog.content_image)} alt={blog.title} />
+                </div>
+              ) : blog.featured_image ? (
+                <div className="blog-detail-image-inline">
+                  <img src={toAbsoluteUrl(blog.featured_image)} alt={blog.title} />
+                </div>
+              ) : (
+                <div className="blog-detail-image-inline blog-detail-image-placeholder">
+                  <i className="fa fa-newspaper blog-detail-image-placeholder-icon"></i>
+                </div>
+              )}
+              
+              <div className="blog-detail-body" dangerouslySetInnerHTML={{ __html: blog.content }} />
             </div>
-          ) : (
-            <div className="blog-detail-image-inline blog-detail-image-placeholder">
-              <i className="fa fa-newspaper blog-detail-image-placeholder-icon"></i>
-            </div>
-          )}
-          
-          <div dangerouslySetInnerHTML={{ __html: blog.content }} />
-        </div>
 
           {/* Navigation */}
           <div className="blog-navigation">
@@ -125,6 +129,7 @@ const BlogDetailPage = () => {
               <i className="fa fa-arrow-left"></i>
               Back to Blog
             </Link>
+          </div>
           </div>
         </div>
       </section>

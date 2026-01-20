@@ -182,7 +182,7 @@ export default function BlogFormPage() {
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium">
-                  Featured Image (Consigliato: 340 x 250px)
+                  Featured Image (340 x 250px)
                 </label>
                 
                 {imagePreview ? (

@@ -9,6 +9,7 @@ import { format } from 'date-fns'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import DefaultEditor from 'react-simple-wysiwyg'
 
 export default function BlogsPage() {
   const queryClient = useQueryClient()
@@ -62,6 +63,8 @@ export default function BlogsPage() {
   const openModal = (blog: any | null) => {
     if (blog) {
       setEditingBlog(blog)
+      const formDate = blog.published_date || new Date().toISOString().split('T')[0];
+      console.log('Opening blog for edit:', { blogId: blog.id, published_date: formDate });
       setFormData({
         title: blog.title || '',
         description: blog.description || '',
@@ -70,15 +73,18 @@ export default function BlogsPage() {
         featured_image: blog.featured_image || '',
         content_image: blog.content_image || '',
         is_active: !!blog.is_active,
-        published_date: blog.published_date
-          ? new Date(blog.published_date).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0],
+        published_date: formDate,
       })
       setImagePreview(toAbsoluteUrl(blog.featured_image))
       setContentImagePreview(toAbsoluteUrl(blog.content_image))
     } else {
       setEditingBlog(null)
-      setFormData({ ...defaultForm })
+      const newDate = new Date().toISOString().split('T')[0];
+      console.log('Opening new blog modal with date:', newDate);
+      setFormData({ 
+        ...defaultForm,
+        published_date: newDate
+      })
       setImagePreview('')
       setContentImagePreview('')
     }
@@ -181,6 +187,46 @@ export default function BlogsPage() {
     setImagePreview('')
   }
 
+  const handleContentImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const payload = new FormData()
+    payload.append('image', file)
+    setUploadingContent(true)
+
+    try {
+      const response = await api.post('/upload/blog-image', payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      const uploaded =
+        response.data?.data?.url ||
+        response.data?.urls?.original ||
+        response.data?.data?.filename ||
+        ''
+      if (uploaded) {
+        setFormData((p) => ({ ...p, content_image: uploaded }))
+        setContentImagePreview(toAbsoluteUrl(uploaded))
+      }
+    } catch (error) {
+      console.error('Failed to upload content image:', error)
+    } finally {
+      setUploadingContent(false)
+    }
+  }
+
+  const handleRemoveContentImage = async () => {
+    if (formData.content_image) {
+      try {
+        await api.delete(`/upload/file?url=${encodeURIComponent(formData.content_image)}`)
+      } catch (error) {
+        console.error('Failed to remove content image:', error)
+      }
+    }
+    setFormData((p) => ({ ...p, content_image: '' }))
+    setContentImagePreview('')
+  }
+
   const toggleActive = async (blog: any, value: boolean) => {
     try {
       setList((prev) =>
@@ -195,8 +241,8 @@ export default function BlogsPage() {
   }
 
   const handleSave = () => {
-    if (uploading) {
-      alert('Attendi il termine del caricamento immagine prima di salvare.')
+    if (uploading || uploadingContent) {
+      alert('Please wait for image uploads to complete before saving.')
       return
     }
     const effectiveImage =
@@ -208,20 +254,39 @@ export default function BlogsPage() {
         : '')
 
     if (!effectiveImage) {
-      alert('Carica un’immagine di copertina prima di salvare.')
+      alert('Featured image is required. Please upload an image.')
       return
     }
-    if (!formData.title.trim()) {
+    if (!formData.title || !formData.title.trim()) {
       alert('Title is required')
+      return
+    }
+    if (formData.title.trim().length < 3) {
+      alert('Title must be at least 3 characters long')
+      return
+    }
+    if (formData.title.length > 255) {
+      alert('Title must be less than 255 characters')
+      return
+    }
+    if (formData.description && formData.description.length > 500) {
+      alert('Short description must be less than 500 characters')
+      return
+    }
+    if (!formData.published_date || !/^\d{4}-\d{2}-\d{2}$/.test(formData.published_date)) {
+      alert('Please select a valid published date')
       return
     }
 
     const payload: any = {
       ...formData,
       featured_image: effectiveImage,
-      published_date: formData.published_date || new Date().toISOString().split('T')[0],
+      published_date: formData.published_date,
       slug: formData.slug?.trim() || undefined,
     }
+
+    // Debug: verifica il payload prima dell'invio
+    console.log('Saving blog with payload:', payload)
 
     if (!editingBlog) {
       payload.display_order = (list?.length || 0) + 1
@@ -327,10 +392,10 @@ export default function BlogsPage() {
                   <img
                     src={toAbsoluteUrl(blog.featured_image)}
                     alt={blog.title}
-                    className="w-48 h-48 object-cover"
+                    className="w-48 h-48 object-cover my-4 ml-2 mr-4 rounded-lg"
                   />
                 ) : (
-                  <div className="w-48 h-48 bg-gray-200 flex items-center justify-center flex-shrink-0">
+                  <div className="w-48 h-48 bg-gray-200 flex items-center justify-center flex-shrink-0 my-4 ml-2 mr-4 rounded-lg">
                     <span className="text-gray-400">No image</span>
                   </div>
                 )}
@@ -397,7 +462,7 @@ export default function BlogsPage() {
 
       {modalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b px-6 py-4">
               <div>
                 <p className="text-sm text-muted-foreground uppercase tracking-[3px]">Blog</p>
@@ -418,22 +483,19 @@ export default function BlogsPage() {
                     value={formData.title}
                     onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
                     required
+                    minLength={3}
+                    maxLength={255}
+                    placeholder="Enter blog title (min 3 characters)"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Published Date</label>
+                  <label className="text-sm font-medium">Published Date *</label>
                   <Input
                     type="date"
                     value={formData.published_date}
                     onChange={(e) => setFormData((p) => ({ ...p, published_date: e.target.value }))}
+                    required
                   />
-                </div>
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={formData.is_active}
-                    onCheckedChange={(v) => setFormData((p) => ({ ...p, is_active: v }))}
-                  />
-                  <span className="text-sm font-medium">Active (visible on site)</span>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Short Description</label>
@@ -441,44 +503,125 @@ export default function BlogsPage() {
                     rows={3}
                     value={formData.description}
                     onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
+                    maxLength={500}
+                    placeholder="Brief description for listing page (max 500 characters)"
                   />
+                  <p className="text-xs text-muted-foreground">{formData.description?.length || 0}/500 characters</p>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Full Content</label>
-                  <Textarea
-                    rows={15}
+                  <DefaultEditor
                     value={formData.content}
-                    onChange={(e) => setFormData((p) => ({ ...p, content: e.target.value }))}
-                    placeholder="Full blog content (supporta HTML: <strong>bold</strong>, <em>italic</em>)"
-                    className="font-mono text-sm"
+                    onChange={(e: any) => setFormData((p) => ({ ...p, content: e.target.value }))}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Puoi usare HTML: &lt;strong&gt;grassetto&lt;/strong&gt;, &lt;em&gt;corsivo&lt;/em&gt;, &lt;p&gt;paragrafo&lt;/p&gt;
+                    Use the toolbar to format text: bold, italic, lists, etc.
                   </p>
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">Image</label>
-                  <p className="text-xs text-muted-foreground mb-2">Consigliato: 340 x 250px, formato .jpg o .webp</p>
+                <div className="space-y-2 md:col-span-1">
+                  <label className="text-sm font-medium">Image *</label>
+                  <p className="text-xs text-muted-foreground mb-2">Recommended: 340 x 250px</p>
                   {imagePreview ? (
-                    <div className="relative inline-block">
-                      <img src={imagePreview} alt="Preview" style={{ width: '340px', height: '250px' }} className="object-cover rounded-lg border" />
+                    <div className="space-y-2">
+                      <div 
+                        className="relative inline-block cursor-pointer group"
+                        onClick={() => {
+                          const popup = document.createElement('div');
+                          popup.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4';
+                          popup.onclick = () => popup.remove();
+                          popup.innerHTML = `
+                            <div class="relative">
+                              <img src="${imagePreview}" class="max-w-full max-h-[90vh] rounded-lg" />
+                              <button 
+                                onclick="this.parentElement.parentElement.remove()" 
+                                class="absolute top-2 right-2 bg-white/90 hover:bg-white text-black rounded-full w-8 h-8 flex items-center justify-center font-bold text-xl"
+                                style="line-height: 1;"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          `;
+                          document.body.appendChild(popup);
+                        }}
+                      >
+                        <img src={imagePreview} alt="Preview" style={{ width: '170px', height: '125px' }} className="object-cover rounded border group-hover:opacity-80 transition" />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                          <span className="text-white text-xs bg-black/60 px-2 py-1 rounded">Click to enlarge</span>
+                        </div>
+                      </div>
                       <Button
                         type="button"
                         variant="destructive"
                         size="sm"
-                        className="absolute top-2 right-2"
                         onClick={handleRemoveImage}
                       >
-                        <X className="h-4 w-4 mr-1" />
-                        Remove
+                        <X className="h-4 w-4" />
                       </Button>
                     </div>
                   ) : (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <Upload className="h-10 w-10 mx-auto text-gray-400 mb-3" />
-                      <p className="text-sm text-gray-600 mb-3">Click to upload</p>
-                      <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
-                      {uploading && <p className="text-sm text-primary mt-2">Uploading...</p>}
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                      <label className="cursor-pointer block">
+                        <div className="flex flex-col items-center">
+                          <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                          <span className="text-sm text-gray-600">Click to upload</span>
+                        </div>
+                        <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} className="hidden" />
+                      </label>
+                      {uploading && <p className="text-sm text-primary mt-2 text-center">Uploading...</p>}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2 md:col-span-1">
+                  <label className="text-sm font-medium">Content Image (Optional)</label>
+                  <p className="text-xs text-muted-foreground mb-2">680 x 500px</p>
+                  {contentImagePreview ? (
+                    <div className="space-y-2">
+                      <div 
+                        className="relative inline-block cursor-pointer group"
+                        onClick={() => {
+                          const popup = document.createElement('div');
+                          popup.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4';
+                          popup.onclick = () => popup.remove();
+                          popup.innerHTML = `
+                            <div class="relative">
+                              <img src="${contentImagePreview}" class="max-w-full max-h-[90vh] rounded-lg" />
+                              <button 
+                                onclick="this.parentElement.parentElement.remove()" 
+                                class="absolute top-2 right-2 bg-white/90 hover:bg-white text-black rounded-full w-8 h-8 flex items-center justify-center font-bold text-xl"
+                                style="line-height: 1;"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          `;
+                          document.body.appendChild(popup);
+                        }}
+                      >
+                        <img src={contentImagePreview} alt="Content Preview" style={{ width: '340px', height: '250px' }} className="object-cover rounded border group-hover:opacity-80 transition" />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                          <span className="text-white text-xs bg-black/60 px-2 py-1 rounded">Click to enlarge</span>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleRemoveContentImage}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                      <label className="cursor-pointer block">
+                        <div className="flex flex-col items-center">
+                          <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                          <span className="text-sm text-gray-600">Click to upload (optional)</span>
+                        </div>
+                        <Input type="file" accept="image/*" onChange={handleContentImageUpload} disabled={uploadingContent} className="hidden" />
+                      </label>
+                      {uploadingContent && <p className="text-sm text-primary mt-2 text-center">Uploading...</p>}
                     </div>
                   )}
                 </div>
@@ -487,18 +630,20 @@ export default function BlogsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs uppercase tracking-[2px] text-muted-foreground">SEO</p>
-                      <h4 className="text-base font-semibold">Permalink</h4>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">URL slug</label>
+                    <label className="text-sm font-medium">URL</label>
                     <Input
                       placeholder="es. 010-luxury-condo"
                       value={formData.slug}
-                      onChange={(e) => setFormData((p) => ({ ...p, slug: e.target.value }))}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\s+/g, '-');
+                        setFormData((p) => ({ ...p, slug: value }));
+                      }}
                     />
                     <p className="text-xs text-muted-foreground">
-                      URL finale: /blog/{formData.slug || 'your-slug'}
+                      URL: /blog/{formData.slug || 'your-slug'}
                     </p>
                   </div>
                 </div>

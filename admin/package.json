@@ -33,6 +33,7 @@
     "react-hook-form": "^7.49.3",
     "react-quill": "^2.0.0",
     "react-router-dom": "^6.21.3",
+    "react-simple-wysiwyg": "^3.4.1",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.4",

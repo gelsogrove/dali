@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Upload, X } from 'lucide-react'
-import TipTapEditor from '@/components/TipTapEditor'
+import TrixEditor from '@/components/TrixEditor'
 
 export default function BlogFormPage() {
   const { id } = useParams()
@@ -62,7 +62,7 @@ export default function BlogFormPage() {
       }
     },
     onSuccess: () => {
-      navigate('/blogs')
+      alert('Blog saved successfully!')
     },
     onError: (error: any) => {
       alert(error.response?.data?.error || 'An error occurred')
@@ -256,7 +256,7 @@ export default function BlogFormPage() {
               <label htmlFor="content" className="text-sm font-medium">
                 Full Content
               </label>
-              <TipTapEditor
+              <TrixEditor
                 value={formData.content}
                 onChange={(value) => setFormData(prev => ({ ...prev, content: value }))}
                 placeholder="Write your blog content here..."
@@ -272,7 +272,7 @@ export default function BlogFormPage() {
                 variant="outline"
                 onClick={() => navigate('/blogs')}
               >
-                Cancel
+                Close
               </Button>
             </div>
           </CardContent>

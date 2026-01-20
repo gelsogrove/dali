@@ -24,6 +24,7 @@ class AuthController {
         try {
             // Validate input
             if (empty($email) || empty($password)) {
+                error_log("Login failed: Empty email or password");
                 return $this->errorResponse('Email and password are required', 400);
             }
 
@@ -34,19 +35,22 @@ class AuthController {
             $result = $this->db->executePrepared($query, [$email], 's');
 
             if (!$result || $result->num_rows === 0) {
-                return $this->errorResponse('Invalid credentials', 401);
+                error_log("Login failed: User not found for email: " . $email);
+                return $this->errorResponse('Invalid email or password. Please check your credentials.', 401);
             }
 
             $user = $result->fetch_assoc();
 
             // Check if user is active
             if (!$user['is_active']) {
-                return $this->errorResponse('Account is inactive', 403);
+                error_log("Login failed: Account inactive for user: " . $email);
+                return $this->errorResponse('Your account is inactive. Please contact support.', 403);
             }
 
             // Verify password
             if (!password_verify($password, $user['password_hash'])) {
-                return $this->errorResponse('Invalid credentials', 401);
+                error_log("Login failed: Invalid password for user: " . $email);
+                return $this->errorResponse('Invalid email or password. Please check your credentials.', 401);
             }
 
             // Generate JWT token
@@ -82,8 +86,8 @@ class AuthController {
             ]);
 
         } catch (Exception $e) {
-            error_log("Login error: " . $e->getMessage());
-            return $this->errorResponse('An error occurred during login', 500);
+            error_log("Login error: " . $e->getMessage() . " | Trace: " . $e->getTraceAsString());
+            return $this->errorResponse('An error occurred during login. Please try again or contact support.', 500);
         }
     }
 

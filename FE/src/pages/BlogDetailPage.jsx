@@ -82,6 +82,11 @@ const BlogDetailPage = () => {
 
   return (
     <>
+      <div className="page-breadcrumbs-wrap">
+        <div className="page-breadcrumbs">
+          <Link to="/">Home</Link> <span>»</span> <Link to="/category/blog">Blog</Link> <span>» <em style={{ fontStyle: 'italic', opacity: 0.7 }}>{blog.title}</em></span>
+        </div>
+      </div>
       <PageHero breadcrumb="» Blog" />
 
       <section className="blog-detail-section">

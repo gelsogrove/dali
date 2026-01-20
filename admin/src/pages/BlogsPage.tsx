@@ -9,7 +9,7 @@ import { format } from 'date-fns'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import DefaultEditor from 'react-simple-wysiwyg'
+import TrixEditor from '@/components/TrixEditor'
 
 export default function BlogsPage() {
   const queryClient = useQueryClient()
@@ -510,9 +510,10 @@ export default function BlogsPage() {
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Full Content</label>
-                  <DefaultEditor
+                  <TrixEditor
                     value={formData.content}
-                    onChange={(e: any) => setFormData((p) => ({ ...p, content: e.target.value }))}
+                    onChange={(value) => setFormData((p) => ({ ...p, content: value }))}
+                    placeholder="Write your blog content here..."
                   />
                   <p className="text-xs text-muted-foreground">
                     Use the toolbar to format text: bold, italic, lists, etc.
@@ -651,7 +652,7 @@ export default function BlogsPage() {
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={closeModal}>
-                  Cancel
+                  Close
                 </Button>
                 <Button onClick={handleSave} disabled={saveMutation.isPending}>
                   {saveMutation.isPending ? 'Saving...' : 'Save'}
@@ -670,7 +671,7 @@ export default function BlogsPage() {
               Are you sure you want to delete this blog? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setDeleteId(null)}>Close</Button>
               <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
             </div>
           </div>

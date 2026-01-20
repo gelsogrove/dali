@@ -2,10 +2,14 @@
 node_modules/
 vendor/
 
-# Environment
+# Environment (all env files, keep only examples)
 .env
 .env.local
 .env.*.local
+.env.production
+**/.env
+**/.env.*
+!**/.env.example
 
 # Logs
 *.log

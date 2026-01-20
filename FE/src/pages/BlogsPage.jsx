@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import ContactSection from '../components/ContactSection';
 import PageHero from '../components/PageHero';
 import TitlePage from '../components/TitlePage';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { api, endpoints } from '../config/api';
 
 export default function BlogsPage() {
@@ -63,11 +64,7 @@ export default function BlogsPage() {
         <div className="blog-listing-inner">
           <TitlePage kicker="Our" title="Blog" className="blog-title-center" />
           
-          {loading && (
-            <div className="blog-loading">
-              <p>Loading blogs...</p>
-            </div>
-          )}
+          {loading && <LoadingSpinner />}
 
           {error && (
             <div className="blog-error">

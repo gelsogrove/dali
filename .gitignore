@@ -9,6 +9,7 @@ vendor/
 .env.production
 **/.env
 **/.env.*
+*.bak
 !**/.env.example
 
 # Logs

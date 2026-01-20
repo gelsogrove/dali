@@ -1,11 +1,15 @@
 <?php
 
 /**
- * Local env loader (dev-only).
- * Reads key=value pairs from api/.env.local and injects them into env if not already set.
- * Use this to point the local API to a local DB without touching production variables.
+ * Environment loader.
+ * Reads key=value pairs from .env.local (dev) or .env (production) and injects them into env.
  */
+
+// Try .env.local first (development), then .env (production)
 $envFile = __DIR__ . '/.env.local';
+if (!file_exists($envFile)) {
+    $envFile = __DIR__ . '/.env';
+}
 
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -38,4 +42,3 @@ if (file_exists($envFile)) {
         $_SERVER[$key] = $value;
     }
 }
-

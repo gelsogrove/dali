@@ -1,5 +1,6 @@
 import CanvasImage from './CanvasImage';
 import { welcomeSection } from '../data/homeData';
+import ButtonDali from './ButtonDali';
 
 export default function WelcomeSection() {
   return (
@@ -22,9 +23,9 @@ export default function WelcomeSection() {
             ))}
           </div>
           <div className="wc-button">
-            <a href={welcomeSection.cta.href} className="default-button" target="_blank" rel="noopener noreferrer">
+            <ButtonDali href={welcomeSection.cta.href} target="_blank" rel="noopener noreferrer">
               {welcomeSection.cta.label}
-            </a>
+            </ButtonDali>
           </div>
         </div>
       </div>

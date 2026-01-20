@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Upload, X } from 'lucide-react'
-import RichTextEditor from '@/components/RichTextEditor'
+import TipTapEditor from '@/components/TipTapEditor'
 
 export default function BlogFormPage() {
   const { id } = useParams()
@@ -256,10 +256,10 @@ export default function BlogFormPage() {
               <label htmlFor="content" className="text-sm font-medium">
                 Full Content
               </label>
-              <RichTextEditor
+              <TipTapEditor
                 value={formData.content}
                 onChange={(value) => setFormData(prev => ({ ...prev, content: value }))}
-                placeholder="Full blog content"
+                placeholder="Write your blog content here..."
               />
             </div>
 

@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api, endpoints } from "../config/api";
 import ContactSection from "../components/ContactSection";
+import PageHero from "../components/PageHero";
+import ButtonDali from "../components/ButtonDali";
 
 const BlogDetailPage = () => {
   const { slug } = useParams();
@@ -80,56 +82,46 @@ const BlogDetailPage = () => {
 
   return (
     <>
-      <section className="page-hero">
-        <div className="page-hero-overlay"></div>
-      </section>
-      <div className="page-breadcrumbs-wrap">
-        <div className="page-breadcrumbs">
-          <Link to="/">Home</Link> <span>»</span> <Link to="/category/blog">Blog</Link> <span>» <em style={{fontStyle: 'italic', opacity: 0.7}}>{blog.title}</em></span>
-        </div>
-      </div>
+      <PageHero breadcrumb="» Blog" />
 
       <section className="blog-detail-section">
         <div className="blog-detail-container">
-          <div className="blog-detail-card">
-            <div className="blog-detail-header">
-              <h1 className="blog-detail-title">{blog.title}</h1>
-              
-              {blog.subtitle && (
-                <h2 className="blog-detail-subtitle">{blog.subtitle}</h2>
-              )}
-              
-              <div className="blog-detail-meta">
-                {formatDate(blog.published_date || blog.created_at)}
-              </div>
+          <div className="blog-detail-header">
+            <h1 className="blog-detail-title">{blog.title}</h1>
+            
+            {blog.subtitle && (
+              <h2 className="blog-detail-subtitle">{blog.subtitle}</h2>
+            )}
+            
+            <div className="blog-detail-meta">
+              {formatDate(blog.published_date || blog.created_at)}
             </div>
+          </div>
 
-        {/* Content with floating image */}
-            <div className="blog-detail-content">
-              {blog.content_image ? (
-                <div className="blog-detail-image-large">
-                  <img src={toAbsoluteUrl(blog.content_image)} alt={blog.title} />
-                </div>
-              ) : blog.featured_image ? (
-                <div className="blog-detail-image-inline">
-                  <img src={toAbsoluteUrl(blog.featured_image)} alt={blog.title} />
-                </div>
-              ) : (
-                <div className="blog-detail-image-inline blog-detail-image-placeholder">
-                  <i className="fa fa-newspaper blog-detail-image-placeholder-icon"></i>
-                </div>
-              )}
-              
-              <div className="blog-detail-body" dangerouslySetInnerHTML={{ __html: blog.content }} />
-            </div>
+          {/* Content with floating image */}
+          <div className="blog-detail-content">
+            {blog.content_image ? (
+              <div className="blog-detail-image-large">
+                <img src={toAbsoluteUrl(blog.content_image)} alt={blog.title} />
+              </div>
+            ) : blog.featured_image ? (
+              <div className="blog-detail-image-inline">
+                <img src={toAbsoluteUrl(blog.featured_image)} alt={blog.title} />
+              </div>
+            ) : (
+              <div className="blog-detail-image-inline blog-detail-image-placeholder">
+                <i className="fa fa-newspaper blog-detail-image-placeholder-icon"></i>
+              </div>
+            )}
+            
+            <div className="blog-detail-body" dangerouslySetInnerHTML={{ __html: blog.content }} />
+          </div>
 
           {/* Navigation */}
           <div className="blog-navigation">
-            <Link to="/category/blog" className="blog-back-link">
-              <i className="fa fa-arrow-left"></i>
-              Back to Blog
-            </Link>
-          </div>
+            <ButtonDali href="/category/blog">
+              ← Back to Blog
+            </ButtonDali>
           </div>
         </div>
       </section>

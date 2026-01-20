@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import CanvasImage from './CanvasImage';
 import { contactInfo } from '../data/homeData';
+import ButtonDali from './ButtonDali';
 
 export default function ContactSection() {
   const [status, setStatus] = useState('');
@@ -49,9 +50,9 @@ export default function ContactSection() {
                   <textarea id="message" name="message" rows="5" placeholder="Message"></textarea>
                 </div>
               </div>
-              <button type="submit" className="default-button">
+              <ButtonDali type="submit">
                 Send
-              </button>
+              </ButtonDali>
               {status && <div className="form-status">{status}</div>}
             </form>
           </div>

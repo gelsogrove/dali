@@ -1,5 +1,6 @@
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import { testimonials } from '../data/homeData';
+import ButtonDali from './ButtonDali';
 
 export default function Testimonials() {
   return (
@@ -41,9 +42,9 @@ export default function Testimonials() {
           </Splide>
         </div>
         <div className="testi-link" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
-          <a href="/testimonials" className="default-button">
+          <ButtonDali href="/testimonials">
             View All Testimonials
-          </a>
+          </ButtonDali>
         </div>
       </div>
     </section>

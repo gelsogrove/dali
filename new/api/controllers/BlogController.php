@@ -166,7 +166,7 @@ class BlogController {
             ];
 
             // Types: s=string, i=integer
-            $types = 'sssssssiis';
+            $types = 'ssssssiisi';
 
             $result = $this->db->executePrepared($query, $params, $types);
 
@@ -213,7 +213,7 @@ class BlogController {
                             'is_active', 'display_order', 'published_date', 'slug'];
 
             foreach ($allowedFields as $field) {
-                if (isset($data[$field])) {
+                if (isset($data[$field]) && $field !== 'slug') { // Skip slug, gestito dopo
                     $updates[] = "$field = ?";
                     $params[] = $data[$field];
                     $types .= $this->getParamType($field);

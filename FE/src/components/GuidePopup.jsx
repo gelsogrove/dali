@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ButtonDali from './ButtonDali';
 
 export default function GuidePopup() {
   const [open, setOpen] = useState(false);
@@ -50,24 +51,23 @@ export default function GuidePopup() {
                 </div>
               </div>
               <div className="popup-link">
-                <button type="submit" className="default-button">
+                <ButtonDali type="submit">
                   Real Estate Buyer's Guide
-                </button>
+                </ButtonDali>
               </div>
               {status && <div className="wpcf7-response-output" aria-live="polite">{status}</div>}
             </form>
           </div>
           <div className="popup-toggler">
             <div className="popup-link">
-              <button
-                className="default-button"
+              <ButtonDali
                 onClick={() => {
                   setOpen(true);
                   setStatus('');
                 }}
               >
                 Sign Up for a Copy
-              </button>
+              </ButtonDali>
             </div>
           </div>
         </div>

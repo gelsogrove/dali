@@ -190,16 +190,16 @@ if [ -d "config" ]; then
     # database.php usa getenv(), funzionerà con .env.production
 fi
 
-# Leggi credenziali dal .env locale e crea .env per produzione
-if [ -f "$PROJECT_ROOT/.env" ]; then
-    echo -e "${BLUE}📝 Lettura credenziali da .env locale...${NC}"
+# Leggi credenziali dal .env.production e crea .env per API
+if [ -f "$PROJECT_ROOT/.env.production" ]; then
+    echo -e "${BLUE}📝 Lettura credenziali da .env.production...${NC}"
     
-    # Estrai valori dal .env locale
-    DB_HOST=$(grep "MYSQL_HOST" "$PROJECT_ROOT/.env" | cut -d '=' -f2 | tr -d '"' | xargs || echo "localhost")
-    DB_NAME=$(grep "MYSQL_DATABASE" "$PROJECT_ROOT/.env" | cut -d '=' -f2 | tr -d '"' | xargs)
-    DB_USER=$(grep "MYSQL_USER" "$PROJECT_ROOT/.env" | cut -d '=' -f2 | tr -d '"' | xargs)
-    DB_PASSWORD=$(grep "MYSQL_PASSWORD" "$PROJECT_ROOT/.env" | cut -d '=' -f2 | tr -d '"' | xargs)
-    JWT_SECRET=$(grep "JWT_SECRET" "$PROJECT_ROOT/.env" | cut -d '=' -f2 | tr -d '"' | xargs)
+    # Estrai valori dal .env.production
+    DB_HOST=$(grep "^DB_HOST" "$PROJECT_ROOT/.env.production" | cut -d '=' -f2 | tr -d '"' | xargs || echo "localhost")
+    DB_NAME=$(grep "^DB_NAME" "$PROJECT_ROOT/.env.production" | cut -d '=' -f2 | tr -d '"' | xargs)
+    DB_USER=$(grep "^DB_USER" "$PROJECT_ROOT/.env.production" | cut -d '=' -f2 | tr -d '"' | xargs)
+    DB_PASSWORD=$(grep "^DB_PASSWORD" "$PROJECT_ROOT/.env.production" | cut -d '=' -f2 | tr -d '"' | xargs)
+    JWT_SECRET=$(grep "^JWT_SECRET" "$PROJECT_ROOT/.env.production" | cut -d '=' -f2 | tr -d '"' | xargs)
     
     # Default a localhost se non specificato
     [ -z "$DB_HOST" ] && DB_HOST="localhost"
@@ -207,7 +207,7 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
     # Crea .env per produzione con le credenziali lette
     cat > "$NEW_DIR/api/.env" << EOF
 # 🚀 Production Environment Variables
-# Generato automaticamente da .env locale
+# Generato automaticamente da .env.production
 
 DB_HOST=${DB_HOST}
 DB_NAME=${DB_NAME}
@@ -218,11 +218,11 @@ DB_PASSWORD=${DB_PASSWORD}
 JWT_SECRET=${JWT_SECRET}
 EOF
 
-    echo -e "${GREEN}✓ File .env creato con credenziali da .env locale${NC}"
+    echo -e "${GREEN}✓ File .env creato con credenziali da .env.production${NC}"
 else
-    echo -e "${YELLOW}⚠️  File .env locale non trovato, creo template...${NC}"
+    echo -e "${YELLOW}⚠️  File .env.production non trovato, creo template...${NC}"
     
-    # Crea template se .env non esiste
+    # Crea template se .env.production non esiste
     cat > "$NEW_DIR/api/.env" << 'EOF'
 # 🔧 CONFIGURA QUESTE VARIABILI CON LE CREDENZIALI GODADDY
 

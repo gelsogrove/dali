@@ -1,0 +1,74 @@
+/* TipTap Editor Custom Styles */
+
+.prose-editor {
+  @apply border-t border-border;
+}
+
+.prose-editor .ProseMirror {
+  @apply min-h-[400px] p-4 focus:outline-none;
+}
+
+.prose-editor .ProseMirror p {
+  @apply mb-4 last:mb-0;
+}
+
+.prose-editor .ProseMirror h1 {
+  @apply text-3xl font-bold mb-4 mt-6 first:mt-0;
+}
+
+.prose-editor .ProseMirror h2 {
+  @apply text-2xl font-semibold mb-3 mt-5 first:mt-0;
+}
+
+.prose-editor .ProseMirror ul,
+.prose-editor .ProseMirror ol {
+  @apply pl-6 mb-4;
+}
+
+.prose-editor .ProseMirror ul {
+  @apply list-disc;
+}
+
+.prose-editor .ProseMirror ol {
+  @apply list-decimal;
+}
+
+.prose-editor .ProseMirror li {
+  @apply mb-1;
+}
+
+.prose-editor .ProseMirror strong {
+  @apply font-bold;
+}
+
+.prose-editor .ProseMirror em {
+  @apply italic;
+}
+
+.prose-editor .ProseMirror u {
+  @apply underline;
+}
+
+.prose-editor .ProseMirror a {
+  @apply text-primary underline hover:text-primary/80;
+}
+
+.prose-editor .ProseMirror p.is-editor-empty:first-child::before {
+  @apply text-muted-foreground float-left h-0 pointer-events-none;
+  content: attr(data-placeholder);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .prose-editor .ProseMirror {
+    @apply p-3 min-h-[300px];
+  }
+  
+  .prose-editor .ProseMirror h1 {
+    @apply text-2xl;
+  }
+  
+  .prose-editor .ProseMirror h2 {
+    @apply text-xl;
+  }
+}

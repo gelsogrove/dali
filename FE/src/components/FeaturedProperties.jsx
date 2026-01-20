@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ImageWithOverlay from './ImageWithOverlay';
 import TitlePage from './TitlePage';
 import { featuredProperties } from '../data/homeData';
+import ButtonDali from './ButtonDali';
 
 export default function FeaturedProperties({ activeTab = 'properties', paginate = false, pageSize = 12, items }) {
   const data = items || featuredProperties;
@@ -19,12 +20,12 @@ export default function FeaturedProperties({ activeTab = 'properties', paginate 
       <div className="fp-container">
         <TitlePage kicker="Featured" title="Properties" className="fp-title" />
         <div className="fp-links" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
-          <a href="/active-properties" className={`default-button ${isActive('active') ? 'active' : ''}`}>
+          <ButtonDali href="/active-properties" className={isActive('active') ? 'active' : ''}>
             Active Properties
-          </a>
-          <a href="/new-developments" className={`default-button ${isActive('new') ? 'active' : ''}`}>
+          </ButtonDali>
+          <ButtonDali href="/new-developments" className={isActive('new') ? 'active' : ''}>
             New Developments
-          </a>
+          </ButtonDali>
         </div>
         <div className="fp-grid" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
           {visible.map((item) => {

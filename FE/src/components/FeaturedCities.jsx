@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import CanvasImage from './CanvasImage';
 import { featuredCities } from '../data/homeData';
+import ButtonDali from './ButtonDali';
 
 export default function FeaturedCities() {
   const sliderRefs = useRef({});
@@ -91,9 +92,9 @@ export default function FeaturedCities() {
         ))}
       </div>
       <div className="wc-button">
-        <a href="/communities" className="default-button">
+        <ButtonDali href="/communities">
           View All Communities
-        </a>
+        </ButtonDali>
       </div>
     </section>
   );

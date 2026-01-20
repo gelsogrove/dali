@@ -1,0 +1,5 @@
+DB_HOST=localhost
+DB_NAME=dme8be4x62fn_dalila_db
+DB_USER=dme8be4x62fn_dalila_user
+DB_PASSWORD=L2tZ%oFZpF87
+JWT_SECRET=METTI_JWT_SECRET_PRODUZIONE_QUI

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import CanvasImage from './CanvasImage';
 import { api } from '../config/api';
+import ButtonDali from './ButtonDali';
 
 export default function BlogsSection() {
   const [items, setItems] = useState([]);
@@ -58,12 +59,16 @@ export default function BlogsSection() {
               options={{
                 type: 'loop',
                 perPage: 3,
+                perMove: 1,
                 gap: '25px',
                 arrows: false,
-                pagination: false,
+                pagination: true,
                 autoplay: true,
-                interval: 5000,
+                interval: 3000,
+                speed: 800,
                 pauseOnHover: true,
+                pauseOnFocus: false,
+                resetProgress: false,
                 breakpoints: {
                   1100: { perPage: 2 },
                   768: { perPage: 1 },
@@ -91,18 +96,20 @@ export default function BlogsSection() {
                       <p>{blog.description}</p>
                     </div>
                     <div className="blog-link">
-                      <a href={`/blog/${blog.slug}`} className="default-button">
+                      <ButtonDali href={`/blog/${blog.slug}`}>
                         Learn More <span className="screen-reader-text">About {blog.title}</span>
-                      </a>
+                      </ButtonDali>
                     </div>
                   </div>
                 </SplideSlide>
               ))}
             </Splide>
           </div>
-          <a href="/category/blog/" className="default-button">
-            View More Blogs
-          </a>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
+            <ButtonDali href="/category/blog/">
+              View More Blogs
+            </ButtonDali>
+          </div>
         </div>
       </div>
     </section>

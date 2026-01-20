@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import CanvasImage from './CanvasImage';
 import { videos } from '../data/homeData';
+import ButtonDali from './ButtonDali';
 
 export default function FeaturedVideos() {
   const sliderRef = useRef(null);
@@ -97,9 +98,9 @@ export default function FeaturedVideos() {
             <i className="ai-font-arrow-b"></i>
           </a>
 
-          <a href="/videos" className="default-button">
+          <ButtonDali href="/videos">
             View All Videos
-          </a>
+          </ButtonDali>
           <a
             href="#"
             className="next"

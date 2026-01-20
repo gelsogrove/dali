@@ -1,5 +1,5 @@
 .search-page {
-  padding: 60px 20px;
+  padding: 80px 5% 110px;
   background: #ffffff;
   min-height: 100vh;
 }
@@ -10,36 +10,39 @@
 }
 
 .search-header {
-  text-align: center;
-  margin-bottom: 50px;
-  animation: fadeInDown 0.6s ease-out;
+  text-align: left;
+  margin-bottom: 40px;
 }
 
 .search-header .section-title {
-  display: inline-block;
-  text-align: left;
+  display: block;
 }
 
 .search-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 15px;
-  color: #1a1a1a;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+  font-family: 'Playfair Display', serif;
+  font-size: 42px;
+  font-weight: 500;
+  color: #c19280;
+  margin: 0 0 12px 0;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
 }
 
 .search-header p {
-  font-size: 1.1rem;
-  color: #666;
+  font-size: 13px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
   margin: 0;
 }
 
 .search-form {
-  background: white;
-  border-radius: 15px;
-  padding: 40px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  animation: fadeInUp 0.6s ease-out;
+  background: #ffffff;
+  border: 1px solid #e8ddd5;
+  border-radius: 2px;
+  padding: 40px 35px;
+  box-shadow: 0 4px 20px rgba(193, 146, 128, 0.08);
 }
 
 /* Form Rows */
@@ -56,34 +59,33 @@
 }
 
 .form-group label {
-  font-size: 0.95rem;
+  font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: #2f343b;
   margin-bottom: 8px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.5px;
 }
 
 .form-input {
   padding: 12px 14px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-family: inherit;
+  border: 1px solid #e8ddd5;
+  border-radius: 2px;
+  font-size: 15px;
+  font-family: 'Glacial Indifference', sans-serif;
   transition: all 0.3s ease;
   background: white;
-  color: #333;
+  color: #2f343b;
 }
 
 .form-input:hover {
-  border-color: #b0b0b0;
+  border-color: #c19280;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #d4a574;
-  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1);
-  background: #fafaf8;
+  border-color: #c19280;
+  box-shadow: 0 0 0 3px rgba(193, 146, 128, 0.1);
 }
 
 .form-input:disabled {

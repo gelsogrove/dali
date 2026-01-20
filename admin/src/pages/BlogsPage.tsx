@@ -12,18 +12,24 @@ import { Switch } from '@/components/ui/switch'
 
 export default function BlogsPage() {
   const queryClient = useQueryClient()
+  const [searchTerm, setSearchTerm] = useState('')
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['blogs'],
+    queryKey: ['blogs', searchTerm],
     queryFn: async () => {
-      const response = await api.get('/blogs?is_active=all')
+      const q = searchTerm ? `&q=${encodeURIComponent(searchTerm)}` : ''
+      const response = await api.get(`/blogs?is_active=all${q}`)
       return response.data.data
     },
+    refetchOnWindowFocus: false,
   })
   const API_BASE = import.meta.env.VITE_API_URL || '/api'
   const assetBase = useMemo(() => API_BASE.replace(/\/api$/, ''), [API_BASE])
   const toAbsoluteUrl = (url?: string) => {
     if (!url) return ''
-    return url.startsWith('http') ? url : `${assetBase}${url}`
+    const base = assetBase || window.location.origin
+    if (url.startsWith('http')) return url
+    if (url.startsWith('/')) return `${base}${url}`
+    return `${base}/${url}`
   }
 
   const [list, setList] = useState<any[]>([])
@@ -32,16 +38,20 @@ export default function BlogsPage() {
   const [editingBlog, setEditingBlog] = useState<any | null>(null)
   const defaultForm = {
     title: '',
-    subtitle: '',
     description: '',
     content: '',
+    slug: '',
     featured_image: '',
+    content_image: '',
     is_active: true,
     published_date: new Date().toISOString().split('T')[0],
   }
   const [formData, setFormData] = useState({ ...defaultForm })
   const [imagePreview, setImagePreview] = useState('')
+  const [contentImagePreview, setContentImagePreview] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [uploadingContent, setUploadingContent] = useState(false)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
 
   useEffect(() => {
     if (data?.blogs) {
@@ -54,20 +64,23 @@ export default function BlogsPage() {
       setEditingBlog(blog)
       setFormData({
         title: blog.title || '',
-        subtitle: blog.subtitle || '',
         description: blog.description || '',
         content: blog.content || '',
+        slug: blog.slug || '',
         featured_image: blog.featured_image || '',
+        content_image: blog.content_image || '',
         is_active: !!blog.is_active,
         published_date: blog.published_date
           ? new Date(blog.published_date).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
       })
       setImagePreview(toAbsoluteUrl(blog.featured_image))
+      setContentImagePreview(toAbsoluteUrl(blog.content_image))
     } else {
       setEditingBlog(null)
       setFormData({ ...defaultForm })
       setImagePreview('')
+      setContentImagePreview('')
     }
     setModalOpen(true)
   }
@@ -87,22 +100,18 @@ export default function BlogsPage() {
       }
       return api.post('/blogs', payload)
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['blogs'] })
-      refetch()
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['blogs'] })
+      const refreshed = await refetch()
+      if (refreshed?.data?.blogs) {
+        setList(refreshed.data.blogs)
+      }
       closeModal()
     },
   })
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this blog?')) return
-    
-    try {
-      await api.delete(`/blogs/${id}`)
-      refetch()
-    } catch (error) {
-      console.error('Failed to delete blog:', error)
-    }
+    setDeleteId(id)
   }
 
   const handleDrop = async (targetIndex: number) => {
@@ -121,9 +130,9 @@ export default function BlogsPage() {
     setDragIndex(null)
 
     try {
-      await Promise.all(
-        ordered.map((b, i) => api.put(`/blogs/${b.id}`, { display_order: i + 1 }))
-      )
+      await api.post('/blogs/reorder', {
+        order: ordered.map((b, i) => ({ id: b.id, display_order: i + 1 })),
+      })
       queryClient.invalidateQueries({ queryKey: ['blogs'] })
       refetch()
     } catch (error) {
@@ -137,7 +146,7 @@ export default function BlogsPage() {
     if (!file) return
 
     const payload = new FormData()
-    payload.append('file', file)
+    payload.append('image', file)
     setUploading(true)
 
     try {
@@ -172,7 +181,36 @@ export default function BlogsPage() {
     setImagePreview('')
   }
 
+  const toggleActive = async (blog: any, value: boolean) => {
+    try {
+      setList((prev) =>
+        prev.map((b) => (b.id === blog.id ? { ...b, is_active: value } : b))
+      )
+      await api.put(`/blogs/${blog.id}`, { is_active: value ? 1 : 0 })
+      queryClient.invalidateQueries({ queryKey: ['blogs'] })
+    } catch (error) {
+      console.error('Failed to update status', error)
+      refetch()
+    }
+  }
+
   const handleSave = () => {
+    if (uploading) {
+      alert('Attendi il termine del caricamento immagine prima di salvare.')
+      return
+    }
+    const effectiveImage =
+      formData.featured_image ||
+      (imagePreview
+        ? imagePreview.startsWith(assetBase)
+          ? imagePreview.replace(assetBase, '')
+          : imagePreview
+        : '')
+
+    if (!effectiveImage) {
+      alert('Carica un’immagine di copertina prima di salvare.')
+      return
+    }
     if (!formData.title.trim()) {
       alert('Title is required')
       return
@@ -180,7 +218,9 @@ export default function BlogsPage() {
 
     const payload: any = {
       ...formData,
+      featured_image: effectiveImage,
       published_date: formData.published_date || new Date().toISOString().split('T')[0],
+      slug: formData.slug?.trim() || undefined,
     }
 
     if (!editingBlog) {
@@ -188,6 +228,17 @@ export default function BlogsPage() {
     }
 
     saveMutation.mutate(payload)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteId) return
+    try {
+      await api.delete(`/blogs/${deleteId}`)
+      setDeleteId(null)
+      refetch()
+    } catch (error) {
+      console.error('Failed to delete blog:', error)
+    }
   }
 
   if (isLoading) {
@@ -223,17 +274,25 @@ export default function BlogsPage() {
 
   return (
     <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-bold">Blogs</h1>
             <p className="text-muted-foreground">
               {data?.pagination?.total || 0} total blogs
             </p>
           </div>
-          <Button onClick={() => openModal(null)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Blog
-          </Button>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Search blogs..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-56"
+            />
+            <Button onClick={() => openModal(null)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Blog
+            </Button>
+          </div>
         </div>
 
       {list.length === 0 ? (
@@ -286,13 +345,13 @@ export default function BlogsPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 ml-4">
-                        <span className={`text-xs px-2 py-1 rounded whitespace-nowrap ${
-                          blog.is_active 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {blog.is_active ? 'Active' : 'Inactive'}
-                        </span>
+                        <span className="text-xs text-muted-foreground">Active</span>
+                        <Switch
+                          checked={!!blog.is_active}
+                          onCheckedChange={(v) => toggleActive(blog, v)}
+                          className="data-[state=checked]:bg-green-500"
+                          aria-label="Toggle blog visibility"
+                        />
                       </div>
                     </div>
                   </CardHeader>
@@ -361,13 +420,6 @@ export default function BlogsPage() {
                     required
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">Subtitle</label>
-                  <Input
-                    value={formData.subtitle}
-                    onChange={(e) => setFormData((p) => ({ ...p, subtitle: e.target.value }))}
-                  />
-                </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Published Date</label>
                   <Input
@@ -394,16 +446,22 @@ export default function BlogsPage() {
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Full Content</label>
                   <Textarea
-                    rows={10}
+                    rows={15}
                     value={formData.content}
                     onChange={(e) => setFormData((p) => ({ ...p, content: e.target.value }))}
+                    placeholder="Full blog content (supporta HTML: <strong>bold</strong>, <em>italic</em>)"
+                    className="font-mono text-sm"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Puoi usare HTML: &lt;strong&gt;grassetto&lt;/strong&gt;, &lt;em&gt;corsivo&lt;/em&gt;, &lt;p&gt;paragrafo&lt;/p&gt;
+                  </p>
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">Featured Image</label>
+                  <label className="text-sm font-medium">Image</label>
+                  <p className="text-xs text-muted-foreground mb-2">Consigliato: 340 x 250px, formato .jpg o .webp</p>
                   {imagePreview ? (
-                    <div className="relative">
-                      <img src={imagePreview} alt="Preview" className="w-full max-h-64 object-cover rounded-lg border" />
+                    <div className="relative inline-block">
+                      <img src={imagePreview} alt="Preview" style={{ width: '340px', height: '250px' }} className="object-cover rounded-lg border" />
                       <Button
                         type="button"
                         variant="destructive"
@@ -424,6 +482,26 @@ export default function BlogsPage() {
                     </div>
                   )}
                 </div>
+
+                <div className="md:col-span-2 border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[2px] text-muted-foreground">SEO</p>
+                      <h4 className="text-base font-semibold">Permalink</h4>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">URL slug</label>
+                    <Input
+                      placeholder="es. 010-luxury-condo"
+                      value={formData.slug}
+                      onChange={(e) => setFormData((p) => ({ ...p, slug: e.target.value }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      URL finale: /blog/{formData.slug || 'your-slug'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
@@ -434,6 +512,21 @@ export default function BlogsPage() {
                   {saveMutation.isPending ? 'Saving...' : 'Save'}
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteId && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full space-y-4">
+            <h3 className="text-xl font-semibold">Delete blog?</h3>
+            <p className="text-muted-foreground">
+              Are you sure you want to delete this blog? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+              <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
             </div>
           </div>
         </div>

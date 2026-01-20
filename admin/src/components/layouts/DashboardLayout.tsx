@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/button'
-import { Home, FileText, LogOut, Menu, BookOpen, Image } from 'lucide-react'
+import { Home, FileText, LogOut, Menu, BookOpen, Image, Video, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 
 export default function DashboardLayout() {
@@ -16,10 +16,12 @@ export default function DashboardLayout() {
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Properties', href: '/properties', icon: FileText },
+    { name: 'Home', href: '/', icon: Home },
     { name: 'Blogs', href: '/blogs', icon: BookOpen },
+    { name: 'Properties', href: '/properties', icon: FileText },
     { name: 'Photo Gallery', href: '/photogallery', icon: Image },
+    { name: 'Videos', href: '/videos', icon: Video },
+    { name: 'Feedbacks', href: '/feedbacks', icon: MessageSquare },
   ]
 
   return (

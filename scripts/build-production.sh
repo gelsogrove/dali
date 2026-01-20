@@ -29,6 +29,21 @@ fi
 
 # Crea struttura
 mkdir -p "$NEW_DIR"
+
+# 1.5 Copia file .env per build
+echo -e "${YELLOW}📋 Copia configurazione .env.production...${NC}"
+if [ -f "$PROJECT_ROOT/.env.production" ]; then
+    cp "$PROJECT_ROOT/.env.production" "$PROJECT_ROOT/fe/.env.production"
+    cp "$PROJECT_ROOT/.env.production" "$PROJECT_ROOT/admin/.env.production"
+    
+    # Crea .env per API (estrae solo variabili DB e JWT)
+    grep -E '^(DB_|JWT_)' "$PROJECT_ROOT/.env.production" > "$PROJECT_ROOT/api/.env"
+    
+    echo -e "${GREEN}✓ File .env.production copiati da root${NC}"
+    echo -e "${GREEN}✓ File api/.env creato con variabili DB e JWT${NC}"
+else
+    echo -e "${RED}⚠ Warning: .env.production non trovato in root${NC}"
+fi
 mkdir -p "$NEW_DIR/admin"
 mkdir -p "$NEW_DIR/api"
 mkdir -p "$NEW_DIR/assets"
@@ -630,4 +645,18 @@ echo -e "   3. Importa database via phpMyAdmin"
 echo -e "   4. ${GREEN}File .env già pronto con credenziali locali!${NC}"
 echo -e "   5. Imposta permessi 755 su ${BLUE}api/uploads/${NC}"
 echo -e "   6. Test: ${BLUE}https://buywithdali.com/new/${NC}"
+echo ""
+
+# Link utili
+echo -e "${BLUE}🔗 Link applicazioni:${NC}"
+echo -e "   ${GREEN}FE:${NC}     ${BLUE}http://localhost:5174/${NC}"
+echo -e "   ${GREEN}ADMIN:${NC}  ${BLUE}http://localhost:5175/${NC}"
+echo -e "   ${GREEN}API:${NC}    ${BLUE}http://localhost:8080/api/${NC}"
+echo ""
+
+# Nota per permessi uploads (solo promemoria)
+echo -e "${YELLOW}💡 Per configurare uploads locali (se necessario):${NC}"
+echo -e "   ${DIM}sudo mkdir -p /var/www/html/uploads/{properties,videos,galleries,temp,blogs}${NC}"
+echo -e "   ${DIM}sudo chown -R _www:_www /var/www/html/uploads${NC}"
+echo -e "   ${DIM}sudo chmod -R 755 /var/www/html/uploads${NC}"
 echo ""

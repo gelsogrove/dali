@@ -187,38 +187,7 @@ CREATE TABLE IF NOT EXISTS `blogs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================
--- Insert Default Admin User
--- Password: Admin@123 (CHANGE THIS IN PRODUCTION!)
--- =============================================
-INSERT INTO `admin_users` (`email`, `password_hash`, `first_name`, `last_name`, `role`, `is_active`) 
-VALUES ('admin@dalila.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin', 'User', 'admin', 1)
-ON DUPLICATE KEY UPDATE `email` = `email`;
-
 -- =============================================
 -- Sample Properties Data
 -- =============================================
-INSERT INTO `properties` (`title`, `slug`, `description`, `price`, `bedrooms`, `bathrooms`, `square_feet`, `property_type`, `status`, `address`, `city`, `state`, `zip_code`, `featured`, `created_by`) VALUES
-('Luxury Waterfront Villa', 'luxury-waterfront-villa', 'Stunning waterfront property with panoramic ocean views. Features high-end finishes, gourmet kitchen, and infinity pool.', 2500000.00, 5, 4.5, 4800, 'Single Family', 'active', '123 Ocean Drive', 'Miami Beach', 'FL', '33139', 1, 1),
-('Modern Downtown Condo', 'modern-downtown-condo', 'Contemporary condo in the heart of downtown. Walking distance to restaurants, shops, and entertainment.', 650000.00, 2, 2.0, 1400, 'Condo', 'active', '456 Main Street', 'Miami', 'FL', '33130', 1, 1),
-('Charming Family Home', 'charming-family-home', 'Beautifully maintained family home in quiet neighborhood. Large backyard perfect for entertaining.', 485000.00, 4, 3.0, 2600, 'Single Family', 'active', '789 Oak Avenue', 'Coral Gables', 'FL', '33134', 0, 1)
-ON DUPLICATE KEY UPDATE `slug` = `slug`;
-
--- =============================================
--- Sample Videos Data (for homepage)
--- =============================================
-INSERT INTO `videos` (`property_id`, `title`, `description`, `video_url`, `video_type`, `thumbnail_url`, `display_order`, `is_featured`) VALUES
-(1, 'Luxury Villa Tour', 'Complete walkthrough of the stunning waterfront villa', 'https://player.vimeo.com/video/1042515673', 'vimeo', '/uploads/videos/thumbnails/villa-tour.jpg', 1, 1),
-(2, 'Downtown Condo Showcase', 'Modern living in the heart of Miami', 'https://player.vimeo.com/video/1042515674', 'vimeo', '/uploads/videos/thumbnails/condo-tour.jpg', 2, 1),
-(3, 'Family Home Experience', 'Discover this perfect family property', 'https://player.vimeo.com/video/1042515675', 'vimeo', '/uploads/videos/thumbnails/home-tour.jpg', 3, 1)
-ON DUPLICATE KEY UPDATE `title` = `title`;
-
--- =============================================
--- Sample Blogs Data
--- =============================================
-INSERT INTO `blogs` (`title`, `slug`, `subtitle`, `description`, `content`, `published_date`, `display_order`, `is_active`, `created_by`) VALUES
-('Top 5 Tips for First-Time Home Buyers', 'top-5-tips-first-time-home-buyers', 'Essential advice for your first property purchase', 'Buying your first home is an exciting milestone. Here are the most important tips to help you navigate the process successfully.', 'Buying your first home is one of the most significant financial decisions you will make. Here are five essential tips to help you through the process:\n\n1. Get Pre-Approved for a Mortgage\nBefore you start house hunting, get pre-approved for a mortgage. This will give you a clear understanding of your budget and show sellers that you are a serious buyer.\n\n2. Research Neighborhoods Thoroughly\nDon''t just focus on the house itself. Research the neighborhood, schools, local amenities, and future development plans in the area.\n\n3. Budget for Additional Costs\nRemember to factor in closing costs, moving expenses, home inspection fees, and ongoing maintenance costs.\n\n4. Don''t Skip the Home Inspection\nAlways get a professional home inspection. This can reveal potential issues that might not be visible during a showing.\n\n5. Work with a Real Estate Agent\nAn experienced agent can guide you through the process, negotiate on your behalf, and help you avoid common pitfalls.', '2026-01-15', 1, 1, 1),
-('Miami Real Estate Market Trends 2026', 'miami-real-estate-market-trends-2026', 'What to expect from the Miami property market this year', 'An in-depth look at the current trends shaping Miami''s real estate market and predictions for the rest of 2026.', 'The Miami real estate market continues to show strong growth in 2026. Here''s what you need to know:\n\nMarket Overview:\nPrices have stabilized after the rapid growth of previous years, creating excellent opportunities for both buyers and sellers.\n\nKey Trends:\n- Increased demand for waterfront properties\n- Growing interest in eco-friendly and smart homes\n- Strong international buyer presence\n- New developments in emerging neighborhoods\n\nExpert Predictions:\nAnalysts expect steady appreciation throughout the year, with particular strength in the luxury segment.\n\nBest Time to Buy:\nSpring and fall typically offer the best opportunities for buyers, with more inventory and motivated sellers.', '2026-01-10', 2, 1, 1),
-('The Ultimate Guide to Selling Your Home Fast', 'ultimate-guide-selling-home-fast', 'Proven strategies to sell your property quickly', 'Learn the secrets to attracting buyers and closing deals faster with these professional selling strategies.', 'Selling your home doesn''t have to be a lengthy process. Follow these proven strategies:\n\n1. Price it Right from the Start\nOverpricing is the #1 reason homes sit on the market. Work with your agent to set a competitive price.\n\n2. Stage Your Home Professionally\nFirst impressions matter. Professional staging can increase your home''s value by 5-15%.\n\n3. Professional Photography is Essential\nMost buyers start their search online. High-quality photos are crucial for attracting interest.\n\n4. Make Necessary Repairs\nFix any obvious issues before listing. Small repairs can prevent big negotiations later.\n\n5. Be Flexible with Showings\nThe more available you are for showings, the faster you''ll find a buyer.\n\n6. Market Aggressively\nUse all available channels: MLS, social media, open houses, and virtual tours.', '2026-01-05', 3, 1, 1)
-ON DUPLICATE KEY UPDATE `slug` = `slug`;
-
 SET FOREIGN_KEY_CHECKS = 1;

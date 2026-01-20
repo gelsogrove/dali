@@ -4,11 +4,13 @@
   "description": "Full-stack property management system with React frontend, PHP API, and admin panel",
   "private": true,
   "scripts": {
+    "predev": "cp .env.local fe/.env.local && cp .env.local admin/.env.local && grep -E '^(DB_|JWT_)' .env.local > api/.env.local",
     "dev": "npm run docker:up && concurrently \"npm run dev:fe\" \"npm run dev:admin\"",
     "dev:fe": "cd fe && npm run dev",
     "dev:admin": "cd admin && npm run dev",
     "docker:up": "docker-compose up -d && echo '⏳ Waiting for services...' && sleep 10",
     "docker:down": "docker-compose down",
+    "docker:rebuild": "docker-compose down && docker-compose build --no-cache && docker-compose up -d && echo '⏳ Waiting for services...' && sleep 10",
     "docker:restart": "docker-compose restart",
     "docker:logs": "docker-compose logs -f",
     "build": "bash scripts/build-production.sh",

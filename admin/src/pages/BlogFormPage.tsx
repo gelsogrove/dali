@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Upload, X } from 'lucide-react'
+import RichTextEditor from '@/components/RichTextEditor'
 
 export default function BlogFormPage() {
   const { id } = useParams()
@@ -21,7 +22,6 @@ export default function BlogFormPage() {
 
   const [formData, setFormData] = useState({
     title: '',
-    subtitle: '',
     description: '',
     content: '',
     featured_image: '',
@@ -39,7 +39,6 @@ export default function BlogFormPage() {
       const blog = response.data.data
       setFormData({
         title: blog.title || '',
-        subtitle: blog.subtitle || '',
         description: blog.description || '',
         content: blog.content || '',
         featured_image: blog.featured_image || '',
@@ -168,18 +167,6 @@ export default function BlogFormPage() {
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <label htmlFor="subtitle" className="text-sm font-medium">
-                  Subtitle
-                </label>
-                <Input
-                  id="subtitle"
-                  name="subtitle"
-                  value={formData.subtitle}
-                  onChange={handleChange}
-                />
-              </div>
-
               <div className="space-y-2">
                 <label htmlFor="published_date" className="text-sm font-medium">
                   Published Date
@@ -195,15 +182,16 @@ export default function BlogFormPage() {
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium">
-                  Featured Image
+                  Featured Image (Consigliato: 340 x 250px)
                 </label>
                 
                 {imagePreview ? (
-                  <div className="relative">
+                  <div className="relative inline-block">
                     <img
                       src={imagePreview}
                       alt="Preview"
-                      className="w-full h-64 object-cover rounded-lg border"
+                      style={{ width: '340px', height: '250px' }}
+                      className="object-cover rounded-lg border"
                     />
                     <Button
                       type="button"
@@ -268,12 +256,9 @@ export default function BlogFormPage() {
               <label htmlFor="content" className="text-sm font-medium">
                 Full Content
               </label>
-              <Textarea
-                id="content"
-                name="content"
+              <RichTextEditor
                 value={formData.content}
-                onChange={handleChange}
-                rows={12}
+                onChange={(value) => setFormData(prev => ({ ...prev, content: value }))}
                 placeholder="Full blog content"
               />
             </div>

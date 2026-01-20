@@ -93,6 +93,7 @@ cp -r api/controllers "$DEPLOY_DIR/api/"
 cp -r api/middleware "$DEPLOY_DIR/api/"
 cp -r api/config "$DEPLOY_DIR/api/"
 cp api/.htaccess "$DEPLOY_DIR/api/" 2>/dev/null || true
+cp init.sql "$DEPLOY_DIR/init.sql"
 
 echo -e "${GREEN}✅ File API copiati${NC}"
 

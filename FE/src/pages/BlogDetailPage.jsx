@@ -8,6 +8,13 @@ const BlogDetailPage = () => {
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const apiBase = import.meta.env.VITE_API_URL || '/api';
+  const assetBase = apiBase.replace(/\/api$/, '');
+
+  const toAbsoluteUrl = (url) => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `${assetBase}${url}`;
+  };
 
   useEffect(() => {
     const fetchBlog = async () => {
@@ -20,6 +27,16 @@ const BlogDetailPage = () => {
           setBlog(response.data);
           // Update page title
           document.title = `${response.data.title} - Buy with Dalila`;
+          const metaDesc = document.querySelector('meta[name="description"]') || (() => {
+            const m = document.createElement('meta');
+            m.setAttribute('name', 'description');
+            document.head.appendChild(m);
+            return m;
+          })();
+          const summary = response.data.description || response.data.subtitle || '';
+          if (summary) {
+            metaDesc.setAttribute('content', summary.slice(0, 160));
+          }
         } else {
           setError('Blog not found');
         }
@@ -86,18 +103,21 @@ const BlogDetailPage = () => {
             </div>
           </div>
 
-        {/* Featured Image */}
-        {blog.featured_image && (
-          <div className="blog-detail-image">
-            <img src={blog.featured_image} alt={blog.title} />
-          </div>
-        )}
-
-        {/* Content */}
-        <div 
-          className="blog-detail-content"
-          dangerouslySetInnerHTML={{ __html: blog.content }}
-        />
+        {/* Content with floating image */}
+        <div className="blog-detail-content">
+          {/* Featured Image inline */}
+          {blog.featured_image ? (
+            <div className="blog-detail-image-inline">
+              <img src={toAbsoluteUrl(blog.featured_image)} alt={blog.title} />
+            </div>
+          ) : (
+            <div className="blog-detail-image-inline blog-detail-image-placeholder">
+              <i className="fa fa-newspaper blog-detail-image-placeholder-icon"></i>
+            </div>
+          )}
+          
+          <div dangerouslySetInnerHTML={{ __html: blog.content }} />
+        </div>
 
           {/* Navigation */}
           <div className="blog-navigation">

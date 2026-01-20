@@ -31,7 +31,7 @@ class AuthMiddleware {
             return false;
         }
 
-        // Verify session exists and is valid
+        // Verify session exists and is valid; if missing but token still valid, recreate it
         $conn = $this->db->getConnection();
         $query = "SELECT id FROM sessions WHERE user_id = ? AND token = ? AND expires_at > NOW() LIMIT 1";
         $stmt = $conn->prepare($query);
@@ -40,8 +40,20 @@ class AuthMiddleware {
         $result = $stmt->get_result();
 
         if ($result->num_rows === 0) {
-            $this->sendUnauthorized('Session expired');
-            return false;
+            // Attempt to recreate session to avoid stale-token errors
+            $expiresAt = isset($payload['exp'])
+                ? date('Y-m-d H:i:s', $payload['exp'])
+                : date('Y-m-d H:i:s', time() + 3600);
+            $ip = $_SERVER['REMOTE_ADDR'] ?? null;
+            $ua = $_SERVER['HTTP_USER_AGENT'] ?? null;
+            $insert = $conn->prepare("INSERT INTO sessions (user_id, token, refresh_token, ip_address, user_agent, expires_at) VALUES (?, ?, NULL, ?, ?, ?)");
+            $insert->bind_param('issss', $payload['user_id'], $token, $ip, $ua, $expiresAt);
+            $insert->execute();
+
+            if ($insert->affected_rows === 0) {
+                $this->sendUnauthorized('Session expired');
+                return false;
+            }
         }
 
         return $payload;
@@ -71,11 +83,26 @@ class AuthMiddleware {
      * @return string|null
      */
     private function getBearerToken() {
-        $headers = getallheaders();
-        
-        if (isset($headers['Authorization'])) {
-            $matches = [];
-            if (preg_match('/Bearer\s+(.*)$/i', $headers['Authorization'], $matches)) {
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+
+        // Normalize keys to handle case differences
+        $normalized = [];
+        foreach ($headers as $key => $value) {
+            $normalized[strtolower($key)] = $value;
+        }
+
+        // Fallbacks for servers that don't pass Authorization
+        $candidates = [
+            $normalized['authorization'] ?? null,
+            $_SERVER['HTTP_AUTHORIZATION'] ?? null,
+            $_SERVER['Authorization'] ?? null,
+            $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null,
+            $_SERVER['HTTP_X_AUTHORIZATION'] ?? null,
+        ];
+
+        foreach ($candidates as $auth) {
+            if (!$auth) continue;
+            if (preg_match('/Bearer\s+(.*)$/i', $auth, $matches)) {
                 return $matches[1];
             }
         }

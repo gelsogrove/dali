@@ -10,7 +10,8 @@ class UploadController {
     private $maxVideoSize = 104857600; // 100MB (100 * 1024 * 1024 bytes)
 
     public function __construct() {
-        $this->uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/../uploads';
+        // Prefer an uploads folder inside the webroot to avoid permission issues on /var/www
+        $this->uploadDir = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/uploads';
         
         // Create upload directories if they don't exist
         $dirs = ['properties', 'videos', 'galleries', 'temp', 'blogs'];
@@ -379,9 +380,22 @@ class UploadController {
      */
     public function deleteFile($url) {
         try {
+            if (empty($url)) {
+                return $this->errorResponse('File URL is required', 400);
+            }
+
+            // If absolute URL, strip scheme/host and keep path
+            if (preg_match('#^https?://#i', $url)) {
+                $parts = parse_url($url);
+                $url = $parts['path'] ?? '';
+            }
+
             // Remove leading slash if present
             $url = ltrim($url, '/');
-            $fullPath = $_SERVER['DOCUMENT_ROOT'] . '/../' . $url;
+
+            // Base dir = document root; $url already includes "uploads/..."
+            $baseDir = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/';
+            $fullPath = $baseDir . $url;
 
             if (!file_exists($fullPath)) {
                 return $this->errorResponse('File not found', 404);

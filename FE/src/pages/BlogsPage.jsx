@@ -9,20 +9,32 @@ export default function BlogsPage() {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const apiBase = import.meta.env.VITE_API_URL || '/api';
+  const assetBase = apiBase.replace(/\/api$/, '');
+
+  const toAbsoluteUrl = (url) => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `${assetBase}${url}`;
+  };
 
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
         setLoading(true);
         const response = await api.get(endpoints.blogs);
-        
-        if (response.success) {
-          // Filter only active blogs
-          const activeBlogs = response.data.blogs.filter(blog => blog.is_active);
-          setBlogs(activeBlogs);
-        } else {
+        console.debug('Blogs API response', response);
+
+        if (!response?.success) {
+          console.error('Blogs API not successful', response);
           setError('Failed to load blogs');
+          return;
         }
+
+        const list = (response?.data?.blogs || [])
+          .filter((blog) => blog.is_active)
+          .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+
+        setBlogs(list);
       } catch (err) {
         console.error('Error fetching blogs:', err);
         setError('Failed to load blogs');
@@ -72,15 +84,17 @@ export default function BlogsPage() {
           {!loading && !error && blogs.map((blog, index) => (
             <article className="blog-row" key={blog.id}>
               <div className="blog-row-media">
-                {blog.featured_image ? (
-                  <img 
-                    src={blog.featured_image} 
-                    alt={blog.title}
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="blog-placeholder"></div>
-                )}
+                <Link to={`/blog/${blog.slug}`}>
+                  {blog.featured_image ? (
+                    <img 
+                      src={toAbsoluteUrl(blog.featured_image)} 
+                      alt={blog.title}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="blog-placeholder"></div>
+                  )}
+                </Link>
               </div>
               <div className="blog-row-body">
                 <div className="blog-meta">
@@ -89,7 +103,6 @@ export default function BlogsPage() {
                 <h2>
                   <Link to={`/blog/${blog.slug}`}>{blog.title}</Link>
                 </h2>
-                {blog.subtitle && <h3 className="blog-subtitle">{blog.subtitle}</h3>}
                 <p>{blog.description}</p>
                 <Link to={`/blog/${blog.slug}`} className="blog-readmore">
                   Read more

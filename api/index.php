@@ -5,6 +5,14 @@ if (file_exists(__DIR__ . '/load-env.php')) {
     require_once __DIR__ . '/load-env.php';
 }
 
+// Basic CORS fallback (Apache config should ideally handle this)
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+header("Access-Control-Allow-Origin: {$origin}");
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Authorization, Content-Type');
+header('Vary: Origin');
+
 header('Content-Type: application/json');
 
 // CORS headers are set in Apache config (apache-config.conf)
@@ -297,7 +305,7 @@ function handleBlogRoutes($segments, $method) {
     
     // Protected routes (require auth)
     $auth = new AuthMiddleware();
-    $user = $auth->verifyToken();
+    $user = $auth->authenticate();
     
     if (!$user) {
         http_response_code(401);

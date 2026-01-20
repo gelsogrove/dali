@@ -32,6 +32,14 @@ class BlogController {
                 $where[] = "is_active = 1";
             }
 
+            // Search filter
+            if (!empty($filters['q'])) {
+                $where[] = "(title LIKE ? OR subtitle LIKE ? OR description LIKE ? OR content LIKE ?)";
+                $searchTerm = '%' . $filters['q'] . '%';
+                array_push($params, $searchTerm, $searchTerm, $searchTerm, $searchTerm);
+                $types .= 'ssss';
+            }
+
             // Build query
             $whereClause = empty($where) ? '1=1' : implode(' AND ', $where);
             $query = "SELECT id, title, slug, subtitle, description, featured_image, is_active, 
@@ -135,8 +143,9 @@ class BlogController {
                 return $this->errorResponse("Title is required", 400);
             }
 
-            // Generate slug
-            $slug = $this->generateSlug($data['title']);
+            // Generate slug (allow custom)
+            $slugSource = !empty($data['slug']) ? $data['slug'] : $data['title'];
+            $slug = $this->generateSlug($slugSource);
 
             // Insert blog
             $query = "INSERT INTO blogs (title, slug, subtitle, description, content, featured_image, 
@@ -201,7 +210,7 @@ class BlogController {
             $types = '';
 
             $allowedFields = ['title', 'subtitle', 'description', 'content', 'featured_image', 
-                            'is_active', 'display_order', 'published_date'];
+                            'is_active', 'display_order', 'published_date', 'slug'];
 
             foreach ($allowedFields as $field) {
                 if (isset($data[$field])) {
@@ -215,9 +224,10 @@ class BlogController {
                 return $this->errorResponse('No valid fields to update', 400);
             }
 
-            // Regenerate slug if title changed
-            if (isset($data['title'])) {
-                $slug = $this->generateSlug($data['title'], $id);
+            // Regenerate slug if title changed or custom slug provided
+            if (isset($data['title']) || isset($data['slug'])) {
+                $slugSource = !empty($data['slug']) ? $data['slug'] : $data['title'];
+                $slug = $this->generateSlug($slugSource, $id);
                 $updates[] = "slug = ?";
                 $params[] = $slug;
                 $types .= 's';
@@ -249,11 +259,25 @@ class BlogController {
      */
     public function delete($id, $userId) {
         try {
+            // Fetch blog to know related assets
+            $fetch = $this->db->executePrepared("SELECT featured_image FROM blogs WHERE id = ? LIMIT 1", [$id], 'i');
+            $featured = null;
+            if ($fetch && $fetch->num_rows > 0) {
+                $featured = $fetch->fetch_assoc()['featured_image'] ?? null;
+            }
+
             $query = "DELETE FROM blogs WHERE id = ?";
             $result = $this->db->executePrepared($query, [$id], 'i');
 
             if (!$result) {
                 return $this->errorResponse('Failed to delete blog');
+            }
+
+            // Delete featured image and variants if present
+            if (!empty($featured)) {
+                require_once __DIR__ . '/UploadController.php';
+                $uploader = new UploadController();
+                $uploader->deleteFile($featured);
             }
 
             // Log activity
@@ -268,11 +292,45 @@ class BlogController {
     }
 
     /**
+     * Bulk reorder blogs
+     */
+    public function reorder($orderItems, $userId) {
+        if (empty($orderItems) || !is_array($orderItems)) {
+            return $this->errorResponse('Invalid order data', 400);
+        }
+
+        $this->conn->begin_transaction();
+        try {
+            $stmt = $this->conn->prepare("UPDATE blogs SET display_order = ? WHERE id = ?");
+
+            foreach ($orderItems as $item) {
+                $id = isset($item['id']) ? (int)$item['id'] : 0;
+                $pos = isset($item['display_order']) ? (int)$item['display_order'] : 0;
+                if ($id <= 0) {
+                    continue;
+                }
+                $stmt->bind_param('ii', $pos, $id);
+                $stmt->execute();
+            }
+
+            $this->conn->commit();
+            $this->logActivity($userId, 'update', 'blog', 0, 'Reordered blogs');
+            return $this->successResponse(['message' => 'Order updated']);
+        } catch (Exception $e) {
+            $this->conn->rollback();
+            error_log("Error reordering blogs: " . $e->getMessage());
+            return $this->errorResponse('Failed to update order');
+        }
+    }
+
+    /**
      * Generate unique slug
      */
     private function generateSlug($title, $excludeId = null) {
         $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $title)));
-        
+        $slug = preg_replace('/-+/', '-', $slug);
+        $slug = trim($slug, '-');
+
         $query = "SELECT COUNT(*) as count FROM blogs WHERE slug = ?";
         $params = [$slug];
         $types = 's';

@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Wrench } from 'lucide-react'
 
-export default function DashboardPage() {
+export default function FeedbacksPage() {
   return (
     <div className="space-y-6">
       <Card className="p-10 text-center border-dashed">
@@ -9,7 +9,7 @@ export default function DashboardPage() {
           <div className="flex justify-center">
             <Wrench className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h2 className="text-2xl font-semibold">Home — work in progress</h2>
+          <h2 className="text-2xl font-semibold">Feedbacks — work in progress</h2>
           <p className="text-muted-foreground">
             Questa sezione sarà presto disponibile.
           </p>

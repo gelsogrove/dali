@@ -54,6 +54,7 @@ api/uploads/*
 !api/uploads/README.md
 !api/uploads/*/
 !api/uploads/*/.gitkeep
+api/.env.local
 
 # Temporary files
 *.tmp

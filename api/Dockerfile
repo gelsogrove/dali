@@ -31,10 +31,24 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . /var/www/html/
 
-# Create uploads directory with proper permissions
-RUN mkdir -p /var/www/html/uploads/properties /var/www/html/uploads/videos /var/www/html/uploads/galleries \
+# Copy and set permissions for init script
+COPY init-uploads.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/init-uploads.sh
+
+# Create uploads directory with correct permissions
+RUN mkdir -p /var/www/html/uploads/properties \
+    /var/www/html/uploads/videos \
+    /var/www/html/uploads/galleries \
+    /var/www/html/uploads/blogs \
+    /var/www/html/uploads/temp \
     && chown -R www-data:www-data /var/www/html/uploads \
     && chmod -R 755 /var/www/html/uploads
+
+# Expose port
+EXPOSE 80
+
+# Start Apache with init script
+CMD ["/bin/bash", "-c", "/usr/local/bin/init-uploads.sh && apache2-foreground"]
 
 # Configure Apache
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf

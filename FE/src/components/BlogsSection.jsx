@@ -1,8 +1,45 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import CanvasImage from './CanvasImage';
-import { blogs } from '../data/homeData';
+import { api } from '../config/api';
 
 export default function BlogsSection() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const apiBase = import.meta.env.VITE_API_URL || '/api';
+  const assetBase = useMemo(() => apiBase.replace(/\/api$/, ''), [apiBase]);
+
+  const toAbsoluteUrl = (url) => {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `${assetBase}${url}`;
+  };
+
+  const formatDate = (value) => {
+    if (!value) return '';
+    const d = new Date(value);
+    return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/blogs?is_active=true&per_page=20');
+        if (res?.success) {
+          const sorted = (res.data?.blogs || []).sort(
+            (a, b) => (a.display_order || 0) - (b.display_order || 0)
+          );
+          setItems(sorted);
+        }
+      } catch (err) {
+        console.error('Failed to load blogs', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
   return (
     <section id="blogs">
       <div className="blogs-container">
@@ -15,6 +52,7 @@ export default function BlogsSection() {
             <h2>Blogs</h2>
           </div>
           <div className="blogs-grid-div">
+            {loading && <div className="text-center text-white">Loading blogs...</div>}
             <Splide
               aria-label="Featured blogs"
               options={{
@@ -35,25 +73,25 @@ export default function BlogsSection() {
               data-aos-duration="1000"
               data-aos-delay="300"
             >
-              {blogs.map((blog) => (
-                <SplideSlide key={blog.href} className="blog-item">
+              {items.map((blog) => (
+                <SplideSlide key={blog.id || blog.slug} className="blog-item">
                   <div className="blog-image">
-                    <a href={blog.href} target="_blank" rel="noopener noreferrer" aria-label={blog.title}>
-                      <CanvasImage src={blog.image} width={360} height={269} className="lazyload" />
+                    <a href={`/blog/${blog.slug}`} aria-label={blog.title}>
+                      <CanvasImage src={toAbsoluteUrl(blog.featured_image)} width={360} height={269} className="lazyload" />
                     </a>
                   </div>
                   <div className="blog-item-content">
                     <div className="blog-item-title">
-                      <a href={blog.href} target="_blank" rel="noopener noreferrer">
+                      <a href={`/blog/${blog.slug}`}>
                         <strong>{blog.title}</strong>
                       </a>
                     </div>
-                    <div className="blog-item-date">{blog.date}</div>
+                    <div className="blog-item-date">{formatDate(blog.published_date || blog.created_at)}</div>
                     <div className="blog-item-description">
-                      <p>{blog.excerpt}</p>
+                      <p>{blog.description}</p>
                     </div>
                     <div className="blog-link">
-                      <a href={blog.href} target="_blank" rel="noopener noreferrer" className="default-button">
+                      <a href={`/blog/${blog.slug}`} className="default-button">
                         Learn More <span className="screen-reader-text">About {blog.title}</span>
                       </a>
                     </div>

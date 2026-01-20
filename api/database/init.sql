@@ -78,6 +78,7 @@ CREATE TABLE `admin_users` (
 
 --
 -- Dumping data for table `admin_users`
+-- Credenziali default: admin@dalila.com / admin123 (cambiare in produzione!)
 --
 
 LOCK TABLES `admin_users` WRITE;
@@ -101,6 +102,7 @@ CREATE TABLE `blogs` (
   `description` text DEFAULT NULL,
   `content` longtext DEFAULT NULL,
   `featured_image` varchar(255) DEFAULT NULL,
+  `content_image` varchar(255) DEFAULT NULL COMMENT 'Immagine grande per contenuto (680x500px consigliato)',
   `is_active` tinyint(1) DEFAULT 1,
   `display_order` int(11) DEFAULT 0,
   `published_date` date DEFAULT NULL,

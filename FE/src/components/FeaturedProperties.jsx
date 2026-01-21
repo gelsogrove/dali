@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import ImageWithOverlay from './ImageWithOverlay';
-import TitlePage from './TitlePage';
+import TitleHeader from './TitleHeader';
 import { featuredProperties } from '../data/homeData';
 import ButtonDali from './ButtonDali';
 
@@ -18,7 +18,7 @@ export default function FeaturedProperties({ activeTab = 'properties', paginate 
   return (
     <section id="featured-properties">
       <div className="fp-container">
-        <TitlePage kicker="Featured" title="Properties" className="fp-title" />
+        <TitleHeader kicker="Featured" title="Properties" className="fp-title" />
         <div className="fp-links" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
           <ButtonDali href="/active-properties" className={isActive('active') ? 'active' : ''}>
             Active Properties

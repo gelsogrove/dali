@@ -11,7 +11,7 @@ export default function PropertiesPage() {
           </div>
           <h2 className="text-2xl font-semibold">Properties — work in progress</h2>
           <p className="text-muted-foreground">
-            Questa sezione è in lavorazione. Usa la sezione Blogs per ora.
+            This section is under construction. Use the Blogs section for now.
           </p>
         </CardContent>
       </Card>

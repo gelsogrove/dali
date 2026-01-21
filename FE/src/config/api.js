@@ -31,4 +31,6 @@ export const endpoints = {
   properties: '/properties',
   propertyBySlug: (slug) => `/properties/slug/${slug}`,
   homeData: '/home',
+  videos: '/videos',
+  homeVideos: '/home/videos',
 };

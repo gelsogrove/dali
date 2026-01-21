@@ -4,6 +4,7 @@ import { api, endpoints } from "../config/api";
 import ContactSection from "../components/ContactSection";
 import PageHero from "../components/PageHero";
 import ButtonDali from "../components/ButtonDali";
+import SEO from "../components/SEO";
 
 const BlogDetailPage = () => {
   const { slug } = useParams();
@@ -27,18 +28,6 @@ const BlogDetailPage = () => {
         
         if (response.success) {
           setBlog(response.data);
-          // Update page title
-          document.title = `${response.data.title} - Buy with Dalila`;
-          const metaDesc = document.querySelector('meta[name="description"]') || (() => {
-            const m = document.createElement('meta');
-            m.setAttribute('name', 'description');
-            document.head.appendChild(m);
-            return m;
-          })();
-          const summary = response.data.description || response.data.subtitle || '';
-          if (summary) {
-            metaDesc.setAttribute('content', summary.slice(0, 160));
-          }
         } else {
           setError('Blog not found');
         }
@@ -82,12 +71,29 @@ const BlogDetailPage = () => {
 
   return (
     <>
-      <div className="page-breadcrumbs-wrap">
-        <div className="page-breadcrumbs">
-          <Link to="/">Home</Link> <span>»</span> <Link to="/category/blog">Blog</Link> <span>» <em style={{ fontStyle: 'italic', opacity: 0.7 }}>{blog.title}</em></span>
-        </div>
-      </div>
-      <PageHero breadcrumb="» Blog" />
+      {blog && (
+        <SEO 
+          title={blog.title}
+          description={blog.description || blog.subtitle || `Read ${blog.title} - insights on Riviera Maya real estate from Dalila Gelsomino`}
+          keywords={`${blog.title}, Riviera Maya real estate, Tulum property, real estate blog`}
+          ogImage={blog.content_image ? toAbsoluteUrl(blog.content_image) : undefined}
+          canonicalUrl={`https://buywithdali.com/blog/${slug}`}
+        />
+      )}
+      <PageHero
+        breadcrumb={
+          <>
+            <span>»</span>{' '}
+            <a href="/category/blog">Blog</a>
+            {blog?.title && (
+              <>
+                {' '}<span>»</span>{' '}
+                <a href={`/blog/${slug}`}>{blog.title}</a>
+              </>
+            )}
+          </>
+        }
+      />
 
       <section className="blog-detail-section">
         <div className="blog-detail-container">

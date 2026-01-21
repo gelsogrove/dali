@@ -1,21 +1,26 @@
 import { contactInfo } from '../data/homeData';
+import './ContactPage.css';
 import PageHero from '../components/PageHero';
 import ContactSection from '../components/ContactSection';
 import ContactCtaGrid from '../components/ContactCtaGrid';
-import TitlePage from '../components/TitlePage';
+import TitleHeader from '../components/TitleHeader';
+import SEO from '../components/SEO';
 
 export default function ContactPage() {
   return (
     <>
+      <SEO 
+        title="Contact Us"
+        description="Get in touch with Dalila Gelsomino, your trusted real estate agent in Riviera Maya. Call, email, or schedule a consultation for luxury properties in Tulum and Playa del Carmen."
+        keywords="contact real estate agent, Riviera Maya properties, Dalila Gelsomino contact, Tulum real estate agent"
+        canonicalUrl="https://buywithdali.com/contact-us"
+      />
       <PageHero breadcrumb="» Contact Us" />
       
-      {/* Hero Section with Title */}
-      <section className="contact-hero-section">
-        <TitlePage kicker="Let's" title="Connect" />
-      </section>
-
       {/* Main Contact Section */}
       <section className="contact-main-section">
+        <TitleHeader kicker="Let's" title="Connect" />
+        
         <div className="contact-wrapper">
           
           {/* Contact Info Card */}

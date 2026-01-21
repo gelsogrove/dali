@@ -11,7 +11,7 @@ export default function PhotoGalleryPage() {
           </div>
           <h2 className="text-2xl font-semibold">Photo Gallery — work in progress</h2>
           <p className="text-muted-foreground">
-            Questa sezione è in lavorazione. Torna più tardi.
+            This section is under construction. Check back soon.
           </p>
         </CardContent>
       </Card>

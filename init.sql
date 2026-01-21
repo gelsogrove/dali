@@ -90,21 +90,23 @@ CREATE TABLE IF NOT EXISTS `photogallery` (
 -- =============================================
 CREATE TABLE IF NOT EXISTS `videos` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `property_id` INT UNSIGNED NOT NULL,
+  `property_id` INT UNSIGNED NULL,
   `title` VARCHAR(255) NOT NULL,
   `description` TEXT NULL,
-  `video_url` VARCHAR(500) NOT NULL COMMENT 'URL to video file or YouTube/Vimeo embed',
-  `video_type` ENUM('upload', 'youtube', 'vimeo') DEFAULT 'upload',
-  `thumbnail_url` VARCHAR(255) NULL,
-  `duration` INT NULL COMMENT 'Duration in seconds',
+  `video_url` VARCHAR(500) NOT NULL COMMENT 'URL to Vimeo embed',
+  `video_type` ENUM('vimeo', 'youtube', 'upload', 'link') DEFAULT 'vimeo',
+  `thumbnail_url` VARCHAR(255) NOT NULL,
   `display_order` INT DEFAULT 0,
-  `is_featured` TINYINT(1) DEFAULT 0,
+  `is_active` TINYINT(1) DEFAULT 1,
+  `created_by` INT UNSIGNED NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   INDEX `idx_property_id` (`property_id`),
   INDEX `idx_display_order` (`display_order`),
-  FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE CASCADE
+  INDEX `idx_is_active` (`is_active`),
+  FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================

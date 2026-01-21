@@ -6,7 +6,7 @@ export default function PageHero({ breadcrumb }) {
       </section>
       <div className="page-breadcrumbs-wrap">
         <div className="page-breadcrumbs">
-          <a href="/">Home</a> <span>{breadcrumb}</span>
+          <a href="/">Home</a> {breadcrumb && <>{breadcrumb}</>}
         </div>
       </div>
     </>

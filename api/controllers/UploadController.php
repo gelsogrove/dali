@@ -144,6 +144,67 @@ class UploadController {
     }
 
     /**
+     * Upload thumbnail for videos
+     * @param array $file Uploaded file
+     * @return array
+     */
+    public function uploadVideoImage($file) {
+        try {
+            $validation = $this->validateImageUpload($file);
+            if (!$validation['success']) {
+                return $validation;
+            }
+
+            $originalName = $file['name'];
+            $tempPath = $file['tmp_name'];
+            $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+            $filename = uniqid('video_', true) . '_' . time() . '.' . $extension;
+            $basePath = $this->uploadDir . '/videos';
+
+            $versions = [
+                'original' => ['width' => 1600, 'quality' => 90],
+                'large' => ['width' => 1200, 'quality' => 85],
+                'thumbnail' => ['width' => 600, 'quality' => 80]
+            ];
+
+            $urls = [];
+
+            foreach ($versions as $version => $settings) {
+                $versionFilename = $version === 'original'
+                    ? $filename
+                    : str_replace(".{$extension}", "_{$version}.{$extension}", $filename);
+
+                $destinationPath = $basePath . '/' . $versionFilename;
+
+                $result = $this->resizeImage(
+                    $tempPath,
+                    $destinationPath,
+                    $settings['width'],
+                    $settings['quality']
+                );
+
+                if (!$result) {
+                    $this->cleanupFiles($urls);
+                    return $this->errorResponse('Failed to process image');
+                }
+
+                $urls[$version] = '/uploads/videos/' . $versionFilename;
+            }
+
+            return $this->successResponse([
+                'filename' => $filename,
+                'url' => $urls['original'],
+                'urls' => $urls,
+                'size' => filesize($basePath . '/' . $filename)
+            ], 201);
+        } catch (Exception $e) {
+            error_log("Upload video image error: " . $e->getMessage());
+            return $this->errorResponse('An error occurred during upload');
+        }
+    }
+
+    /**
      * Validate image upload
      * @param array $file Uploaded file
      * @return array
@@ -299,7 +360,7 @@ class UploadController {
      */
     private function cleanupFiles($urls) {
         foreach ($urls as $url) {
-            $path = $_SERVER['DOCUMENT_ROOT'] . '/..' . $url;
+            $path = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/' . ltrim($url, '/');
             if (file_exists($path)) {
                 unlink($path);
             }

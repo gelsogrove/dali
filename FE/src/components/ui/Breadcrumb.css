@@ -1,0 +1,80 @@
+/* ==================== BREADCRUMB COMPONENT STYLES ==================== */
+/* Standardized breadcrumb navigation */
+
+.breadcrumb,
+.page-breadcrumbs {
+  /* Layout */
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  
+  /* Spacing */
+  padding: 16px 5%;
+  margin: 0;
+  
+  /* Colors */
+  background: var(--color-bg-white);
+  
+  /* Typography */
+  font-size: var(--font-size-body);
+  line-height: 1.4;
+}
+
+.breadcrumb a,
+.page-breadcrumbs a {
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  transition: color 0.3s ease;
+  font-size: var(--font-size-body);
+}
+
+.breadcrumb a:hover,
+.page-breadcrumbs a:hover {
+  color: var(--color-primary);
+}
+
+.breadcrumb span,
+.page-breadcrumbs span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body);
+}
+
+.breadcrumb em,
+.page-breadcrumbs em {
+  color: var(--color-primary);
+  font-style: italic;
+  font-size: var(--font-size-body);
+}
+
+/* Breadcrumb Wrapper */
+.page-breadcrumbs-wrap {
+  width: 100%;
+  background: var(--color-bg-white);
+}
+
+/* ===== Breadcrumb Separator ===== */
+.breadcrumb .separator,
+.page-breadcrumbs > span:not(em) {
+  margin: 0 4px;
+  color: var(--color-text-muted);
+}
+
+/* ===== Responsive Styles ===== */
+
+@media (max-width: 768px) {
+  .breadcrumb,
+  .page-breadcrumbs {
+    font-size: 16px;
+    padding: 14px 5%;
+  }
+  
+  .breadcrumb a,
+  .page-breadcrumbs a,
+  .breadcrumb span,
+  .page-breadcrumbs span,
+  .breadcrumb em,
+  .page-breadcrumbs em {
+    font-size: 16px;
+  }
+}

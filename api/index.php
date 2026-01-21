@@ -36,6 +36,7 @@ require_once __DIR__ . '/controllers/UploadController.php';
 require_once __DIR__ . '/controllers/HomeController.php';
 require_once __DIR__ . '/controllers/BlogController.php';
 require_once __DIR__ . '/controllers/PhotoGalleryController.php';
+require_once __DIR__ . '/controllers/VideoController.php';
 require_once __DIR__ . '/middleware/AuthMiddleware.php';
 
 // Get request method and path
@@ -78,6 +79,10 @@ try {
         
         case 'blogs':
             handleBlogRoutes($segments, $method);
+            break;
+
+        case 'videos':
+            handleVideoRoutes($segments, $method);
             break;
         
         case 'photogallery':
@@ -226,6 +231,11 @@ function handleUploadRoutes($segments, $method) {
                 $result = $controller->uploadVideo($_FILES['video'] ?? null);
                 echo json_encode($result);
                 break;
+
+            case 'video-image':
+                $result = $controller->uploadVideoImage($_FILES['image'] ?? null);
+                echo json_encode($result);
+                break;
             
             case 'blog-image':
                 $result = $controller->uploadBlogImage($_FILES['image'] ?? null);
@@ -350,6 +360,74 @@ function handleBlogRoutes($segments, $method) {
             echo json_encode($result);
             break;
             
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+}
+
+/**
+ * Handle video routes
+ */
+function handleVideoRoutes($segments, $method) {
+    $controller = new VideoController();
+
+    if ($method === 'GET' && empty($segments[1])) {
+        $filters = $_GET;
+        $result = $controller->getAll($filters);
+        echo json_encode($result);
+        return;
+    }
+
+    if ($method === 'GET' && !empty($segments[1]) && is_numeric($segments[1])) {
+        $result = $controller->getById($segments[1]);
+        echo json_encode($result);
+        return;
+    }
+
+    $auth = new AuthMiddleware();
+    $user = $auth->authenticate();
+
+    if (!$user) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+        return;
+    }
+
+    switch ($method) {
+        case 'POST':
+            if (!empty($segments[1]) && $segments[1] === 'reorder') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $result = $controller->reorder($data['order'] ?? [], $user['user_id']);
+                echo json_encode($result);
+                break;
+            }
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->create($data, $user['user_id']);
+            echo json_encode($result);
+            break;
+
+        case 'PUT':
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Video ID required']);
+                return;
+            }
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->update($segments[1], $data, $user['user_id']);
+            echo json_encode($result);
+            break;
+
+        case 'DELETE':
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Video ID required']);
+                return;
+            }
+            $result = $controller->delete($segments[1], $user['user_id']);
+            echo json_encode($result);
+            break;
+
         default:
             http_response_code(405);
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);

@@ -1,0 +1,70 @@
+/* ==================== TITLE PAGE COMPONENT ==================== */
+/* Accent title variant with vertical bar */
+
+.section-accent-title {
+  width: fit-content;
+  max-width: 1000px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-top: 0;
+  margin-bottom: var(--title-margin-bottom);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.section-accent-bar {
+  width: var(--border-width-thick);
+  min-height: 130px;
+  background: var(--color-primary-light);
+}
+
+.section-accent-kicker {
+  margin: 0;
+  letter-spacing: var(--letter-spacing-widest);
+  text-transform: uppercase;
+  color: var(--color-text-lighter);
+  font-size: var(--font-size-accent-kicker);
+  font-family: var(--font-family-default);
+  font-weight: var(--font-weight-normal);
+}
+
+.section-accent-headline {
+  margin: 6px 0 0;
+  font-size: var(--font-size-accent-title);
+  letter-spacing: var(--letter-spacing-wider);
+  color: var(--color-primary-dark);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-family-title);
+}
+
+/* ===== Responsive Styles ===== */
+
+/* Mobile */
+@media (max-width: 768px) {
+  .section-accent-title {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-bottom: var(--title-margin-bottom-small);
+  }
+
+  .section-accent-headline {
+    font-size: var(--font-size-accent-title-mobile);
+  }
+}
+
+/* ===== TitlePage Classic Variant ===== */
+/* Centered with left border */
+.title-page.section-title,
+.title-page.section-title.fp-title,
+#featured-properties .title-page.section-title.fp-title {
+  width: fit-content;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-bottom: var(--title-margin-bottom) !important;
+  padding-left: 20px;
+  border-left: var(--border-width-thick) solid var(--color-primary-light);
+}

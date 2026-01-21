@@ -9,6 +9,7 @@ export default function ButtonDali({ children, href, onClick, className = '', ta
         className={combinedClass}
         target={target}
         rel={rel}
+        onClick={onClick}
       >
         {children}
       </a>

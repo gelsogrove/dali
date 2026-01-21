@@ -1,0 +1,106 @@
+/* ==================== COLOR SYSTEM ==================== */
+/* Standardized color palette and usage */
+
+:root {
+  /* ===== Primary Brand Colors ===== */
+  --color-primary: #c19280;
+  --color-primary-dark: #b18068;
+  --color-primary-darker: #a9745f;
+  --color-primary-light: #ebd7cf;
+  --color-primary-lighter: #f5f0ed;
+  
+  /* ===== Text Colors ===== */
+  --color-text-primary: #333333;
+  --color-text-secondary: #4a4a4a;
+  --color-text-tertiary: #5a5a5a;
+  --color-text-muted: #999999;
+  --color-text-light: #b3a59f;
+  --color-text-lighter: #c0b4af;
+  
+  /* ===== Background Colors ===== */
+  --color-bg-white: #ffffff;
+  --color-bg-light: #f5f0ed;
+  --color-bg-lighter: #f9f9f9;
+  --color-bg-accent: #ebd7cf;
+  
+  /* ===== Border Colors ===== */
+  --color-border-light: #e8ddd5;
+  --color-border-medium: #d4c4ba;
+  --color-border-dark: #c19280;
+  
+  /* ===== Status Colors ===== */
+  --color-success: #4caf50;
+  --color-success-light: #e8f5e9;
+  --color-error: #f44336;
+  --color-error-light: #ffebee;
+  --color-warning: #ff9800;
+  --color-warning-light: #fff3e0;
+  --color-info: #2196f3;
+  --color-info-light: #e3f2fd;
+  
+  /* ===== Overlay Colors ===== */
+  --color-overlay-dark: rgba(0, 0, 0, 0.5);
+  --color-overlay-light: rgba(255, 255, 255, 0.9);
+  
+  /* ===== Shadow Colors ===== */
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  --color-shadow-primary: rgba(193, 146, 128, 0.08);
+  --color-shadow-primary-medium: rgba(193, 146, 128, 0.12);
+  --color-shadow-primary-strong: rgba(193, 146, 128, 0.3);
+}
+
+/* ===== Background Classes ===== */
+.bg-white {
+  background-color: var(--color-bg-white);
+}
+
+.bg-light {
+  background-color: var(--color-bg-light);
+}
+
+.bg-lighter {
+  background-color: var(--color-bg-lighter);
+}
+
+.bg-accent {
+  background-color: var(--color-bg-accent);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+  color: var(--color-bg-white);
+}
+
+/* ===== Text Color Classes ===== */
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-dark {
+  color: var(--color-text-primary);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-light {
+  color: var(--color-text-light);
+}
+
+.text-white {
+  color: var(--color-bg-white);
+}
+
+/* ===== Border Color Classes ===== */
+.border-light {
+  border-color: var(--color-border-light);
+}
+
+.border-medium {
+  border-color: var(--color-border-medium);
+}
+
+.border-primary {
+  border-color: var(--color-primary);
+}

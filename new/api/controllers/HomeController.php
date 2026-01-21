@@ -52,36 +52,29 @@ class HomeController {
                 }
             }
 
-            // Get featured videos for homepage
+            // Get videos for homepage (first 5 by order)
+            $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 5;
             $videosQuery = "SELECT 
                 id, property_id, title, description, 
                 video_url, video_type, thumbnail_url, 
                 display_order
                 FROM videos 
-                WHERE is_featured = 1
-                ORDER BY display_order ASC";
+                WHERE is_active = 1 AND (property_id IS NULL OR property_id = 0)
+                ORDER BY display_order ASC, created_at DESC
+                LIMIT ?";
             
-            $videosResult = $this->conn->query($videosQuery);
+            $videosStmt = $this->conn->prepare($videosQuery);
+            $videosStmt->bind_param('i', $limit);
+            $videosStmt->execute();
+            $videosResult = $videosStmt->get_result();
             $videos = [];
             
             if ($videosResult && $videosResult->num_rows > 0) {
                 while ($row = $videosResult->fetch_assoc()) {
-                    // Get property info for each video
-                    if ($row['property_id']) {
-                        $propQuery = "SELECT id, title, slug, price, city 
-                                      FROM properties 
-                                      WHERE id = ?";
-                        $propStmt = $this->conn->prepare($propQuery);
-                        $propStmt->bind_param('i', $row['property_id']);
-                        $propStmt->execute();
-                        $propResult = $propStmt->get_result();
-                        $row['property'] = $propResult->fetch_assoc();
-                        $propStmt->close();
-                    }
-                    
                     $videos[] = $row;
                 }
             }
+            $videosStmt->close();
 
             return [
                 'success' => true,
@@ -106,18 +99,20 @@ class HomeController {
      */
     public function getFeaturedVideos() {
         try {
+            $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 5;
             $query = "SELECT 
-                v.id, v.property_id, v.title, v.description, 
-                v.video_url, v.video_type, v.thumbnail_url, 
-                v.display_order,
-                p.title as property_title, p.slug as property_slug, 
-                p.price, p.city
-                FROM videos v
-                LEFT JOIN properties p ON v.property_id = p.id
-                WHERE v.is_featured = 1
-                ORDER BY v.display_order ASC";
+                id, property_id, title, description, 
+                video_url, video_type, thumbnail_url, 
+                display_order
+                FROM videos
+                WHERE is_active = 1 AND (property_id IS NULL OR property_id = 0)
+                ORDER BY display_order ASC, created_at DESC
+                LIMIT ?";
             
-            $result = $this->conn->query($query);
+            $stmt = $this->conn->prepare($query);
+            $stmt->bind_param('i', $limit);
+            $stmt->execute();
+            $result = $stmt->get_result();
             $videos = [];
             
             if ($result && $result->num_rows > 0) {
@@ -125,6 +120,7 @@ class HomeController {
                     $videos[] = $row;
                 }
             }
+            $stmt->close();
 
             return [
                 'success' => true,

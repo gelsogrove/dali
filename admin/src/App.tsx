@@ -11,6 +11,8 @@ import PhotoGalleryPage from './pages/PhotoGalleryPage'
 import PhotoGalleryFormPage from './pages/PhotoGalleryFormPage'
 import VideosPage from './pages/VideosPage'
 import FeedbacksPage from './pages/FeedbacksPage'
+import CommunitiesPage from './pages/CommunitiesPage'
+import LinkGenerationPage from './pages/LinkGenerationPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -47,6 +49,8 @@ function App() {
         <Route path="photogallery/:id/edit" element={<PhotoGalleryFormPage />} />
         <Route path="videos" element={<VideosPage />} />
         <Route path="feedbacks" element={<FeedbacksPage />} />
+        <Route path="community" element={<CommunitiesPage />} />
+        <Route path="link-generation" element={<LinkGenerationPage />} />
       </Route>
     </Routes>
   )

@@ -1,3 +1,4 @@
+import './HomePage.css';
 import GuidePopup from '../components/GuidePopup';
 import HeroSlider from '../components/HeroSlider';
 import WelcomeSection from '../components/WelcomeSection';

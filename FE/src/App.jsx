@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import AOS from 'aos';
 import PasswordGate from './components/PasswordGate';
 import Header from './components/Header';
@@ -16,6 +17,7 @@ import BlogDetailPage from './pages/BlogDetailPage';
 import TestimonialsPage from './pages/TestimonialsPage';
 import ActivePropertiesPage from './pages/ActivePropertiesPage';
 import NewDevelopmentsPage from './pages/NewDevelopmentsPage';
+import VideosPage from './pages/VideosPage';
 import CommunitiesPage from './pages/CommunitiesPage';
 import ListWithDaliPage from './pages/ListWithDaliPage';
 import CommunityPage from './pages/CommunityPage';
@@ -40,35 +42,38 @@ export default function App() {
   }, [menuOpen]);
 
   return (
-    <PasswordGate>
-      <Router>
-        <div id="main-wrapper">
-          <Header onToggleMenu={() => setMenuOpen(true)} />
-          <MobileHeader onToggleMenu={() => setMenuOpen(true)} />
-          <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-          <main>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact-us" element={<ContactPage />} />
-              <Route path="/testimonials" element={<TestimonialsPage />} />
-              <Route path="/properties" element={<PropertiesPage />} />
-              <Route path="/active-properties" element={<ActivePropertiesPage />} />
-              <Route path="/new-developments" element={<NewDevelopmentsPage />} />
-              <Route path="/communities" element={<CommunitiesPage />} />
-              <Route path="/list-with-dali" element={<ListWithDaliPage />} />
-              <Route path="/community/:slug" element={<CommunityPage />} />
-              <Route path="/buyers-guide" element={<BuyersGuidePage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/category/blog" element={<BlogsPage />} />
-              <Route path="/blogs" element={<BlogsPage />} />
-              <Route path="/blog/:slug" element={<BlogDetailPage />} />
-              <Route path="/listings/*" element={<ListingDetailPage />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
-    </PasswordGate>
+    <HelmetProvider>
+      <PasswordGate>
+        <Router>
+          <div id="main-wrapper">
+            <Header onToggleMenu={() => setMenuOpen(true)} />
+            <MobileHeader onToggleMenu={() => setMenuOpen(true)} />
+            <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+            <main>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/contact-us" element={<ContactPage />} />
+                <Route path="/testimonials" element={<TestimonialsPage />} />
+                <Route path="/properties" element={<PropertiesPage />} />
+                <Route path="/active-properties" element={<ActivePropertiesPage />} />
+                <Route path="/new-developments" element={<NewDevelopmentsPage />} />
+                <Route path="/communities" element={<CommunitiesPage />} />
+                <Route path="/list-with-dali" element={<ListWithDaliPage />} />
+                <Route path="/videos" element={<VideosPage />} />
+                <Route path="/community/:slug" element={<CommunityPage />} />
+                <Route path="/buyers-guide" element={<BuyersGuidePage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/category/blog" element={<BlogsPage />} />
+                <Route path="/blogs" element={<BlogsPage />} />
+                <Route path="/blog/:slug" element={<BlogDetailPage />} />
+                <Route path="/listings/*" element={<ListingDetailPage />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </Router>
+      </PasswordGate>
+    </HelmetProvider>
   );
 }

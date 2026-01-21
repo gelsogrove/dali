@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import PageHero from '../components/PageHero';
 import ContactSection from '../components/ContactSection';
-import TitlePage from '../components/TitlePage';
+import TitleHeader from '../components/TitleHeader';
+import SEO from '../components/SEO';
 import './SearchPage.css';
 
 const COUNTRIES = {
@@ -124,13 +125,18 @@ export default function SearchPage() {
 
   return (
     <>
+      <SEO 
+        title="Search Properties"
+        description="Search luxury real estate in Riviera Maya, Tulum, Playa del Carmen. Filter by price, location, bedrooms, and amenities to find your dream property."
+        keywords="search properties Riviera Maya, Tulum real estate search, property finder Playa del Carmen, luxury homes search Mexico"
+        canonicalUrl="https://buywithdali.com/search"
+      />
       <PageHero breadcrumb="» Search" />
       
       <section className="search-page">
         <div className="search-container">
           <div className="search-header">
-            <TitlePage kicker="Find Your Perfect" title="Property" />
-           
+            <TitleHeader kicker="Search" title="Properties" />
           </div>
 
           <form onSubmit={handleSubmit} className="search-form">

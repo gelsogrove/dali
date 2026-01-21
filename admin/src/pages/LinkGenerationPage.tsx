@@ -1,0 +1,20 @@
+import { Card, CardContent } from '@/components/ui/card'
+import { Wrench } from 'lucide-react'
+
+export default function LinkGenerationPage() {
+  return (
+    <div className="space-y-6">
+      <Card className="p-10 text-center border-dashed">
+        <CardContent className="space-y-3">
+          <div className="flex justify-center">
+            <Wrench className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <h2 className="text-2xl font-semibold">Link Generation — work in progress</h2>
+          <p className="text-muted-foreground">
+            This section will be available soon.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

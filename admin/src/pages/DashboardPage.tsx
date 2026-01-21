@@ -11,7 +11,7 @@ export default function DashboardPage() {
           </div>
           <h2 className="text-2xl font-semibold">Home — work in progress</h2>
           <p className="text-muted-foreground">
-            Questa sezione sarà presto disponibile.
+            This section will be available soon.
           </p>
         </CardContent>
       </Card>

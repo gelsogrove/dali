@@ -5,6 +5,7 @@ export const navLinks = [
     href: '/properties',
   },
   { label: 'Search', href: '/search' },
+  { label: 'Videos', href: '/videos' },
   { label: 'Blogs', href: '/category/blog/' },
   { label: 'Contact Us', href: '/contact-us' },
 ];

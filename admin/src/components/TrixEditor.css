@@ -155,7 +155,7 @@ trix-editor pre {
   line-height: 1.5 !important;
 }
 
-/* Rimuovi upload immagini/file (non necessari) */
+/* Hide image/file upload buttons (not needed) */
 trix-toolbar .trix-button--icon-attach,
 trix-toolbar .trix-button-group--file-tools {
   display: none !important;

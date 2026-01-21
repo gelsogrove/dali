@@ -1,10 +1,38 @@
+/* ==================== DESIGN SYSTEM IMPORTS ==================== */
+/* Import order is important - base styles first, then components */
+
+/* 1. Base System Variables */
+@import './variables.css';
+@import './colors.css';
+
+/* 2. Fonts */
 @import './fonts.css';
 @import url('https://cdn.vs12.com/font-icons/agentimage.font.icons.css');
+
+/* 3. Third-party Libraries */
 @import '@splidejs/react-splide/css';
 @import 'aos/dist/aos.css';
+
+/* 4. Design System Core */
+@import './global.css';
+@import './typography.css';
+
+/* 5. UI Components */
+@import '../components/ui/Button.css';
+@import '../components/ui/Card.css';
+@import '../components/ui/Form.css';
+@import '../components/ui/Table.css';
+@import '../components/ui/Breadcrumb.css';
+
+/* 6. Legacy Theme (will be phased out) */
 @import './theme.css';
 @import './theme-media.css';
+
+/* 7. Legacy App Styles (will be refactored) */
 @import './app.css';
+
+/* 8. Page-specific overrides (highest priority) */
+@import '../pages/BlogsPage.css';
 
 * {
   box-sizing: border-box;
@@ -14,7 +42,7 @@ body {
   margin: 0;
   background: #ffffff;
   color: #000000;
-  font-family: 'Glacial Indifference', sans-serif;
+  font-family: var(--font-family-default);
 }
 
 #root {

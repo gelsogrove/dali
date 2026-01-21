@@ -1,0 +1,169 @@
+/* ==================== BUTTON COMPONENT STYLES ==================== */
+/* Standardized button styles with variants */
+
+.button-dali {
+  /* Base Styles */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  /* Spacing */
+  padding: 12px 30px;
+  
+  /* Typography */
+  font-family: var(--font-family-title);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  
+  /* Colors */
+  color: var(--color-primary);
+  background: var(--color-bg-white);
+  border: 2px solid var(--color-primary);
+  
+  /* Layout */
+  width: fit-content;
+  max-width: 280px;
+  
+  /* Effects */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: none;
+}
+
+/* Hover State */
+.button-dali:hover {
+  background: var(--color-primary);
+  color: var(--color-bg-white);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--color-shadow-primary-strong);
+}
+
+/* Active/Pressed State */
+.button-dali:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Focus State (for accessibility) */
+.button-dali:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Disabled State */
+.button-dali:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ===== Button Variants ===== */
+
+/* Primary Button (filled) */
+.button-dali.primary {
+  background: var(--color-primary);
+  color: var(--color-bg-white);
+  border-color: var(--color-primary);
+}
+
+.button-dali.primary:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+}
+
+/* Secondary Button (outline - default) */
+.button-dali.secondary {
+  background: var(--color-bg-white);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Large Button */
+.button-dali.large {
+  padding: 16px 40px;
+  font-size: 14px;
+}
+
+/* Small Button */
+.button-dali.small {
+  padding: 8px 20px;
+  font-size: 11px;
+}
+
+/* Full Width Button */
+.button-dali.full-width {
+  width: 100%;
+  max-width: none;
+}
+
+/* ===== Button with Icon ===== */
+.button-dali svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ===== Active State (for filter buttons, tabs, etc.) ===== */
+.button-dali.active {
+  background: var(--color-primary);
+  color: var(--color-bg-white);
+  border-color: var(--color-primary);
+}
+
+.button-dali.active:hover {
+  background: var(--color-primary-darker);
+  border-color: var(--color-primary-darker);
+}
+
+/* ===== Default Button (legacy support) ===== */
+.default-button {
+  composes: button-dali;
+}
+
+.default-button:hover {
+  background: var(--color-primary);
+  color: var(--color-bg-white);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--color-shadow-primary-strong);
+}
+
+.default-button.active {
+  background: var(--color-primary);
+  color: var(--color-bg-white);
+  border-color: var(--color-primary);
+}
+
+.default-button.active:hover {
+  background: var(--color-primary-darker);
+  border-color: var(--color-primary-darker);
+}
+
+.default-button:active {
+  transform: translateY(0);
+}
+
+/* ===== Responsive Styles ===== */
+@media (max-width: 768px) {
+  .button-dali {
+    padding: 10px 24px;
+    font-size: 12px;
+  }
+  
+  .button-dali.large {
+    padding: 14px 32px;
+    font-size: 13px;
+  }
+  
+  .button-dali.small {
+    padding: 8px 16px;
+    font-size: 10px;
+  }
+}

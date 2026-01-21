@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ContactSection from '../components/ContactSection';
 import PageHero from '../components/PageHero';
-import TitlePage from '../components/TitlePage';
+import TitleHeader from '../components/TitleHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ButtonDali from '../components/ButtonDali';
+import SEO from '../components/SEO';
 import { api, endpoints } from '../config/api';
 
 export default function BlogsPage() {
@@ -58,11 +60,17 @@ export default function BlogsPage() {
 
   return (
     <>
+      <SEO 
+        title="Blog"
+        description="Read the latest insights on Riviera Maya real estate, property investment tips, market trends, and lifestyle guides for Tulum and Playa del Carmen."
+        keywords="Riviera Maya real estate blog, Tulum property tips, real estate investment Mexico, Playa del Carmen lifestyle"
+        canonicalUrl="https://buywithdali.com/category/blog"
+      />
       <PageHero breadcrumb="» Blog" />
 
       <section className="blog-listing">
         <div className="blog-listing-inner">
-          <TitlePage kicker="Our" title="Blog" className="blog-title-center" />
+          <TitleHeader kicker="Our" title="Blog" />
           
           {loading && <LoadingSpinner />}
 
@@ -107,13 +115,13 @@ export default function BlogsPage() {
                 <div className="blog-meta">
                   {formatDate(blog.published_date || blog.created_at)}
                 </div>
-                <h2>
-                  <Link to={`/blog/${blog.slug}`}>{blog.title}</Link>
-                </h2>
+                <h2>{blog.title}</h2>
                 <p>{blog.description}</p>
-                <Link to={`/blog/${blog.slug}`} className="blog-readmore">
-                  Read more
-                </Link>
+                <div className="blog-row-actions">
+                  <ButtonDali asChild>
+                    <Link to={`/blog/${blog.slug}`}>Read More</Link>
+                  </ButtonDali>
+                </div>
               </div>
               {index !== blogs.length - 1 && <div className="blog-row-divider"></div>}
             </article>

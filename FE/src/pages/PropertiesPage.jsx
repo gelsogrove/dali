@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import './PropertiesPage.css';
 import PageHero from '../components/PageHero';
 import FeaturedProperties from '../components/FeaturedProperties';
 import ContactSection from '../components/ContactSection';

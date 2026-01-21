@@ -1,0 +1,207 @@
+/* ==================== TYPOGRAPHY SYSTEM ==================== */
+/* Standardized typography styles for the entire application */
+
+/* ===== Base Typography ===== */
+body {
+  font-family: var(--font-family-default);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-normal);
+}
+
+/* ===== Headings ===== */
+h1, h2:not(.blog-row-body h2), h3, h4, h5, h6 {
+  font-family: var(--font-family-title);
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+}
+
+h1 {
+  font-size: var(--font-size-title);
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+h2:not(.blog-row-body h2) {
+  font-size: 48px;
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+h3 {
+  font-size: 36px;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+h4 {
+  font-size: 28px;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+h5 {
+  font-size: 24px;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+h6 {
+  font-size: 20px;
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+/* ===== Paragraphs ===== */
+p {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-normal);
+  margin: 0 0 20px 0;
+  color: var(--color-text-secondary);
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== Text Styles ===== */
+.text-large {
+  font-size: 22px;
+  line-height: var(--line-height-relaxed);
+}
+
+.text-small {
+  font-size: var(--font-size-body-small);
+  line-height: var(--line-height-normal);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-light {
+  color: var(--color-text-light);
+}
+
+.text-primary {
+  color: var(--color-primary);
+}
+
+/* ===== Kicker Text (Label above titles) ===== */
+.kicker {
+  font-family: var(--font-family-default);
+  font-size: var(--font-size-kicker);
+  letter-spacing: var(--letter-spacing-widest);
+  text-transform: uppercase;
+  color: var(--color-text-light);
+  font-weight: var(--font-weight-normal);
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* ===== Title Styles (for TitleHeader/TitlePage) ===== */
+.title-text {
+  font-family: var(--font-family-title);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-normal);
+  color: var(--color-primary);
+  line-height: var(--line-height-tight);
+}
+
+/* ===== Subtitle Styles ===== */
+.subtitle {
+  font-size: 20px;
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-tertiary);
+  margin-top: 16px;
+}
+
+/* ===== Link Styles ===== */
+.link {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+/* ===== Lists ===== */
+ul, ol {
+  padding-left: 20px;
+  margin: 0 0 20px 0;
+}
+
+ul li, ol li {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-normal);
+  margin-bottom: 8px;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Strong & Emphasis ===== */
+strong {
+  font-weight: var(--font-weight-bold);
+}
+
+em {
+  font-style: italic;
+}
+
+/* ===== Responsive Typography ===== */
+@media (max-width: 1024px) {
+  h1, .title-text {
+    font-size: var(--font-size-title-tablet);
+  }
+  
+  h2 {
+    font-size: 42px;
+  }
+  
+  h3 {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    font-size: 18px;
+  }
+  
+  h1, .title-text {
+    font-size: var(--font-size-title-mobile);
+  }
+  
+  h2 {
+    font-size: 36px;
+  }
+  
+  h3 {
+    font-size: 28px;
+  }
+  
+  h4 {
+    font-size: 24px;
+  }
+  
+  h5 {
+    font-size: 20px;
+  }
+  
+  .kicker {
+    font-size: var(--font-size-kicker-mobile);
+  }
+  
+  .subtitle {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1, .title-text {
+    font-size: 48px;
+  }
+  
+  h2 {
+    font-size: 32px;
+  }
+}

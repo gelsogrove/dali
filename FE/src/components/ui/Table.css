@@ -1,0 +1,187 @@
+/* ==================== TABLE COMPONENT STYLES ==================== */
+/* Standardized table styles */
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin: 40px 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--border-radius-medium);
+  overflow: hidden;
+}
+
+/* ===== Table Header ===== */
+
+thead {
+  background: var(--color-bg-light);
+}
+
+thead th {
+  padding: 18px 20px;
+  text-align: left;
+  font-family: var(--font-family-default);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--letter-spacing-tight);
+  border-bottom: 2px solid var(--color-border-medium);
+}
+
+/* ===== Table Body ===== */
+
+tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+tbody tr:hover {
+  background: var(--color-bg-lighter);
+}
+
+tbody tr:not(:last-child) {
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+tbody td {
+  padding: 18px 20px;
+  text-align: left;
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+/* ===== Table Footer ===== */
+
+tfoot {
+  background: var(--color-bg-light);
+  border-top: 2px solid var(--color-border-medium);
+}
+
+tfoot td {
+  padding: 18px 20px;
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+/* ===== Table Variants ===== */
+
+/* Striped Table */
+table.striped tbody tr:nth-child(even) {
+  background: var(--color-bg-lighter);
+}
+
+table.striped tbody tr:nth-child(even):hover {
+  background: var(--color-bg-light);
+}
+
+/* Bordered Table */
+table.bordered td,
+table.bordered th {
+  border: 1px solid var(--color-border-light);
+}
+
+/* Compact Table */
+table.compact thead th,
+table.compact tbody td,
+table.compact tfoot td {
+  padding: 12px 16px;
+}
+
+/* ===== Cell Alignment ===== */
+
+.text-center {
+  text-align: center !important;
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+/* ===== Special Cells ===== */
+
+td.actions {
+  white-space: nowrap;
+}
+
+td.actions button,
+td.actions .button-dali {
+  margin-right: 8px;
+}
+
+td.actions button:last-child,
+td.actions .button-dali:last-child {
+  margin-right: 0;
+}
+
+td.status {
+  font-weight: var(--font-weight-semibold);
+}
+
+td.status.active {
+  color: var(--color-success);
+}
+
+td.status.inactive {
+  color: var(--color-text-muted);
+}
+
+td.status.pending {
+  color: var(--color-warning);
+}
+
+/* ===== Responsive Table ===== */
+
+@media (max-width: 768px) {
+  /* Stack table on mobile */
+  table.responsive {
+    border: 0;
+  }
+
+  table.responsive thead {
+    display: none;
+  }
+
+  table.responsive tbody tr {
+    display: block;
+    margin-bottom: 20px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--border-radius-medium);
+  }
+
+  table.responsive tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    text-align: right;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  table.responsive tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  table.responsive tbody td::before {
+    content: attr(data-label);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    text-align: left;
+    margin-right: 20px;
+  }
+  
+  /* Standard tables - reduce padding */
+  thead th {
+    padding: 14px 12px;
+    font-size: 16px;
+  }
+  
+  tbody td {
+    padding: 14px 12px;
+    font-size: 16px;
+  }
+}

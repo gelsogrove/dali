@@ -1,0 +1,118 @@
+/* ==================== TITLE HEADER COMPONENT ==================== */
+/* Centered page/section title with left accent bar */
+
+.title-header {
+  width: fit-content;
+  display: flex;
+  justify-content: center;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-bottom: var(--title-margin-bottom);
+  padding: 0;
+}
+
+.title-header.title-header--center {
+  justify-content: center;
+}
+
+/* Featured Properties specific centering */
+.title-header.fp-title,
+#featured-properties .title-header.fp-title {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  justify-content: center !important;
+  width: fit-content !important;
+}
+
+.title-header__inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.title-header__bar {
+  width: var(--border-width-thick);
+  height: 140px;
+  background: var(--color-primary-light);
+  display: block;
+  flex-shrink: 0;
+}
+
+.title-header__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.title-header__kicker {
+  font-size: var(--font-size-accent-kicker) !important;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: #c0b4af;
+  margin: 0;
+  font-weight: 500;
+}
+
+.title-header__title {
+  margin: 0;
+  font-family: var(--font-family-title);
+  font-size: var(--font-size-accent-title) !important;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: var(--line-height-tight);
+}
+
+/* ===== Responsive Styles ===== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .title-header {
+    margin-bottom: 32px;
+  }
+
+  .title-header__bar {
+    height: 100px;
+  }
+
+  .title-header__title {
+    font-size: var(--font-size-title-tablet);
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .title-header {
+    padding: 0 0 10px;
+  }
+
+  .title-header__inner {
+    gap: 14px;
+  }
+
+  .title-header__bar {
+    height: 80px;
+  }
+
+  .title-header__title {
+    font-size: var(--font-size-title-mobile);
+  }
+
+  .title-header__kicker {
+    font-size: var(--font-size-kicker-mobile);
+    letter-spacing: 2px;
+  }
+}
+
+/* ===== Blog/Videos Page Specific ===== */
+.blog-title-center {
+  text-align: center;
+}
+
+.blog-title-center h2,
+.blog-title-center h3,
+.blog-title-center .title-header__title {
+  text-align: left;
+}

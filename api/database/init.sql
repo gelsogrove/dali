@@ -294,22 +294,24 @@ DROP TABLE IF EXISTS `videos`;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `videos` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `property_id` int(10) unsigned NOT NULL,
+  `property_id` int(10) unsigned DEFAULT NULL,
   `title` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
-  `video_url` varchar(500) NOT NULL COMMENT 'URL to video file or YouTube/Vimeo embed',
-  `video_type` enum('upload','youtube','vimeo') DEFAULT 'upload',
-  `thumbnail_url` varchar(255) DEFAULT NULL,
-  `duration` int(11) DEFAULT NULL COMMENT 'Duration in seconds',
+  `video_url` varchar(500) NOT NULL COMMENT 'URL to Vimeo embed',
+  `video_type` enum('vimeo','youtube','upload','link') DEFAULT 'vimeo',
+  `thumbnail_url` varchar(255) NOT NULL,
   `display_order` int(11) DEFAULT 0,
-  `is_featured` tinyint(1) DEFAULT 0,
+  `is_active` tinyint(1) DEFAULT 1,
+  `created_by` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_property_id` (`property_id`),
   KEY `idx_display_order` (`display_order`),
-  CONSTRAINT `videos_ibfk_1` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `idx_is_active` (`is_active`),
+  CONSTRAINT `videos_ibfk_1` FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `videos_ibfk_2` FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -318,7 +320,12 @@ CREATE TABLE `videos` (
 
 LOCK TABLES `videos` WRITE;
 /*!40000 ALTER TABLE `videos` DISABLE KEYS */;
-INSERT INTO `videos` VALUES (1,1,'Luxury Villa Tour','Complete walkthrough of the stunning waterfront villa','https://player.vimeo.com/video/1042515673','vimeo','/uploads/videos/thumbnails/villa-tour.jpg',NULL,1,1,'2026-01-19 11:24:56','2026-01-19 11:24:56'),(2,2,'Downtown Condo Showcase','Modern living in the heart of Miami','https://player.vimeo.com/video/1042515674','vimeo','/uploads/videos/thumbnails/condo-tour.jpg',NULL,2,1,'2026-01-19 11:24:56','2026-01-19 11:24:56'),(3,3,'Family Home Experience','Discover this perfect family property','https://player.vimeo.com/video/1042515675','vimeo','/uploads/videos/thumbnails/home-tour.jpg',NULL,3,1,'2026-01-19 11:24:56','2026-01-19 11:24:56');
+INSERT INTO `videos` VALUES 
+(1,NULL,'With Dalila','Discover the lifestyle with Dalila''s team','https://player.vimeo.com/video/1042515673','vimeo','/uploads/videos/with-dalila.jpg',1,1,1,'2026-01-19 11:24:56','2026-01-19 11:24:56'),
+(2,NULL,'Buy With Dalila','Behind the scenes of buying with Dalila','https://player.vimeo.com/video/1042515721','vimeo','/uploads/videos/buy-with-dalila.jpg',2,1,1,'2026-01-19 11:24:56','2026-01-19 11:24:56'),
+(3,NULL,'Villa Flor','A tour of Villa Flor with Francisco Uhmay','https://player.vimeo.com/video/1042515908','vimeo','/uploads/videos/villa-flor.jpg',3,1,1,'2026-01-19 11:24:56','2026-01-19 11:24:56'),
+(4,NULL,'Riviera Maya Living','Experience Riviera Maya living','https://player.vimeo.com/video/926961901','vimeo','/uploads/videos/riviera-maya.jpg',4,1,1,'2026-01-19 11:24:56','2026-01-19 11:24:56'),
+(5,NULL,'Tulum Highlight','Highlights from Tulum''s luxury homes','https://player.vimeo.com/video/840687984','vimeo','/uploads/videos/tulum-highlight.jpg',5,1,1,'2026-01-19 11:24:56','2026-01-19 11:24:56');
 /*!40000 ALTER TABLE `videos` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

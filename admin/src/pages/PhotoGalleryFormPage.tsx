@@ -92,7 +92,7 @@ export default function PhotoGalleryFormPage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Per favore seleziona un file immagine');
+      alert('Please select an image file');
       return;
     }
 
@@ -124,14 +124,14 @@ export default function PhotoGalleryFormPage() {
       setImagePreview(data.medium);
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Errore durante il caricamento dell\'immagine');
+      alert('Error while uploading the image');
     } finally {
       setUploading(false);
     }
   };
 
   const handleRemoveImage = async () => {
-    if (!confirm('Vuoi rimuovere questa immagine?')) return;
+    if (!confirm('Do you want to remove this image?')) return;
 
     if (formData.image_url) {
       try {
@@ -154,7 +154,7 @@ export default function PhotoGalleryFormPage() {
     e.preventDefault();
 
     if (!formData.image_url) {
-      alert('Per favore carica un\'immagine');
+      alert('Please upload an image');
       return;
     }
 
@@ -185,10 +185,10 @@ export default function PhotoGalleryFormPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-3xl font-bold">
-          {isEdit ? 'Modifica Foto' : 'Carica Nuova Foto'}
+          {isEdit ? 'Edit Photo' : 'Upload New Photo'}
         </h1>
         <p className="text-muted-foreground mt-1">
-          {isEdit ? 'Aggiorna i dettagli della foto' : 'Aggiungi una nuova foto alla galleria'}
+          {isEdit ? 'Update photo details' : 'Add a new photo to the gallery'}
         </p>
       </div>
 
@@ -196,7 +196,7 @@ export default function PhotoGalleryFormPage() {
         <Card className="p-6 space-y-6">
           {/* Image Upload */}
           <div className="space-y-2">
-            <Label>Immagine *</Label>
+            <Label>Image *</Label>
             {imagePreview ? (
               <div className="relative">
                 <img
@@ -213,7 +213,7 @@ export default function PhotoGalleryFormPage() {
                     className="absolute top-2 right-2"
                   >
                     <X className="h-4 w-4 mr-1" />
-                    Rimuovi
+                    Remove
                   </Button>
                 )}
               </div>
@@ -230,10 +230,10 @@ export default function PhotoGalleryFormPage() {
                 <label htmlFor="image-upload" className="cursor-pointer">
                   <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-sm font-medium mb-1">
-                    {uploading ? 'Caricamento...' : 'Clicca per caricare o trascina qui'}
+                    {uploading ? 'Uploading...' : 'Click to upload or drag here'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    PNG, JPG, WEBP fino a 10MB
+                    PNG, JPG, WEBP up to 10MB
                   </p>
                 </label>
               </div>
@@ -289,9 +289,9 @@ export default function PhotoGalleryFormPage() {
           {/* Is Featured */}
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div className="space-y-0.5">
-              <Label htmlFor="is_featured">Foto in Evidenza</Label>
+              <Label htmlFor="is_featured">Featured Photo</Label>
               <p className="text-sm text-muted-foreground">
-                Questa sarà la foto principale della proprietà
+                This will be the main photo for the property
               </p>
             </div>
             <Switch
@@ -313,8 +313,8 @@ export default function PhotoGalleryFormPage() {
               {createMutation.isPending || updateMutation.isPending
                 ? 'Salvataggio...'
                 : isEdit
-                ? 'Aggiorna Foto'
-                : 'Carica Foto'}
+                ? 'Update Photo'
+                : 'Upload Photo'}
             </Button>
             <Button type="button" variant="outline" onClick={handleCancel}>
               Annulla

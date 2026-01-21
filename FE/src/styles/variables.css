@@ -1,0 +1,121 @@
+/* ==================== CSS VARIABLES ==================== */
+/* Centralized design tokens for consistency across the application */
+
+:root {
+  /* ===== Typography ===== */
+  /* Font Families */
+  --font-family-default: 'Glacial Indifference', sans-serif;
+  --font-family-title: 'quincy-cf', serif;
+  
+  /* Font Sizes - Body */
+  --font-size-body: 19px;
+  --font-size-body-small: 16px;
+  
+  /* Font Sizes - Titles */
+  --font-size-kicker: 26px;
+  --font-size-kicker-mobile: 20px;
+  --font-size-title: 95px;
+  --font-size-title-tablet: 80px;
+  --font-size-title-mobile: 65px;
+  
+  /* Font Sizes - Accent Title */
+  --font-size-accent-kicker: 28px;
+  --font-size-accent-title: 72px;
+  --font-size-accent-title-mobile: 52px;
+  
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* Line Heights */
+  --line-height-tight: 1.1;
+  --line-height-normal: 1.6;
+  --line-height-relaxed: 1.8;
+  
+  /* Letter Spacing */
+  --letter-spacing-tight: 0.5px;
+  --letter-spacing-normal: 1px;
+  --letter-spacing-wide: 2.5px;
+  --letter-spacing-wider: 3px;
+  --letter-spacing-widest: 5px;
+  
+  /* ===== Colors ===== */
+  /* Primary Colors */
+  --color-primary: #c19280;
+  --color-primary-dark: #b18068;
+  --color-primary-light: #ebd7cf;
+  
+  /* Text Colors */
+  --color-text-primary: #333333;
+  --color-text-secondary: #4a4a4a;
+  --color-text-tertiary: #5a5a5a;
+  --color-text-muted: #999999;
+  --color-text-light: #b3a59f;
+  --color-text-lighter: #c0b4af;
+  
+  /* Background Colors */
+  --color-bg-white: #ffffff;
+  --color-bg-light: #f5f0ed;
+  --color-bg-lighter: #f9f9f9;
+  
+  /* Border Colors */
+  --color-border-light: #e8ddd5;
+  --color-border-medium: #d4c4ba;
+  
+  /* Status Colors */
+  --color-success: #4caf50;
+  --color-error: #f44336;
+  --color-warning: #ff9800;
+  --color-info: #2196f3;
+  
+  /* ===== Spacing ===== */
+  /* Section Padding */
+  --section-padding: 30px 5%;
+  --section-padding-small: 60px 5%;
+  --section-padding-large: 100px 5%;
+  
+  /* Component Margins */
+  --title-margin-bottom: 40px;
+  --title-margin-bottom-small: 28px;
+  --card-gap: 30px;
+  
+  /* Component Padding */
+  --card-padding: 18px;
+  --card-padding-large: 40px;
+  
+  /* ===== Borders ===== */
+  --border-radius-small: 2px;
+  --border-radius-medium: 4px;
+  --border-radius-large: 8px;
+  
+  --border-width-thin: 1px;
+  --border-width-medium: 3px;
+  --border-width-thick: 5px;
+  
+  /* ===== Shadows ===== */
+  --shadow-small: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 20px rgba(193, 146, 128, 0.08);
+  --shadow-large: 0 8px 40px rgba(193, 146, 128, 0.12);
+  
+  /* ===== Transitions ===== */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.4s ease;
+  
+  /* ===== Z-Index ===== */
+  --z-index-dropdown: 100;
+  --z-index-sticky: 200;
+  --z-index-fixed: 300;
+  --z-index-modal-backdrop: 400;
+  --z-index-modal: 500;
+  --z-index-popover: 600;
+  --z-index-tooltip: 700;
+  
+  /* ===== Breakpoints (for reference in media queries) ===== */
+  /* Use these values in @media queries */
+  /* Mobile: max-width: 768px */
+  /* Tablet: max-width: 1024px */
+  /* Desktop: min-width: 1025px */
+}

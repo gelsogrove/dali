@@ -79,7 +79,7 @@
 }
 
 .blog-row-body h2 {
-  font-family: 'quincy-cf', 'Cormorant Garamond', 'Playfair Display', serif !important;
+  font-family: var(--font-family-title) !important;
   font-size: 40px !important;
   color: #c19280 !important;
   margin: 0;

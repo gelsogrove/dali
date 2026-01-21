@@ -58,3 +58,22 @@ a {
 .section-title h3 {
   margin: 0;
 }
+
+/* ===== Token-based Base Typography ===== */
+body,
+p,
+li,
+a,
+span,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-family-default) !important;
+}
+
+p,
+li {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-normal);
+}

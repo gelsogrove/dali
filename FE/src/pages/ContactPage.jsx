@@ -27,7 +27,7 @@ export default function ContactPage() {
           <div className="contact-card" data-aos="fade-up" data-aos-duration="900" data-aos-delay="150">
             <div className="contact-card-header">
               <h2>Get In Touch</h2>
-              <p>I'm always available to discuss your real estate needs</p>
+           
             </div>
             <div className="contact-card-body">
               <div className="contact-info-item">
@@ -63,9 +63,10 @@ export default function ContactPage() {
               <div className="contact-info-text">
                 <span className="contact-label">Location</span>
                 <span className="contact-value">Playa del Carmen, Riviera Maya</span>
+                <br/>
                 <a
                   href="https://calendar.app.google/QoV7AeK9d3B62hqm7"
-                  className="default-button contact-schedule-button"
+                  className="default-button contact-schedule-button "
                   target="_blank"
                   rel="noopener noreferrer"
                 >

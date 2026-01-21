@@ -3164,7 +3164,7 @@ body {
 }
 
 .blog-detail-title {
-  font-family: 'quincy-cf', 'Cormorant Garamond', 'Playfair Display', serif;
+  
   font-size: 40px;
   color: #c19280;
   margin: 0 0 12px;
@@ -3214,7 +3214,7 @@ body {
 }
 
 .blog-detail-content h2 {
-  font-family: 'quincy-cf', 'Cormorant Garamond', 'Playfair Display', serif;
+  font-family: var(--font-family-title);
   font-size: 32px;
   color: #c19280;
   margin: 40px 0 20px;
@@ -3224,7 +3224,7 @@ body {
 }
 
 .blog-detail-content h3 {
-  font-family: 'quincy-cf', 'Cormorant Garamond', 'Playfair Display', serif;
+  font-family: var(--font-family-title);
   font-size: 26px;
   color: #2f343b;
   margin: 32px 0 16px;
@@ -3234,7 +3234,7 @@ body {
 }
 
 .blog-detail-content h4 {
-  font-family: 'quincy-cf', 'Cormorant Garamond', 'Playfair Display', serif;
+  font-family: var(--font-family-title);
   font-size: 22px;
   color: #2f343b;
   margin: 28px 0 14px;

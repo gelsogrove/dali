@@ -25,7 +25,8 @@ export default function LoginPage() {
       
       if (response.data.success) {
         const { token, user } = response.data.data
-        login(user, token)
+        const expiresIn = response.data.data.expires_in
+        login(user, token, expiresIn)
         navigate('/')
       } else {
         setError(response.data.error || 'Login failed')

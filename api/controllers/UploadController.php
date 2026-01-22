@@ -40,8 +40,8 @@ class UploadController {
             $tempPath = $file['tmp_name'];
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
             
-            // Generate unique filename
-            $filename = $this->generateUniqueFilename($extension);
+            // Generate unique filename with timestamp + random + slug
+            $filename = $this->generateUniqueFilename($extension, 'property', $originalName);
             $basePath = $this->uploadDir . '/properties';
 
             // Create image versions
@@ -115,8 +115,8 @@ class UploadController {
             $tempPath = $file['tmp_name'];
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
             
-            // Generate unique filename
-            $filename = $this->generateUniqueFilename($extension);
+            // Generate unique filename with timestamp + random + slug
+            $filename = $this->generateUniqueFilename($extension, 'video', $originalName);
             $destinationPath = $this->uploadDir . '/videos/' . $filename;
 
             // Move uploaded file
@@ -159,7 +159,7 @@ class UploadController {
             $tempPath = $file['tmp_name'];
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
-            $filename = uniqid('video_', true) . '_' . time() . '.' . $extension;
+            $filename = $this->generateUniqueFilename($extension, 'video-thumb', $originalName);
             $basePath = $this->uploadDir . '/videos';
 
             $versions = [
@@ -329,8 +329,26 @@ class UploadController {
      * @param string $extension File extension
      * @return string
      */
-    private function generateUniqueFilename($extension) {
-        return uniqid('img_', true) . '_' . time() . '.' . $extension;
+    private function generateUniqueFilename($extension, $prefix = 'file', $originalName = '') {
+        $timestamp = time();
+        try {
+            $random = bin2hex(random_bytes(4));
+        } catch (Exception $e) {
+            $random = uniqid();
+        }
+        $base = '';
+
+        if (!empty($originalName)) {
+            $base = preg_replace('/[^a-z0-9]+/i', '-', pathinfo($originalName, PATHINFO_FILENAME));
+            $base = trim($base, '-');
+        }
+
+        $parts = [$prefix, $timestamp, $random];
+        if (!empty($base)) {
+            $parts[] = $base;
+        }
+
+        return implode('-', $parts) . '.' . $extension;
     }
 
     /**
@@ -384,8 +402,8 @@ class UploadController {
             $tempPath = $file['tmp_name'];
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
             
-            // Generate unique filename
-            $filename = uniqid('blog_', true) . '_' . time() . '.' . $extension;
+            // Generate unique filename with timestamp + random + slug
+            $filename = $this->generateUniqueFilename($extension, 'blog', $originalName);
             $basePath = $this->uploadDir . '/blogs';
 
             // Create image versions for blog

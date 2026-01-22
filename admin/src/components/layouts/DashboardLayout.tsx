@@ -21,7 +21,7 @@ export default function DashboardLayout() {
     { name: 'Properties', href: '/properties', icon: FileText },
     { name: 'Photo Gallery', href: '/photogallery', icon: Image },
     { name: 'Videos', href: '/videos', icon: Video },
-    { name: 'Feedbacks', href: '/feedbacks', icon: MessageSquare },
+    { name: 'Testimonials', href: '/testimonials', icon: MessageSquare },
     { name: 'Community', href: '/community', icon: MapPin },
     { name: 'Link Generation', href: '/link-generation', icon: Link2 },
   ]

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import CanvasImage from './CanvasImage';
 import ButtonDali from './ButtonDali';
+import TitlePage from './TitlePage';
 import { api, endpoints } from '../config/api';
 
 export default function FeaturedVideos() {
@@ -61,9 +62,7 @@ export default function FeaturedVideos() {
   return (
     <section id="featured-videos">
       <div className="fv-container">
-        <div className="fv-title section-title" data-aos="fade-right" data-aos-duration="1000" data-aos-delay="300">
-          <h2>VIDEOS</h2>
-        </div>
+        <TitlePage kicker="Our" title="Videos" data-aos="fade-right" data-aos-duration="1000" data-aos-delay="300" />
         {loading && (
           <div className="text-center text-muted-foreground" style={{ padding: '20px 0' }}>
             Loading videos...

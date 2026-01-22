@@ -1,4 +1,16 @@
 export default function PageHero({ breadcrumb }) {
+  const truncateBreadcrumb = (content) => {
+    if (!content) return '';
+    // Converto a stringa e contiamo le parole
+    const text = content.toString();
+    const words = text.trim().split(/\s+/);
+    
+    if (words.length > 12) {
+      return words.slice(0, 12).join(' ') + '...';
+    }
+    return content;
+  };
+
   return (
     <>
       <section className="page-hero">
@@ -6,7 +18,9 @@ export default function PageHero({ breadcrumb }) {
       </section>
       <div className="page-breadcrumbs-wrap">
         <div className="page-breadcrumbs">
-          <a href="/">Home</a> {breadcrumb && <>{breadcrumb}</>}
+          <span className="breadcrumbs-content">
+            <a href="/">Home</a> {breadcrumb && <>{truncateBreadcrumb(breadcrumb)}</>}
+          </span>
         </div>
       </div>
     </>

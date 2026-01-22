@@ -63,13 +63,16 @@ a {
 body,
 p,
 li,
-a,
 span,
 button,
 input,
 select,
 textarea {
   font-family: var(--font-family-default) !important;
+}
+
+a {
+  font-family: var(--font-family-default);
 }
 
 p,

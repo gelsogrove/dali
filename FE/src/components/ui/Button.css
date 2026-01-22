@@ -12,7 +12,7 @@
   padding: 12px 30px;
   
   /* Typography */
-  font-family: var(--font-family-title);
+  font-family: var(--font-family-title) !important;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: var(--letter-spacing-wide);

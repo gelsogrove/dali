@@ -37,6 +37,7 @@ require_once __DIR__ . '/controllers/HomeController.php';
 require_once __DIR__ . '/controllers/BlogController.php';
 require_once __DIR__ . '/controllers/PhotoGalleryController.php';
 require_once __DIR__ . '/controllers/VideoController.php';
+require_once __DIR__ . '/controllers/TestimonialController.php';
 require_once __DIR__ . '/middleware/AuthMiddleware.php';
 
 // Get request method and path
@@ -83,6 +84,10 @@ try {
 
         case 'videos':
             handleVideoRoutes($segments, $method);
+            break;
+
+        case 'testimonials':
+            handleTestimonialRoutes($segments, $method);
             break;
         
         case 'photogallery':
@@ -422,6 +427,71 @@ function handleVideoRoutes($segments, $method) {
             if (empty($segments[1])) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'error' => 'Video ID required']);
+                return;
+            }
+            $result = $controller->delete($segments[1], $user['user_id']);
+            echo json_encode($result);
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+}
+
+/**
+ * Handle testimonial routes
+ */
+function handleTestimonialRoutes($segments, $method) {
+    $controller = new TestimonialController();
+
+    if ($method === 'GET') {
+        if (!empty($segments[1]) && is_numeric($segments[1])) {
+            $result = $controller->getById($segments[1]);
+            echo json_encode($result);
+            return;
+        }
+
+        $filters = $_GET;
+        $result = $controller->getAll($filters);
+        echo json_encode($result);
+        return;
+    }
+
+    $auth = new AuthMiddleware();
+    $user = $auth->authenticate();
+    if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
+        return;
+    }
+
+    switch ($method) {
+        case 'POST':
+            if (!empty($segments[1]) && $segments[1] === 'reorder') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $result = $controller->reorder($data['order'] ?? [], $user['user_id']);
+                echo json_encode($result);
+                break;
+            }
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->create($data, $user['user_id']);
+            echo json_encode($result);
+            break;
+
+        case 'PUT':
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Testimonial ID required']);
+                return;
+            }
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->update($segments[1], $data, $user['user_id']);
+            echo json_encode($result);
+            break;
+
+        case 'DELETE':
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Testimonial ID required']);
                 return;
             }
             $result = $controller->delete($segments[1], $user['user_id']);

@@ -88,7 +88,7 @@ const BlogDetailPage = () => {
             {blog?.title && (
               <>
                 {' '}<span>»</span>{' '}
-                <a href={`/blog/${slug}`}>{blog.title}</a>
+                <span>{blog.title}</span>
               </>
             )}
           </>
@@ -97,42 +97,42 @@ const BlogDetailPage = () => {
 
       <section className="blog-detail-section">
         <div className="blog-detail-container">
-          <div className="blog-detail-header">
-            <h1 className="blog-detail-title">{blog.title}</h1>
-            
-            {blog.subtitle && (
-              <h2 className="blog-detail-subtitle">{blog.subtitle}</h2>
-            )}
-            
-            <div className="blog-detail-meta">
-              {formatDate(blog.published_date || blog.created_at)}
+          <div className="blog-detail-layout">
+            {(() => {
+              const subtitle = blog.subtitle || blog.description;
+              return (
+                <div className="blog-detail-header">
+                  <h1 className="blog-detail-title">{blog.title}</h1>
+                  {subtitle && (
+                    <h2 className="blog-detail-subtitle">{subtitle}</h2>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Content with floating image */}
+            <div className="blog-detail-content">
+              {blog.content_image ? (
+                <div className="blog-detail-image-large">
+                  <img src={toAbsoluteUrl(blog.content_image)} alt={blog.title} />
+                </div>
+              ) : blog.featured_image ? (
+                <div className="blog-detail-image-inline">
+                  <img src={toAbsoluteUrl(blog.featured_image)} alt={blog.title} />
+                </div>
+              ) : (
+                <div className="blog-detail-image-inline blog-detail-image-placeholder">
+                  <i className="fa fa-newspaper blog-detail-image-placeholder-icon"></i>
+                </div>
+              )}
+              
+              <div className="blog-detail-body" dangerouslySetInnerHTML={{ __html: blog.content }} />
+              
+              <div className="blog-detail-meta">
+                {formatDate(blog.published_date || blog.created_at)}
+              </div>
+
             </div>
-          </div>
-
-          {/* Content with floating image */}
-          <div className="blog-detail-content">
-            {blog.content_image ? (
-              <div className="blog-detail-image-large">
-                <img src={toAbsoluteUrl(blog.content_image)} alt={blog.title} />
-              </div>
-            ) : blog.featured_image ? (
-              <div className="blog-detail-image-inline">
-                <img src={toAbsoluteUrl(blog.featured_image)} alt={blog.title} />
-              </div>
-            ) : (
-              <div className="blog-detail-image-inline blog-detail-image-placeholder">
-                <i className="fa fa-newspaper blog-detail-image-placeholder-icon"></i>
-              </div>
-            )}
-            
-            <div className="blog-detail-body" dangerouslySetInnerHTML={{ __html: blog.content }} />
-          </div>
-
-          {/* Navigation */}
-          <div className="blog-navigation">
-            <ButtonDali href="/category/blog">
-              ← Back to Blog
-            </ButtonDali>
           </div>
         </div>
       </section>

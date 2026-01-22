@@ -69,9 +69,6 @@ class AuthController {
             // Update last login
             $this->updateLastLogin($user['id']);
 
-            // Log activity
-            $this->logActivity($user['id'], 'login', null, null, 'User logged in');
-
             return $this->successResponse([
                 'token' => $token,
                 'refresh_token' => $refreshToken,
@@ -107,9 +104,6 @@ class AuthController {
             // Delete session
             $query = "DELETE FROM sessions WHERE user_id = ? AND token = ?";
             $this->db->executePrepared($query, [$payload['user_id'], $token], 'is');
-
-            // Log activity
-            $this->logActivity($payload['user_id'], 'logout', null, null, 'User logged out');
 
             return $this->successResponse(['message' => 'Logout successful']);
 

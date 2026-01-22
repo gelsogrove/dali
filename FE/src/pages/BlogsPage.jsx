@@ -115,12 +115,14 @@ export default function BlogsPage() {
                 <div className="blog-meta">
                   {formatDate(blog.published_date || blog.created_at)}
                 </div>
-                <h2>{blog.title}</h2>
+                <h2>
+                  <Link to={`/blog/${blog.slug}`}>{blog.title}</Link>
+                </h2>
                 <p>{blog.description}</p>
                 <div className="blog-row-actions">
-                  <ButtonDali asChild>
-                    <Link to={`/blog/${blog.slug}`}>Read More</Link>
-                  </ButtonDali>
+                  <Link to={`/blog/${blog.slug}`} className="button-dali">
+                    Read More
+                  </Link>
                 </div>
               </div>
               {index !== blogs.length - 1 && <div className="blog-row-divider"></div>}

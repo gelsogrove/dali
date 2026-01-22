@@ -801,14 +801,14 @@ header.header {
 
 .fp-grid {
     position: relative;
-    display: flex;
-    flex-flow: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 5px;
 }
 
 .fp-list {
     position: relative;
-    width: calc((100% / 3) - 5px);
+    width: 100%;
 }
 
 /* Rimosso: ora gestito da ImageWithOverlay */
@@ -1192,7 +1192,8 @@ header.header {
     margin-bottom: 30px;
 }
 
-.testi-quote p {
+.testi-quote p,
+.testi-quote .testi-quote-body {
     font-size: 20px;
     letter-spacing: 1px;
     line-height: 24px;
@@ -1213,6 +1214,15 @@ header.header {
     font-family: var(--font-family-title);
     text-align: center;
     display: block;
+}
+
+.testi-date {
+    display: block;
+    text-align: center;
+    color: #7a7a7a;
+    font-size: 13px;
+    letter-spacing: 1px;
+    margin-top: 6px;
 }
 
 .testi-link a {
@@ -1236,13 +1246,13 @@ header.header {
 }
 
 .cta-grid {
-    display: flex;
-    flex-flow: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
     justify-content: center;
 }
 
 .cta-list {
-    width: calc((100% / 3) - 2.5px);
     position: relative;
 }
 
@@ -1412,31 +1422,32 @@ header.header {
 
 .fv-outline {
     border: 10px solid rgba(255, 255, 255, .5);
-    border-radius: 80px;
-    height: 129px;
-    width: 129px;
+    border-radius: 999px;
+    height: 140px;
+    width: 140px;
     display: flex;
     justify-content: center;
     align-items: center;
+    box-sizing: border-box;
 }
 
 .fv-inline {
     border: 1px solid #ffffff;
-    border-radius: 70px;
-    height: 93px;
-    width: 93px;
+    border-radius: 999px;
+    height: 102px;
+    width: 102px;
     display: flex;
     justify-content: center;
     align-items: center;
+    box-sizing: border-box;
 }
 
 .fv-link {
     margin-top: 60px;
 }
 
-.fv-link a {
+.fv-link .button-dali {
     margin: 0 auto;
-    padding: 0 15px;
 }
 
 /* Blogs */

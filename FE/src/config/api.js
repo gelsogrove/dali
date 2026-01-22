@@ -33,4 +33,5 @@ export const endpoints = {
   homeData: '/home',
   videos: '/videos',
   homeVideos: '/home/videos',
+  testimonials: '/testimonials',
 };

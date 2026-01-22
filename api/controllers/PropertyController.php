@@ -77,17 +77,20 @@ class PropertyController {
                      created_at, updated_at 
                      FROM properties 
                      WHERE $whereClause 
-                     ORDER BY featured DESC, created_at DESC";
+                     ORDER BY featured DESC, created_at DESC
+                     LIMIT ? OFFSET ?";
 
             // Add pagination
             $page = isset($filters['page']) ? (int)$filters['page'] : 1;
             $perPage = isset($filters['per_page']) ? (int)$filters['per_page'] : 12;
             $offset = ($page - 1) * $perPage;
-            $query .= " LIMIT $perPage OFFSET $offset";
+            
+            // Add pagination to parameters
+            $params[] = $perPage;
+            $params[] = $offset;
+            $types .= 'ii';
 
-            $result = empty($params) 
-                ? $this->conn->query($query)
-                : $this->db->executePrepared($query, $params, $types);
+            $result = $this->db->executePrepared($query, $params, $types);
 
             if (!$result) {
                 return $this->errorResponse('Failed to fetch properties');
@@ -98,11 +101,14 @@ class PropertyController {
                 $properties[] = $this->formatProperty($row);
             }
 
-            // Get total count
+            // Get total count (without LIMIT/OFFSET)
             $countQuery = "SELECT COUNT(*) as total FROM properties WHERE $whereClause";
-            $countResult = empty($params)
+            // Remove last 2 params (LIMIT/OFFSET) for count
+            $countParams = array_slice($params, 0, -2);
+            $countTypes = substr($types, 0, -2);
+            $countResult = empty($countParams)
                 ? $this->conn->query($countQuery)
-                : $this->db->executePrepared($countQuery, $params, $types);
+                : $this->db->executePrepared($countQuery, $countParams, $countTypes);
             
             $total = $countResult->fetch_assoc()['total'];
 

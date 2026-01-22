@@ -89,66 +89,92 @@ export default function VideosPage() {
             </div>
           )}
 
-          {!loading && !error && videos.map((video, index) => (
-            <article className="video-row" key={video.id || index}>
-              <div className="video-row-media">
-                <a
-                  href={video.video_url}
-                  className="aios-video-popup"
-                  aria-label={`Play ${video.title}`}
-                  onClick={(e) => {
+          {!loading && !error && videos.map((video, index) => {
+            const openVideo = (e) => {
+              if (e) e.preventDefault();
+              setActiveVideo(video);
+            };
+
+            return (
+              <article
+                className="video-row"
+                key={video.id || index}
+                role="button"
+                tabIndex={0}
+                onClick={openVideo}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    setActiveVideo(video);
-                  }}
-                  style={{ position: 'relative', display: 'block', width: '100%', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }}
-                >
-                  {video.thumbnail_url ? (
-                    <img 
-                      src={toAbsoluteUrl(video.thumbnail_url)} 
-                      alt={video.title}
-                      loading="lazy"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.parentElement.classList.add('video-image-error');
-                      }}
-                    />
-                  ) : (
-                    <div className="video-placeholder">
-                      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" stroke="#c19280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M8.5 10C9.32843 10 10 9.32843 10 8.5C10 7.67157 9.32843 7 8.5 7C7.67157 7 7 7.67157 7 8.5C7 9.32843 7.67157 10 8.5 10Z" stroke="#c19280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M21 15L16 10L5 21" stroke="#c19280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                  )}
-                  <div className="fv-play" style={{ pointerEvents: 'none' }}>
-                    <div className="fv-outline">
-                      <div className="fv-inline">
-                        <i className="ai-font-play-button-a"></i>
+                    openVideo();
+                  }
+                }}
+              >
+                <div className="video-row-media">
+                  <a
+                    href={video.video_url}
+                    className="aios-video-popup"
+                    aria-label={`Play ${video.title}`}
+                    onClick={openVideo}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ position: 'relative', display: 'block', width: '100%', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }}
+                  >
+                    {video.thumbnail_url ? (
+                      <img 
+                        src={toAbsoluteUrl(video.thumbnail_url)} 
+                        alt={video.title}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.classList.add('video-image-error');
+                        }}
+                      />
+                    ) : (
+                      <div className="video-placeholder">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" stroke="#c19280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M8.5 10C9.32843 10 10 9.32843 10 8.5C10 7.67157 9.32843 7 8.5 7C7.67157 7 7 7.67157 7 8.5C7 9.32843 7.67157 10 8.5 10Z" stroke="#c19280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M21 15L16 10L5 21" stroke="#c19280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    )}
+                    <div className="fv-play" style={{ pointerEvents: 'none' }}>
+                      <div className="fv-outline">
+                        <div className="fv-inline">
+                          <i className="ai-font-play-button-a"></i>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </a>
-              </div>
-              <div className="video-row-body">
-                <div className="video-meta"></div>
-                <h2>{video.title}</h2>
-                <p>{video.description}</p>
-                <div className="video-row-actions">
-                  <ButtonDali
-                    href={video.video_url}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setActiveVideo(video);
-                    }}
-                  >
-                    Watch Video
-                  </ButtonDali>
+                  </a>
                 </div>
-              </div>
-              {index !== videos.length - 1 && <div className="video-row-divider"></div>}
-            </article>
-          ))}
+                <div className="video-row-body">
+                  <div className="video-meta"></div>
+                  <h2>
+                    <a
+                      href={video.video_url}
+                      onClick={openVideo}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {video.title}
+                    </a>
+                  </h2>
+                  <p>{video.description}</p>
+                  <div className="video-row-actions">
+                    <ButtonDali
+                      href={video.video_url}
+                      onClick={openVideo}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Watch Video
+                    </ButtonDali>
+                  </div>
+                </div>
+                {index !== videos.length - 1 && <div className="video-row-divider"></div>}
+              </article>
+            );
+          })}
         </div>
       </section>
 

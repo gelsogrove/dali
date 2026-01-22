@@ -8,11 +8,13 @@
 
 .contact-wrapper {
   max-width: 1180px;
-  margin: 0 auto;
+  margin: 80px auto !important;
+  margin-top: 7px;
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: var(--card-gap);
   align-items: stretch;
+
 }
 
 /* ===== Contact Card ===== */

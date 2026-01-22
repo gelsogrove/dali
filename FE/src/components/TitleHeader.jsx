@@ -6,10 +6,11 @@ import './TitleHeader.css';
  * Props:
  * - kicker: small uppercase text above title
  * - title: main heading
+ * - subtitle: optional small text under title
  * - align: 'left' | 'center' (default left)
  * - className: extra classes
  */
-export default function TitleHeader({ kicker, title, align = 'left', className = '', aos = true }) {
+export default function TitleHeader({ kicker, title, subtitle, align = 'left', className = '', aos = true }) {
   const aosProps = aos
     ? {
         'data-aos': 'fade-up',
@@ -24,6 +25,7 @@ export default function TitleHeader({ kicker, title, align = 'left', className =
         <div className="title-header__text">
           {kicker && <p className="title-header__kicker">{kicker}</p>}
           <h2 className="title-header__title">{title}</h2>
+          {subtitle && <p className="title-header__subtitle">{subtitle}</p>}
         </div>
       </div>
     </div>

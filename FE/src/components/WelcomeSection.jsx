@@ -23,7 +23,11 @@ export default function WelcomeSection() {
             ))}
           </div>
           <div className="wc-button">
-            <ButtonDali href={welcomeSection.cta.href} target="_blank" rel="noopener noreferrer">
+            <ButtonDali
+              href={welcomeSection.cta.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {welcomeSection.cta.label}
             </ButtonDali>
           </div>

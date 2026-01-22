@@ -64,6 +64,11 @@
 	}
 	/* The following are used on inner pages. Please edit carefully. */
 
+	.fp-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+
 	.inner {
 		width: 100%;
 	}
@@ -201,11 +206,6 @@
 		margin: auto;
 	}
 
-	.fp-grid {
-		max-width: 600px;
-		margin: auto;
-	}
-
 	.fp-links {
 		flex-flow: column;
 		align-items: center;
@@ -239,13 +239,19 @@
 	}
 
 	.fv-outline {
-		width: 99px;
-		height: 99px;
+		width: 140px;
+		height: 140px;
+		border-radius: 999px;
+		border: 10px solid rgba(255, 255, 255, .5);
+		box-sizing: border-box;
 	}
 	
 	.fv-inline {
-		width: 63px;
-		height: 63px;
+		width: 102px;
+		height: 102px;
+		border-radius: 999px;
+		border: 1px solid #ffffff;
+		box-sizing: border-box;
 	}
 
 	.fv-play {

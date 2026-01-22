@@ -74,11 +74,14 @@ class VideoController {
                       FROM videos 
                       WHERE $whereClause 
                       ORDER BY display_order ASC, created_at DESC 
-                      LIMIT $perPage OFFSET $offset";
+                      LIMIT ? OFFSET ?";
+            
+            // Add pagination to parameters
+            $params[] = $perPage;
+            $params[] = $offset;
+            $types .= 'ii';
 
-            $result = empty($params)
-                ? $this->conn->query($query)
-                : $this->db->executePrepared($query, $params, $types);
+            $result = $this->db->executePrepared($query, $params, $types);
 
             if (!$result) {
                 return $this->errorResponse('Failed to fetch videos');
@@ -101,11 +104,14 @@ class VideoController {
                 ]);
             }
 
-            // Count
+            // Count (without LIMIT/OFFSET)
             $countQuery = "SELECT COUNT(*) as total FROM videos WHERE $whereClause";
-            $countResult = empty($params)
+            // Remove last 2 params (LIMIT/OFFSET) for count
+            $countParams = array_slice($params, 0, -2);
+            $countTypes = substr($types, 0, -2);
+            $countResult = empty($countParams)
                 ? $this->conn->query($countQuery)
-                : $this->db->executePrepared($countQuery, $params, $types);
+                : $this->db->executePrepared($countQuery, $countParams, $countTypes);
             $total = $countResult->fetch_assoc()['total'] ?? 0;
 
             return $this->successResponse([

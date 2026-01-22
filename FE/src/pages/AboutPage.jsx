@@ -4,6 +4,7 @@ import ContactSection from '../components/ContactSection';
 import PageHero from '../components/PageHero';
 import { contactInfo } from '../data/homeData';
 import ContactCtaGrid from '../components/ContactCtaGrid';
+import ButtonDali from '../components/ButtonDali';
 
 export default function AboutPage() {
   return (
@@ -34,14 +35,14 @@ export default function AboutPage() {
                   <i className="ai-font-envelope"></i>
                   {contactInfo.email}
                 </a>
-                <a
+                <ButtonDali
                   href="https://calendar.app.google/QoV7AeK9d3B62hqm7"
-                  className="default-button contact-schedule-button"
+                  className="contact-schedule-button"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   Schedule a Call
-                </a>
+                </ButtonDali>
               </div>
             </div>
 

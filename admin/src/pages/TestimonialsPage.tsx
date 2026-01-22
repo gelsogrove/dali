@@ -1,36 +1,19 @@
 import { useEffect, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import TrixEditor from '@/components/TrixEditor'
-import { Calendar, Edit, GripVertical, Plus, Trash2, X } from 'lucide-react'
-
-type TestimonialForm = {
-  author: string
-  content: string
-  testimonial_date: string
-  is_home: boolean
-}
-
-const defaultForm: TestimonialForm = {
-  author: '',
-  content: '',
-  testimonial_date: new Date().toISOString().split('T')[0],
-  is_home: false,
-}
+import { Calendar, Edit, GripVertical, Plus, Trash2 } from 'lucide-react'
 
 export default function TestimonialsPage() {
   const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState('')
   const [list, setList] = useState<any[]>([])
   const [dragIndex, setDragIndex] = useState<number | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingItem, setEditingItem] = useState<any | null>(null)
-  const [formData, setFormData] = useState<TestimonialForm>({ ...defaultForm })
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const { data, isLoading, refetch } = useQuery({
@@ -49,52 +32,6 @@ export default function TestimonialsPage() {
       setList(ordered)
     }
   }, [data])
-
-  const openModal = (item: any | null) => {
-    if (item) {
-      setEditingItem(item)
-      setFormData({
-        author: item.author || '',
-        content: item.content || '',
-        testimonial_date: item.testimonial_date || new Date().toISOString().split('T')[0],
-        is_home: !!item.is_home,
-      })
-    } else {
-      setEditingItem(null)
-      setFormData({
-        ...defaultForm,
-        testimonial_date: new Date().toISOString().split('T')[0],
-      })
-    }
-    setModalOpen(true)
-  }
-
-  const closeModal = () => {
-    setModalOpen(false)
-    setEditingItem(null)
-    setFormData({
-      ...defaultForm,
-      testimonial_date: new Date().toISOString().split('T')[0],
-    })
-  }
-
-  const saveMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      if (editingItem) {
-        return api.put(`/testimonials/${editingItem.id}`, payload)
-      }
-      return api.post('/testimonials', payload)
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['testimonials'] })
-      const refreshed = await refetch()
-      if (refreshed?.data?.testimonials) {
-        const ordered = [...refreshed.data.testimonials].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
-        setList(ordered)
-      }
-      closeModal()
-    },
-  })
 
   const handleDrop = async (targetIndex: number) => {
     if (dragIndex === null || dragIndex === targetIndex) {
@@ -120,25 +57,6 @@ export default function TestimonialsPage() {
       console.error('Failed to reorder testimonials:', error)
       refetch()
     }
-  }
-
-  const handleSave = () => {
-    if (!formData.author.trim()) {
-      alert('Author is required')
-      return
-    }
-    if (!formData.content.trim()) {
-      alert('Content is required')
-      return
-    }
-
-    const payload = {
-      ...formData,
-      testimonial_date: formData.testimonial_date || null,
-      is_home: formData.is_home ? 1 : 0,
-    }
-
-    saveMutation.mutate(payload)
   }
 
   const toggleHome = async (item: any, value: boolean) => {
@@ -189,10 +107,12 @@ export default function TestimonialsPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-56"
           />
-          <Button onClick={() => openModal(null)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Testimonial
-          </Button>
+          <Link to="/testimonials/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Testimonial
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -200,10 +120,12 @@ export default function TestimonialsPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <p className="text-muted-foreground mb-4">No testimonials yet</p>
-            <Button onClick={() => openModal(null)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create your first testimonial
-            </Button>
+            <Link to="/testimonials/new">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Create your first testimonial
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       )}
@@ -226,17 +148,17 @@ export default function TestimonialsPage() {
               </div>
 
               <div className="flex-1 py-4 pr-4">
-                <CardHeader className="p-0 pb-3">
+                <CardHeader className="p-0 pb-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 space-y-1">
-                      <CardTitle className="text-lg">{item.author}</CardTitle>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
+                    <div className="flex-1">
+                      <CardTitle className="line-clamp-1">{item.author}</CardTitle>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <Calendar className="h-3 w-3" />
                         <span>{item.testimonial_date ? format(new Date(item.testimonial_date), 'dd MMM yyyy') : 'No date'}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Show on Home</span>
+                    <div className="flex items-center gap-2 ml-2">
+                        <span className="text-xs text-muted-foreground">Show in Home</span>
                         <Switch
                           checked={!!item.is_home}
                           onCheckedChange={(v) => toggleHome(item, v)}
@@ -248,96 +170,35 @@ export default function TestimonialsPage() {
                 </CardHeader>
 
                 <CardContent className="p-0">
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                     {shortContent(item.content)}
                   </p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>{item.testimonial_date ? format(new Date(item.testimonial_date), 'dd MMM yyyy') : 'No date'}</span>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/testimonials/${item.id}/edit`}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </Link>
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => setDeleteId(item.id)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
-
-                <div className="flex items-center gap-2 pt-4">
-                  <Button variant="outline" size="sm" onClick={() => openModal(item)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => setDeleteId(item.id)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </div>
               </div>
             </div>
           </Card>
         ))}
       </div>
-
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b px-6 py-4">
-              <div>
-                <p className="text-sm text-muted-foreground uppercase tracking-[3px]">Testimonials</p>
-                <h2 className="text-2xl font-semibold">
-                  {editingItem ? 'Edit Testimonial' : 'New Testimonial'}
-                </h2>
-              </div>
-              <Button variant="ghost" size="icon" onClick={closeModal}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-
-            <div className="px-6 py-4 space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Author *</label>
-                  <Input
-                    value={formData.author}
-                    onChange={(e) => setFormData((p) => ({ ...p, author: e.target.value }))}
-                    placeholder="Full name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Date</label>
-                  <Input
-                    type="date"
-                    value={formData.testimonial_date}
-                    onChange={(e) => setFormData((p) => ({ ...p, testimonial_date: e.target.value }))}
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">Content *</label>
-                  <TrixEditor
-                    value={formData.content}
-                    onChange={(value) => setFormData((p) => ({ ...p, content: value }))}
-                    placeholder="Add testimonial text"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Rich text supported; plain text will be shown on site.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 md:col-span-2">
-                  <Switch
-                    checked={!!formData.is_home}
-                    onCheckedChange={(v) => setFormData((p) => ({ ...p, is_home: v }))}
-                    className="data-[state=checked]:bg-green-500"
-                  />
-                  <span className="text-sm font-medium">Show on Home</span>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={closeModal}>
-                  Close
-                </Button>
-                <Button onClick={handleSave} disabled={saveMutation.isPending}>
-                  {saveMutation.isPending ? 'Saving...' : 'Save'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {deleteId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">

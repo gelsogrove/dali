@@ -213,6 +213,26 @@
 
 	.fc-controls {
 		width: 80vw;
+		flex-direction: column;
+		gap: 20px;
+	}
+
+	.fc-controls h3 {
+		font-size: 28px;
+		margin: 0;
+	}
+
+	.fc-controls .prev,
+	.fc-controls .next {
+		display: none;
+	}
+
+	.fc-cities-wrapper {
+		margin-top: 40px;
+	}
+
+	.fc-grid {
+		margin-top: 40px;
 	}
 
 	.wwwu-numbers {
@@ -256,10 +276,6 @@
 
 	.fv-play {
 		font-size: 36px;
-	}
-
-	.fc-controls h3 {
-		font-size: 28px;
 	}
 
 	.blogs-grid {
@@ -325,6 +341,26 @@
 		height: auto;
 	}
 
+	.fc-controls {
+		width: 90vw;
+	}
+
+	.fc-controls h3 {
+		font-size: 24px;
+	}
+
+	.fc-cities-wrapper {
+		margin-top: 30px;
+	}
+
+	.fc-grid {
+		margin-top: 30px;
+	}
+
+	.fc-item {
+		padding: 0 10px;
+	}
+
 }
 	
 
@@ -332,6 +368,23 @@
 @media only screen and (max-width: 480px) {
 	.footer-links a img {
 		width: 100%;
+	}
+
+	.fc-controls h3 {
+		font-size: 20px;
+	}
+
+	.fc-cities-wrapper {
+		margin-top: 20px;
+	}
+
+	.fc-grid {
+		margin-top: 20px;
+	}
+
+	.fc-item-overlay h5,
+	.fc-item-overlay strong {
+		font-size: 20px;
 	}
 
 	#content .entry-title, #content .archive-title {

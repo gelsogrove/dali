@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/button'
-import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Link2, Repeat, BookMarked } from 'lucide-react'
+import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Link2, Repeat } from 'lucide-react'
 import { useState } from 'react'
 
 export default function DashboardLayout() {
@@ -18,15 +18,17 @@ export default function DashboardLayout() {
   const navigation = [
     { name: 'Blogs', href: '/blogs', icon: BookOpen },
     { name: 'Properties', href: '/properties', icon: FileText },
+    { name: 'Link Generation', href: '/link-generation', icon: Link2, nested: true },
     { name: 'Videos', href: '/videos', icon: Video },
     { name: 'Testimonials', href: '/testimonials', icon: MessageSquare },
-    { name: 'Landing Page', href: '/community', icon: MapPin },
+    { name: 'Landing Page', href: '/landing-pages', icon: MapPin },
+    { name: 'Cities', href: '/cities', icon: MapPin, nested: true },
+    { name: 'Areas', href: '/areas', icon: MapPin, nested: true },
+    { name: 'Buyers Guide (WIP)', href: '/buyers-guide', icon: MapPin, nested: true },
   ]
 
   const utilityNav = [
-    { name: 'Link Generation', href: '/link-generation', icon: Link2 },
     { name: 'Redirects', href: '/redirects', icon: Repeat },
-    // { name: 'SEO Rules', href: '/seo-rules', icon: BookMarked }, // hidden
   ]
 
   return (
@@ -53,7 +55,7 @@ export default function DashboardLayout() {
             <Link
               key={item.name}
               to={item.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors ${item.nested ? 'pl-8 text-sm' : ''}`}
             >
               <item.icon className="h-5 w-5" />
               {sidebarOpen && <span>{item.name}</span>}

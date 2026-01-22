@@ -81,19 +81,19 @@
 
 .blog-row-body h2 {
   font-family: var(--font-family-default) !important;
-  font-size: 32px !important;
+  font-size: 27px !important;
   color: #c19280 !important;
   margin: 0;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
   line-height: 1.2 !important;
   letter-spacing: 0 !important;
 }
 
 .blog-row-body h2 a {
   font-family: var(--font-family-default) !important;
-  font-size: 32px !important;
+  font-size: 27px !important;
   color: #c19280 !important;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
   line-height: 1.2 !important;
   letter-spacing: 0 !important;
   text-decoration: none;

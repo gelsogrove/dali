@@ -21,7 +21,9 @@ import VideosPage from './pages/VideosPage';
 import CommunitiesPage from './pages/CommunitiesPage';
 import ListWithDaliPage from './pages/ListWithDaliPage';
 import CommunityPage from './pages/CommunityPage';
-import BuyersGuidePage from './pages/BuyersGuidePage';
+import CityPage from './pages/CityPage';
+import AreaPage from './pages/AreaPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ListingDetailPage from './pages/ListingDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -62,9 +64,10 @@ export default function App() {
                 <Route path="/communities" element={<CommunitiesPage />} />
                 <Route path="/list-with-dali" element={<ListWithDaliPage />} />
                 <Route path="/videos" element={<VideosPage />} />
-                <Route path="/community/:slug" element={<CommunityPage />} />
-                <Route path="/buyers-guide" element={<BuyersGuidePage />} />
+                <Route path="/community/:citySlug/:areaSlug" element={<AreaPage />} />
+                <Route path="/community/:citySlug" element={<CityPage />} />
                 <Route path="/search" element={<SearchPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/category/blog" element={<BlogsPage />} />
                 <Route path="/blogs" element={<BlogsPage />} />
                 <Route path="/blog/:slug" element={<BlogDetailPage />} />

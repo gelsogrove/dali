@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function PageHero({ breadcrumb }) {
   const truncateBreadcrumb = (content) => {
     if (!content) return '';
@@ -19,7 +21,7 @@ export default function PageHero({ breadcrumb }) {
       <div className="page-breadcrumbs-wrap">
         <div className="page-breadcrumbs">
           <span className="breadcrumbs-content">
-            <a href="/">Home</a> {breadcrumb && <>{truncateBreadcrumb(breadcrumb)}</>}
+            <Link to="/">Home</Link> {breadcrumb && <>{truncateBreadcrumb(breadcrumb)}</>}
           </span>
         </div>
       </div>

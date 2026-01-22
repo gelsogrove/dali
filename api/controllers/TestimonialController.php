@@ -1,14 +1,17 @@
 <?php
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../lib/SitemapService.php';
 
 class TestimonialController {
     private $db;
     private $conn;
+    private $sitemapService;
 
     public function __construct() {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
+        $this->sitemapService = new SitemapService($this->conn);
         $this->ensureSchema();
     }
 
@@ -157,6 +160,9 @@ class TestimonialController {
             $id = $this->db->getLastInsertId();
             $this->logActivity($userId, 'create', 'testimonial', $id, "Created testimonial from {$data['author']}");
 
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
+
             return $this->successResponse([
                 'id' => $id,
                 'message' => 'Testimonial created successfully',
@@ -206,6 +212,9 @@ class TestimonialController {
 
             $this->logActivity($userId, 'update', 'testimonial', $id, "Updated testimonial #{$id}");
 
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
+
             return $this->successResponse(['message' => 'Testimonial updated successfully']);
         } catch (Exception $e) {
             error_log("Error updating testimonial: " . $e->getMessage());
@@ -224,6 +233,9 @@ class TestimonialController {
             }
 
             $this->logActivity($userId, 'delete', 'testimonial', $id, "Deleted testimonial #{$id}");
+
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
 
             return $this->successResponse(['message' => 'Testimonial deleted successfully']);
         } catch (Exception $e) {

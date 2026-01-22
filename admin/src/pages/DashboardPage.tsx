@@ -69,44 +69,6 @@ export default function DashboardPage() {
   )
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <SummaryCard
-          title="Blogs on Home"
-          items={blogs}
-          render={(b) => (
-            <div key={b.id} className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="font-medium leading-tight">{b.title}</p>
-                <p className="text-muted-foreground text-xs">/blog/{b.slug}</p>
-              </div>
-              {b.published_date && <span className="text-xs text-muted-foreground">{formatDate(b.published_date)}</span>}
-            </div>
-          )}
-        />
-
-        <SummaryCard
-          title="Videos on Home"
-          items={videos}
-          render={(v) => (
-            <div key={v.id} className="flex items-start justify-between">
-              <p className="font-medium leading-tight">{v.title}</p>
-              <span className="text-xs text-muted-foreground">Video</span>
-            </div>
-          )}
-        />
-
-        <SummaryCard
-          title="Testimonials on Home"
-          items={testimonials}
-          render={(t) => (
-            <div key={t.id} className="flex items-start justify-between">
-              <p className="font-medium leading-tight">{t.author}</p>
-              {t.testimonial_date && <span className="text-xs text-muted-foreground">{formatDate(t.testimonial_date)}</span>}
-            </div>
-          )}
-        />
-      </div>
-    </div>
+    <div className="space-y-6" />
   )
 }

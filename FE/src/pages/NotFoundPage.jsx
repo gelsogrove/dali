@@ -19,7 +19,9 @@ const NotFoundPage = () => {
           </p>
           <div className="not-found-actions">
             <Link to="/" className="button-dali">Go to Home</Link>
-            <Link to="/category/blog" className="button-dali outline">View Blogs</Link>
+          </div>
+          <div className="not-found-photo">
+            <img src="/images/IMG_4663-min.jpg" alt="Dalila Gelsomino" />
           </div>
         </div>
       </section>

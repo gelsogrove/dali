@@ -12,11 +12,19 @@ import BlogFormPage from './pages/BlogFormPage'
 import PhotoGalleryPage from './pages/PhotoGalleryPage'
 import PhotoGalleryFormPage from './pages/PhotoGalleryFormPage'
 import VideosPage from './pages/VideosPage'
-import CommunitiesPage from './pages/CommunitiesPage'
+import VideoFormPage from './pages/VideoFormPage'
+// import CommunitiesPage from './pages/CommunitiesPage' // Not yet implemented
 import LinkGenerationPage from './pages/LinkGenerationPage'
 import TestimonialsPage from './pages/TestimonialsPage'
+import TestimonialFormPage from './pages/TestimonialFormPage'
 import RedirectsPage from './pages/RedirectsPage'
 import SeoRulesPage from './pages/SeoRulesPage'
+import LandingPagesHub from './pages/LandingPagesHub'
+import CitiesPage from './pages/CitiesPage'
+import CityFormPage from './pages/CityFormPage'
+import AreasPage from './pages/AreasPage'
+import AreaFormPage from './pages/AreaFormPage'
+import BuyersGuideAdminPage from './pages/BuyersGuideAdminPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
@@ -114,10 +122,21 @@ function App() {
         <Route path="photogallery/upload" element={<PhotoGalleryFormPage />} />
         <Route path="photogallery/:id/edit" element={<PhotoGalleryFormPage />} />
         <Route path="videos" element={<VideosPage />} />
+        <Route path="videos/new" element={<VideoFormPage />} />
+        <Route path="videos/:id/edit" element={<VideoFormPage />} />
         <Route path="testimonials" element={<TestimonialsPage />} />
+        <Route path="testimonials/new" element={<TestimonialFormPage />} />
+        <Route path="testimonials/:id/edit" element={<TestimonialFormPage />} />
         <Route path="redirects" element={<RedirectsPage />} />
         <Route path="feedbacks" element={<Navigate to="/testimonials" replace />} />
-        <Route path="community" element={<CommunitiesPage />} />
+        <Route path="landing-pages" element={<LandingPagesHub />} />
+        <Route path="cities" element={<CitiesPage />} />
+        <Route path="cities/new" element={<CityFormPage />} />
+        <Route path="cities/:id/edit" element={<CityFormPage />} />
+        <Route path="areas" element={<AreasPage />} />
+        <Route path="areas/new" element={<AreaFormPage />} />
+        <Route path="areas/:id/edit" element={<AreaFormPage />} />
+        <Route path="buyers-guide" element={<BuyersGuideAdminPage />} />
         <Route path="link-generation" element={<LinkGenerationPage />} />
         <Route path="seo-rules" element={<SeoRulesPage />} />
       </Route>

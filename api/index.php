@@ -38,6 +38,8 @@ require_once __DIR__ . '/controllers/BlogController.php';
 require_once __DIR__ . '/controllers/PhotoGalleryController.php';
 require_once __DIR__ . '/controllers/VideoController.php';
 require_once __DIR__ . '/controllers/TestimonialController.php';
+require_once __DIR__ . '/controllers/CityController.php';
+require_once __DIR__ . '/controllers/AreaController.php';
 // Normalize base dir to avoid trailing spaces/newlines in production paths
 $__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
 require_once $__baseDir . '/config/database.php';
@@ -94,6 +96,14 @@ try {
 
         case 'testimonials':
             handleTestimonialRoutes($segments, $method);
+            break;
+
+        case 'cities':
+            handleCityRoutes($segments, $method);
+            break;
+
+        case 'areas':
+            handleAreaRoutes($segments, $method);
             break;
 
         case 'redirects':
@@ -254,6 +264,16 @@ function handleUploadRoutes($segments, $method) {
             
             case 'blog-image':
                 $result = $controller->uploadBlogImage($_FILES['image'] ?? null);
+                echo json_encode($result);
+                break;
+            
+            case 'city-image':
+                $result = $controller->uploadCityImage($_FILES['image'] ?? null);
+                echo json_encode($result);
+                break;
+
+            case 'area-image':
+                $result = $controller->uploadAreaImage($_FILES['image'] ?? null);
                 echo json_encode($result);
                 break;
             
@@ -506,6 +526,126 @@ function handleTestimonialRoutes($segments, $method) {
             }
             $result = $controller->delete($segments[1], $user['user_id']);
             echo json_encode($result);
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+}
+
+/**
+ * Handle city routes
+ */
+function handleCityRoutes($segments, $method) {
+    $controller = new CityController();
+    $auth = new AuthMiddleware();
+
+    switch ($method) {
+        case 'GET':
+            if (isset($segments[1]) && $segments[1] === 'slug' && !empty($segments[2])) {
+                $result = $controller->getBySlug($segments[2]);
+            } elseif (isset($segments[1]) && is_numeric($segments[1])) {
+                $result = $controller->getById($segments[1]);
+            } else {
+                $result = $controller->getAll($_GET);
+            }
+            echo json_encode($result);
+            break;
+
+        case 'POST':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $result = $controller->create($data, $user['user_id']);
+                echo json_encode($result);
+            }
+            break;
+
+        case 'PUT':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                if (isset($segments[1]) && $segments[1] === 'reorder') {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $items = $data['items'] ?? [];
+                    $result = $controller->reorder($items, $user['user_id']);
+                    echo json_encode($result);
+                } elseif (isset($segments[1]) && is_numeric($segments[1])) {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $result = $controller->update($segments[1], $data, $user['user_id']);
+                    echo json_encode($result);
+                }
+            }
+            break;
+
+        case 'DELETE':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin'])) {
+                if (isset($segments[1]) && is_numeric($segments[1])) {
+                    $result = $controller->delete($segments[1], $user['user_id']);
+                    echo json_encode($result);
+                }
+            }
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+}
+
+/**
+ * Handle area routes
+ */
+function handleAreaRoutes($segments, $method) {
+    $controller = new AreaController();
+    $auth = new AuthMiddleware();
+
+    switch ($method) {
+        case 'GET':
+            if (isset($segments[1]) && $segments[1] === 'slug' && !empty($segments[2]) && !empty($segments[3])) {
+                $result = $controller->getBySlug($segments[2], $segments[3]);
+            } elseif (isset($segments[1]) && is_numeric($segments[1])) {
+                $result = $controller->getById($segments[1]);
+            } else {
+                $result = $controller->getAll($_GET);
+            }
+            echo json_encode($result);
+            break;
+
+        case 'POST':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $result = $controller->create($data, $user['user_id']);
+                echo json_encode($result);
+            }
+            break;
+
+        case 'PUT':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                if (isset($segments[1]) && $segments[1] === 'reorder') {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $items = $data['items'] ?? [];
+                    $result = $controller->reorder($items, $user['user_id']);
+                    echo json_encode($result);
+                } elseif (isset($segments[1]) && is_numeric($segments[1])) {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $result = $controller->update($segments[1], $data, $user['user_id']);
+                    echo json_encode($result);
+                }
+            }
+            break;
+
+        case 'DELETE':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin'])) {
+                if (isset($segments[1]) && is_numeric($segments[1])) {
+                    $result = $controller->delete($segments[1], $user['user_id']);
+                    echo json_encode($result);
+                }
+            }
             break;
 
         default:

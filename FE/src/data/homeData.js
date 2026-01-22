@@ -248,10 +248,7 @@ export const testimonials = [
   },
 ];
 
-export const ctaCards = [
-  { title: 'List With Dali', href: '/list-with-dali', image: '/images/cta-2.jpg' },
-  { title: 'Buyers Guide', href: '/buyers-guide', image: '/images/cta-3.jpg' },
-];
+export const ctaCards = [];
 
 export const videos = [
   { url: 'https://player.vimeo.com/video/1042515673', image: '/images/Buy-with-Dali-1.jpg' },

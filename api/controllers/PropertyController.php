@@ -1,14 +1,17 @@
 <?php
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../lib/SitemapService.php';
 
 class PropertyController {
     private $db;
     private $conn;
+    private $sitemapService;
 
     public function __construct() {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
+        $this->sitemapService = new SitemapService($this->conn);
     }
 
     /**
@@ -255,6 +258,9 @@ class PropertyController {
             // Log activity
             $this->logActivity($userId, 'create', 'property', $propertyId, "Created property: {$data['title']}");
 
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
+
             return $this->successResponse([
                 'id' => $propertyId,
                 'slug' => $slug,
@@ -326,6 +332,9 @@ class PropertyController {
             // Log activity
             $this->logActivity($userId, 'update', 'property', $id, "Updated property ID: $id");
 
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
+
             return $this->successResponse(['message' => 'Property updated successfully']);
 
         } catch (Exception $e) {
@@ -362,6 +371,9 @@ class PropertyController {
 
             // Log activity
             $this->logActivity($userId, 'delete', 'property', $id, "Deleted property: {$property['title']}");
+
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
 
             return $this->successResponse(['message' => 'Property deleted successfully']);
 

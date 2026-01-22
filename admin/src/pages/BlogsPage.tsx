@@ -44,15 +44,22 @@ export default function BlogsPage() {
     queryFn: async () => {
       const q = searchTerm ? `&q=${encodeURIComponent(searchTerm)}` : ''
       const response = await api.get(`/blogs?include_deleted=false${q}`)
-      return response.data.data
+      // normalizza: payload può essere {blogs:[]}, oppure direttamente []
+      const raw = response.data?.data ?? response.data ?? []
+      const blogs = Array.isArray(raw?.blogs) ? raw.blogs : Array.isArray(raw) ? raw : []
+      const pagination = raw?.pagination ?? null
+      return { blogs, pagination }
     },
     refetchOnWindowFocus: false,
   })
 
   useEffect(() => {
-    if (data?.blogs) {
-      const ordered = [...data.blogs].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+    const blogs = (data as any)?.blogs || []
+    if (blogs.length) {
+      const ordered = [...blogs].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
       setList(ordered)
+    } else {
+      setList([])
     }
   }, [data])
 
@@ -161,7 +168,7 @@ export default function BlogsPage() {
         <div>
           <h1 className="text-3xl font-bold">Blogs</h1>
           <p className="text-muted-foreground">
-            {data?.pagination?.total || list.length || 0} total blogs
+            {(data as any)?.pagination?.total ?? list.length ?? 0} total blogs
           </p>
         </div>
         <div className="flex items-center gap-3">

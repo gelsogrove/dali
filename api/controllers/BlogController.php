@@ -4,16 +4,20 @@ $__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
 require_once $__baseDir . '/../config/database.php';
 $__redirectPath = realpath($__baseDir . '/../lib/RedirectService.php') ?: ($__baseDir . '/../lib/RedirectService.php');
 require_once $__redirectPath;
+$__sitemapPath = realpath($__baseDir . '/../lib/SitemapService.php') ?: ($__baseDir . '/../lib/SitemapService.php');
+require_once $__sitemapPath;
 
 class BlogController {
     private $db;
     private $conn;
     private $redirectService;
+    private $sitemapService;
 
     public function __construct() {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
         $this->redirectService = new RedirectService($this->conn);
+        $this->sitemapService = new SitemapService($this->conn);
     }
 
     /**
@@ -209,6 +213,9 @@ class BlogController {
             // Log activity
             $this->logActivity($userId, 'create', 'blog', $blogId, "Created blog: {$data['title']}");
 
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
+
             return $this->successResponse([
                 'id' => $blogId,
                 'slug' => $slug,
@@ -291,6 +298,9 @@ class BlogController {
             // Log activity
             $this->logActivity($userId, 'update', 'blog', $id, "Updated blog: {$data['title']}");
 
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
+
             return $this->successResponse(['message' => 'Blog updated successfully']);
 
         } catch (Exception $e) {
@@ -346,6 +356,10 @@ class BlogController {
                 }
 
                 $this->logActivity($userId, 'delete', 'blog', $id, "Deleted archived blog ID: $id");
+                
+                // Regenerate sitemap
+                $this->sitemapService->generateSitemap();
+                
                 return $this->successResponse(['message' => 'Blog deleted (was already archived); redirect placeholder kept/ensured']);
             }
 
@@ -374,6 +388,10 @@ class BlogController {
                 }
 
                 $this->logActivity($userId, 'delete', 'blog', $id, "Deleted blog ID: $id");
+                
+                // Regenerate sitemap
+                $this->sitemapService->generateSitemap();
+                
                 return $this->successResponse(['message' => 'Blog deleted permanently (created < 24h)']);
             }
 
@@ -396,6 +414,9 @@ class BlogController {
             }
 
             $this->logActivity($userId, 'archive', 'blog', $id, "Archived blog ID: $id and created redirect placeholder");
+
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
 
             return $this->successResponse([
                 'message' => 'Blog archived for SEO. A redirect entry was created with empty urlNew; please set the destination.'

@@ -4,18 +4,22 @@ $__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
 require_once $__baseDir . '/../config/database.php';
 $__redirectPath = realpath($__baseDir . '/../lib/RedirectService.php') ?: ($__baseDir . '/../lib/RedirectService.php');
 require_once $__redirectPath;
+$__sitemapPath = realpath($__baseDir . '/../lib/SitemapService.php') ?: ($__baseDir . '/../lib/SitemapService.php');
+require_once $__sitemapPath;
 
 class VideoController {
     private $db;
     private $conn;
     private $hasCreatedBy = false;
     private $redirectService;
+    private $sitemapService;
 
     public function __construct() {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
         $this->ensureSchema();
         $this->redirectService = new RedirectService($this->conn);
+        $this->sitemapService = new SitemapService($this->conn);
     }
 
     /**
@@ -202,6 +206,9 @@ class VideoController {
             $videoId = $this->db->getLastInsertId();
             $this->logActivity($userId, 'create', 'video', $videoId, "Created video: {$data['title']}");
 
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
+
             return $this->successResponse([
                 'id' => $videoId,
                 'message' => 'Video created successfully'
@@ -259,6 +266,9 @@ class VideoController {
 
             $this->logActivity($userId, 'update', 'video', $id, "Updated video: {$data['title']}");
 
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
+
             return $this->successResponse(['message' => 'Video updated successfully']);
         } catch (Exception $e) {
             error_log("Error updating video: " . $e->getMessage());
@@ -297,6 +307,10 @@ class VideoController {
                 }
 
                 $this->logActivity($userId, 'delete', 'video', $id, "Deleted video ID: $id");
+                
+                // Regenerate sitemap
+                $this->sitemapService->generateSitemap();
+                
                 return $this->successResponse(['message' => 'Video deleted permanently (created < 24h)']);
             }
 
@@ -318,6 +332,10 @@ class VideoController {
             }
 
             $this->logActivity($userId, 'archive', 'video', $id, "Archived video ID: $id and created redirect placeholder");
+            
+            // Regenerate sitemap
+            $this->sitemapService->generateSitemap();
+            
             return $this->successResponse([
                 'message' => 'Video archived for SEO. A redirect entry was created with empty urlNew; please set the destination.'
             ]);

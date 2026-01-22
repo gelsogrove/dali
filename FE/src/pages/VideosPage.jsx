@@ -13,6 +13,7 @@ export default function VideosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeVideo, setActiveVideo] = useState(null);
+  const [imageErrors, setImageErrors] = useState({});
   const apiBase = import.meta.env.VITE_API_URL || '/api';
   const assetBase = useMemo(() => apiBase.replace(/\/api$/, ''), [apiBase]);
 
@@ -119,23 +120,18 @@ export default function VideosPage() {
                     rel="noopener noreferrer"
                     style={{ position: 'relative', display: 'block', width: '100%', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }}
                   >
-                    {video.thumbnail_url ? (
+                    {video.thumbnail_url && !imageErrors[video.id] ? (
                       <img 
                         src={toAbsoluteUrl(video.thumbnail_url)} 
                         alt={video.thumbnail_alt || video.title}
                         loading="lazy"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.parentElement.classList.add('video-image-error');
-                        }}
+                        onError={() =>
+                          setImageErrors((prev) => ({ ...prev, [video.id]: true }))
+                        }
                       />
                     ) : (
                       <div className="video-placeholder">
-                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" stroke="#c19280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M8.5 10C9.32843 10 10 9.32843 10 8.5C10 7.67157 9.32843 7 8.5 7C7.67157 7 7 7.67157 7 8.5C7 9.32843 7.67157 10 8.5 10Z" stroke="#c19280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M21 15L16 10L5 21" stroke="#c19280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
+                        <div className="placeholder-box" aria-hidden="true" />
                       </div>
                     )}
                     <div className="fv-play" style={{ pointerEvents: 'none' }}>

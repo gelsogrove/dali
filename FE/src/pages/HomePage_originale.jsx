@@ -9,7 +9,6 @@ import Testimonials from '../components/Testimonials';
 import CtaSection from '../components/CtaSection';
 import FeaturedVideos from '../components/FeaturedVideos';
 import BlogsSection from '../components/BlogsSection';
-import ContactCtaGrid from '../components/ContactCtaGrid';
 import ContactSection from '../components/ContactSection';
 
 export default function HomePage() {
@@ -25,7 +24,6 @@ export default function HomePage() {
       <CtaSection />
       <FeaturedVideos />
       <BlogsSection />
-      <ContactCtaGrid />
       <ContactSection />
     </>
   );

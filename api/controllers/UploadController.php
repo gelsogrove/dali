@@ -15,7 +15,7 @@ class UploadController {
         
         // Create upload directories if they don't exist
         $legacyDirs = ['properties', 'videos', 'galleries', 'temp', 'blogs'];
-        $imageDirs = ['images', 'images/blog', 'images/video', 'images/properties', 'images/city'];
+        $imageDirs = ['images', 'images/blog', 'images/video', 'images/properties', 'images/city', 'images/area'];
         $dirs = array_merge($legacyDirs, $imageDirs);
         foreach ($dirs as $dir) {
             $path = $this->uploadDir . '/' . $dir;
@@ -441,6 +441,80 @@ class UploadController {
                 $urls[$version] = '/uploads/images/blog/' . $versionFilename;
             }
 
+        return $this->successResponse([
+            'filename' => $filename,
+            'url' => $urls['original'],
+            'urls' => $urls,
+            'size' => filesize($basePath . '/' . $filename)
+        ], 201);
+
+    } catch (Exception $e) {
+        error_log("Upload blog image error: " . $e->getMessage());
+        return $this->errorResponse('An error occurred during upload');
+    }
+}
+
+    /**
+     * Upload city image (cover/content) stored under /uploads/images/city
+     */
+    public function uploadCityImage($file) {
+        return $this->uploadGenericImage($file, 'city');
+    }
+
+    /**
+     * Upload area image (cover/content) stored under /uploads/images/area
+     */
+    public function uploadAreaImage($file) {
+        return $this->uploadGenericImage($file, 'area');
+    }
+
+    /**
+     * Generic image upload for city/area
+     */
+    private function uploadGenericImage($file, $folder) {
+        try {
+            $validation = $this->validateImageUpload($file);
+            if (!$validation['success']) {
+                return $validation;
+            }
+
+            $originalName = $file['name'];
+            $tempPath = $file['tmp_name'];
+            $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+            $filename = $this->generateUniqueFilename($extension, $folder, $originalName);
+            $basePath = $this->uploadDir . '/images/' . $folder;
+
+            $versions = [
+                'original' => ['width' => 1920, 'quality' => 90],
+                'medium' => ['width' => 800, 'quality' => 80],
+                'thumbnail' => ['width' => 400, 'quality' => 75]
+            ];
+
+            $urls = [];
+
+            foreach ($versions as $version => $settings) {
+                $versionFilename = $version === 'original'
+                    ? $filename
+                    : str_replace(".{$extension}", "_{$version}.{$extension}", $filename);
+
+                $destinationPath = $basePath . '/' . $versionFilename;
+
+                $result = $this->resizeImage(
+                    $tempPath,
+                    $destinationPath,
+                    $settings['width'],
+                    $settings['quality']
+                );
+
+                if (!$result) {
+                    $this->cleanupFiles($urls);
+                    return $this->errorResponse('Failed to process image');
+                }
+
+                $urls[$version] = "/uploads/images/{$folder}/" . $versionFilename;
+            }
+
             return $this->successResponse([
                 'filename' => $filename,
                 'url' => $urls['original'],
@@ -449,7 +523,7 @@ class UploadController {
             ], 201);
 
         } catch (Exception $e) {
-            error_log("Upload blog image error: " . $e->getMessage());
+            error_log("Upload {$folder} image error: " . $e->getMessage());
             return $this->errorResponse('An error occurred during upload');
         }
     }

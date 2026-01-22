@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/button'
-import { Home, FileText, LogOut, Menu, BookOpen, Image, Video, MessageSquare, MapPin, Link2 } from 'lucide-react'
+import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Link2, Repeat, BookMarked } from 'lucide-react'
 import { useState } from 'react'
 
 export default function DashboardLayout() {
@@ -16,14 +16,17 @@ export default function DashboardLayout() {
   }
 
   const navigation = [
-    { name: 'Home', href: '/', icon: Home },
     { name: 'Blogs', href: '/blogs', icon: BookOpen },
     { name: 'Properties', href: '/properties', icon: FileText },
-    { name: 'Photo Gallery', href: '/photogallery', icon: Image },
     { name: 'Videos', href: '/videos', icon: Video },
     { name: 'Testimonials', href: '/testimonials', icon: MessageSquare },
-    { name: 'Community', href: '/community', icon: MapPin },
+    { name: 'Landing Page', href: '/community', icon: MapPin },
+  ]
+
+  const utilityNav = [
     { name: 'Link Generation', href: '/link-generation', icon: Link2 },
+    { name: 'Redirects', href: '/redirects', icon: Repeat },
+    // { name: 'SEO Rules', href: '/seo-rules', icon: BookMarked }, // hidden
   ]
 
   return (
@@ -47,6 +50,19 @@ export default function DashboardLayout() {
 
         <nav className="flex-1 p-4 space-y-2">
           {navigation.map((item) => (
+            <Link
+              key={item.name}
+              to={item.href}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+            >
+              <item.icon className="h-5 w-5" />
+              {sidebarOpen && <span>{item.name}</span>}
+            </Link>
+          ))}
+
+          <div className="border-t border-gray-200 my-3"></div>
+
+          {utilityNav.map((item) => (
             <Link
               key={item.name}
               to={item.href}

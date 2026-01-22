@@ -38,6 +38,12 @@ require_once __DIR__ . '/controllers/BlogController.php';
 require_once __DIR__ . '/controllers/PhotoGalleryController.php';
 require_once __DIR__ . '/controllers/VideoController.php';
 require_once __DIR__ . '/controllers/TestimonialController.php';
+// Normalize base dir to avoid trailing spaces/newlines in production paths
+$__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
+require_once $__baseDir . '/config/database.php';
+$__redirectPath = realpath($__baseDir . '/lib/RedirectService.php') ?: ($__baseDir . '/lib/RedirectService.php');
+require_once $__redirectPath;
+require_once __DIR__ . '/controllers/RedirectController.php';
 require_once __DIR__ . '/middleware/AuthMiddleware.php';
 
 // Get request method and path
@@ -88,6 +94,10 @@ try {
 
         case 'testimonials':
             handleTestimonialRoutes($segments, $method);
+            break;
+
+        case 'redirects':
+            handleRedirectRoutes($segments, $method);
             break;
         
         case 'photogallery':
@@ -495,6 +505,73 @@ function handleTestimonialRoutes($segments, $method) {
                 return;
             }
             $result = $controller->delete($segments[1], $user['user_id']);
+            echo json_encode($result);
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+}
+
+/**
+ * Handle redirect routes
+ */
+function handleRedirectRoutes($segments, $method) {
+    $controller = new RedirectController();
+
+    switch ($method) {
+        case 'GET':
+            // Public resolve: /redirects/resolve?urlOld=/path
+            if (!empty($segments[1]) && $segments[1] === 'resolve') {
+                $urlOld = $_GET['urlOld'] ?? '';
+                $result = $controller->resolve($urlOld);
+                echo json_encode($result);
+                return;
+            }
+
+            // Protected routes
+            $auth = new AuthMiddleware();
+            $user = $auth->authenticate();
+            if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+                return;
+            }
+
+            if (!empty($segments[1]) && is_numeric($segments[1])) {
+                $result = $controller->getById((int)$segments[1]);
+                echo json_encode($result);
+                return;
+            }
+            $result = $controller->getAll();
+            echo json_encode($result);
+            break;
+
+        case 'POST':
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->create($data, $user['user_id']);
+            echo json_encode($result);
+            break;
+
+        case 'PUT':
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Redirect ID required']);
+                return;
+            }
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->update((int)$segments[1], $data, $user['user_id']);
+            echo json_encode($result);
+            break;
+
+        case 'DELETE':
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Redirect ID required']);
+                return;
+            }
+            $result = $controller->delete((int)$segments[1], $user['user_id']);
             echo json_encode($result);
             break;
 

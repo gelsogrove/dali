@@ -140,16 +140,6 @@ export default function ContactPage() {
             <h3>Property Value</h3>
             <p>Get a free valuation estimate</p>
           </a>
-          <a href="/newsletter" className="contact-cta-modern" data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">
-            <div className="contact-cta-icon">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M22 6L12 13L2 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <h3>Mailing List</h3>
-            <p>Stay updated with market news</p>
-          </a>
         </div>
       </section>
 

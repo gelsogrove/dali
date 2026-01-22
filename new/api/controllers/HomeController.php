@@ -56,10 +56,10 @@ class HomeController {
             $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 5;
             $videosQuery = "SELECT 
                 id, property_id, title, description, 
-                video_url, video_type, thumbnail_url, 
+                video_url, video_type, thumbnail_url, thumbnail_alt,
                 display_order
                 FROM videos 
-                WHERE is_active = 1 AND (property_id IS NULL OR property_id = 0)
+                WHERE is_home = 1 AND deleted_at IS NULL AND (property_id IS NULL OR property_id = 0)
                 ORDER BY display_order ASC, created_at DESC
                 LIMIT ?";
             
@@ -76,11 +76,51 @@ class HomeController {
             }
             $videosStmt->close();
 
+            // Home blogs (is_home = 1)
+            $blogLimit = isset($_GET['blog_limit']) ? max(1, (int)$_GET['blog_limit']) : 6;
+            $blogsQuery = "SELECT id, title, slug, seoTitle, seoDescription, featured_image, featured_image_alt, content_image, content_image_alt, published_date 
+                           FROM blogs 
+                           WHERE is_home = 1 AND deleted_at IS NULL 
+                           ORDER BY display_order ASC, published_date DESC, created_at DESC 
+                           LIMIT ?";
+            $blogsStmt = $this->conn->prepare($blogsQuery);
+            $blogsStmt->bind_param('i', $blogLimit);
+            $blogsStmt->execute();
+            $blogsResult = $blogsStmt->get_result();
+            $blogs = [];
+            if ($blogsResult && $blogsResult->num_rows > 0) {
+                while ($row = $blogsResult->fetch_assoc()) {
+                    $blogs[] = $row;
+                }
+            }
+            $blogsStmt->close();
+
+            // Home testimonials (is_home = 1)
+            $testLimit = isset($_GET['testimonial_limit']) ? max(1, (int)$_GET['testimonial_limit']) : 6;
+            $testQuery = "SELECT id, author, content, testimonial_date, display_order 
+                          FROM testimonials 
+                          WHERE is_home = 1 
+                          ORDER BY display_order ASC, testimonial_date DESC, created_at DESC 
+                          LIMIT ?";
+            $testStmt = $this->conn->prepare($testQuery);
+            $testStmt->bind_param('i', $testLimit);
+            $testStmt->execute();
+            $testResult = $testStmt->get_result();
+            $testimonials = [];
+            if ($testResult && $testResult->num_rows > 0) {
+                while ($row = $testResult->fetch_assoc()) {
+                    $testimonials[] = $row;
+                }
+            }
+            $testStmt->close();
+
             return [
                 'success' => true,
                 'data' => [
                     'featured_properties' => $properties,
-                    'featured_videos' => $videos
+                    'featured_videos' => $videos,
+                    'home_blogs' => $blogs,
+                    'home_testimonials' => $testimonials
                 ]
             ];
 
@@ -102,10 +142,10 @@ class HomeController {
             $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 5;
             $query = "SELECT 
                 id, property_id, title, description, 
-                video_url, video_type, thumbnail_url, 
+                video_url, video_type, thumbnail_url, thumbnail_alt,
                 display_order
                 FROM videos
-                WHERE is_active = 1 AND (property_id IS NULL OR property_id = 0)
+                WHERE is_home = 1 AND deleted_at IS NULL AND (property_id IS NULL OR property_id = 0)
                 ORDER BY display_order ASC, created_at DESC
                 LIMIT ?";
             

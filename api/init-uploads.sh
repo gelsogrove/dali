@@ -9,7 +9,12 @@ mkdir -p "$UPLOAD_DIR/properties" \
          "$UPLOAD_DIR/videos" \
          "$UPLOAD_DIR/galleries" \
          "$UPLOAD_DIR/blogs" \
-         "$UPLOAD_DIR/temp"
+         "$UPLOAD_DIR/temp" \
+         "$UPLOAD_DIR/images" \
+         "$UPLOAD_DIR/images/blog" \
+         "$UPLOAD_DIR/images/video" \
+         "$UPLOAD_DIR/images/properties" \
+         "$UPLOAD_DIR/images/city"
 
 # Imposta permessi corretti
 chown -R www-data:www-data "$UPLOAD_DIR"

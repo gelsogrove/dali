@@ -97,23 +97,33 @@ DROP TABLE IF EXISTS `blogs`;
 CREATE TABLE `blogs` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
+  `seoTitle` varchar(255) DEFAULT NULL,
+  `seoDescription` text DEFAULT NULL,
+  `ogTitle` varchar(255) DEFAULT NULL,
+  `ogDescription` text DEFAULT NULL,
+  `ogImage` varchar(500) DEFAULT NULL,
   `slug` varchar(255) NOT NULL,
+  `subtitle` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
   `content` longtext DEFAULT NULL,
   `featured_image` varchar(255) DEFAULT NULL,
+  `featured_image_alt` varchar(255) NOT NULL DEFAULT '',
   `content_image` varchar(255) DEFAULT NULL COMMENT 'Immagine grande per contenuto (680x500px consigliato)',
-  `is_active` tinyint(1) DEFAULT 1,
+  `content_image_alt` varchar(255) NOT NULL DEFAULT '',
+  `is_home` tinyint(1) DEFAULT 0,
   `display_order` int(11) DEFAULT 0,
   `published_date` date DEFAULT NULL,
   `created_by` int(10) unsigned DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `slug` (`slug`),
   UNIQUE KEY `idx_slug` (`slug`),
-  KEY `idx_is_active` (`is_active`),
+  KEY `idx_is_home` (`is_home`),
   KEY `idx_display_order` (`display_order`),
   KEY `idx_published_date` (`published_date`),
+  KEY `idx_deleted_at` (`deleted_at`),
   KEY `created_by` (`created_by`),
   CONSTRAINT `blogs_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -125,7 +135,11 @@ CREATE TABLE `blogs` (
 
 LOCK TABLES `blogs` WRITE;
 /*!40000 ALTER TABLE `blogs` DISABLE KEYS */;
-INSERT INTO `blogs` VALUES (1,'First Blog','first-blog','Welcome to our blog','This is the first blog post on our website',NULL,NULL,1,1,'2026-01-19',1,'2026-01-19 13:33:21','2026-01-19 13:33:21'),(3,'Top 5 Tips for First-Time Home Buyers','top-5-tips-first-time-home-buyers','Essential advice for your first property purchase','Buying your first home is an exciting milestone. Here are the most important tips to help you navigate the process successfully.','Buying your first home is one of the most significant financial decisions you will make. Here are five essential tips to help you through the process:\n\n1. Get Pre-Approved for a Mortgage\nBefore you start house hunting, get pre-approved for a mortgage. This will give you a clear understanding of your budget and show sellers that you are a serious buyer.\n\n2. Research Neighborhoods Thoroughly\nDon\'t just focus on the house itself. Research the neighborhood, schools, local amenities, and future development plans in the area.\n\n3. Budget for Additional Costs\nRemember to factor in closing costs, moving expenses, home inspection fees, and ongoing maintenance costs.\n\n4. Don\'t Skip the Home Inspection\nAlways get a professional home inspection. This can reveal potential issues that might not be visible during a showing.\n\n5. Work with a Real Estate Agent\nAn experienced agent can guide you through the process, negotiate on your behalf, and help you avoid common pitfalls.',NULL,1,2,'2026-01-15',1,'2026-01-19 16:13:05','2026-01-19 16:13:05'),(4,'Miami Real Estate Market Trends 2026','miami-real-estate-market-trends-2026','What to expect from the Miami property market this year','An in-depth look at the current trends shaping Miami\'s real estate market and predictions for the rest of 2026.','The Miami real estate market continues to show strong growth in 2026. Here\'s what you need to know:\n\nMarket Overview:\nPrices have stabilized after the rapid growth of previous years, creating excellent opportunities for both buyers and sellers.\n\nKey Trends:\n- Increased demand for waterfront properties\n- Growing interest in eco-friendly and smart homes\n- Strong international buyer presence\n- New developments in emerging neighborhoods\n\nExpert Predictions:\nAnalysts expect steady appreciation throughout the year, with particular strength in the luxury segment.\n\nBest Time to Buy:\nSpring and fall typically offer the best opportunities for buyers, with more inventory and motivated sellers.',NULL,1,3,'2026-01-10',1,'2026-01-19 16:13:05','2026-01-19 16:13:05'),(5,'The Ultimate Guide to Selling Your Home Fast','ultimate-guide-selling-home-fast','Proven strategies to sell your property quickly','Learn the secrets to attracting buyers and closing deals faster with these professional selling strategies.','Selling your home doesn\'t have to be a lengthy process. Follow these proven strategies:\n\n1. Price it Right from the Start\nOverpricing is the #1 reason homes sit on the market. Work with your agent to set a competitive price.\n\n2. Stage Your Home Professionally\nFirst impressions matter. Professional staging can increase your home\'s value by 5-15%.\n\n3. Professional Photography is Essential\nMost buyers start their search online. High-quality photos are crucial for attracting interest.\n\n4. Make Necessary Repairs\nFix any obvious issues before listing. Small repairs can prevent big negotiations later.\n\n5. Be Flexible with Showings\nThe more available you are for showings, the faster you\'ll find a buyer.\n\n6. Market Aggressively\nUse all available channels: MLS, social media, open houses, and virtual tours.',NULL,1,4,'2026-01-05',1,'2026-01-19 16:13:05','2026-01-19 16:13:05');
+INSERT INTO `blogs` (`id`,`title`,`seoTitle`,`seoDescription`,`ogTitle`,`ogDescription`,`ogImage`,`canonicalUrl`,`slug`,`subtitle`,`description`,`content`,`featured_image`,`featured_image_alt`,`content_image`,`content_image_alt`,`is_home`,`display_order`,`published_date`,`created_by`,`created_at`,`updated_at`,`deleted_at`) VALUES
+(1,'First Blog',NULL,NULL,NULL,NULL,NULL,NULL,'first-blog',NULL,'Welcome to our blog','This is the first blog post on our website',NULL,'',NULL,'',0,1,'2026-01-19',1,'2026-01-19 13:33:21','2026-01-19 13:33:21',NULL),
+(3,'Top 5 Tips for First-Time Home Buyers',NULL,NULL,NULL,NULL,NULL,NULL,'top-5-tips-first-time-home-buyers',NULL,'Essential advice for your first property purchase','Buying your first home is an exciting milestone. Here are the most important tips to help you navigate the process successfully.','Buying your first home is one of the most significant financial decisions you will make. Here are five essential tips to help you through the process:\n\n1. Get Pre-Approved for a Mortgage\nBefore you start house hunting, get pre-approved for a mortgage. This will give you a clear understanding of your budget and show sellers that you are a serious buyer.\n\n2. Research Neighborhoods Thoroughly\nDon\'t just focus on the house itself. Research the neighborhood, schools, local amenities, and future development plans in the area.\n\n3. Budget for Additional Costs\nRemember to factor in closing costs, moving expenses, home inspection fees, and ongoing maintenance costs.\n\n4. Don\'t Skip the Home Inspection\nAlways get a professional home inspection. This can reveal potential issues that might not be visible during a showing.\n\n5. Work with a Real Estate Agent\nAn experienced agent can guide you through the process, negotiate on your behalf, and help you avoid common pitfalls.',NULL,'',NULL,'',0,2,'2026-01-15',1,'2026-01-19 16:13:05','2026-01-19 16:13:05',NULL),
+(4,'Miami Real Estate Market Trends 2026',NULL,NULL,NULL,NULL,NULL,NULL,'miami-real-estate-market-trends-2026',NULL,'What to expect from the Miami property market this year','An in-depth look at the current trends shaping Miami\'s real estate market and predictions for the rest of 2026.','The Miami real estate market continues to show strong growth in 2026. Here\'s what you need to know:\n\nMarket Overview:\nPrices have stabilized after the rapid growth of previous years, creating excellent opportunities for both buyers and sellers.\n\nKey Trends:\n- Increased demand for waterfront properties\n- Growing interest in eco-friendly and smart homes\n- Strong international buyer presence\n- New developments in emerging neighborhoods\n\nExpert Predictions:\nAnalysts expect steady appreciation throughout the year, with particular strength in the luxury segment.\n\nBest Time to Buy:\nSpring and fall typically offer the best opportunities for buyers, with more inventory and motivated sellers.',NULL,'',NULL,'',0,3,'2026-01-10',1,'2026-01-19 16:13:05','2026-01-19 16:13:05',NULL),
+(5,'The Ultimate Guide to Selling Your Home Fast',NULL,NULL,NULL,NULL,NULL,NULL,'ultimate-guide-selling-home-fast',NULL,'Proven strategies to sell your property quickly','Learn the secrets to attracting buyers and closing deals faster with these professional selling strategies.','Selling your home doesn\'t have to be a lengthy process. Follow these proven strategies:\n\n1. Price it Right from the Start\nOverpricing is the #1 reason homes sit on the market. Work with your agent to set a competitive price.\n\n2. Stage Your Home Professionally\nFirst impressions matter. Professional staging can increase your home\'s value by 5-15%.\n\n3. Professional Photography is Essential\nMost buyers start their search online. High-quality photos are crucial for attracting interest.\n\n4. Make Necessary Repairs\nFix any obvious issues before listing. Small repairs can prevent big negotiations later.\n\n5. Be Flexible with Showings\nThe more available you are for showings, the faster you\'ll find a buyer.\n\n6. Market Aggressively\nUse all available channels: MLS, social media, open houses, and virtual tours.',NULL,'',NULL,'',0,4,'2026-01-05',1,'2026-01-19 16:13:05','2026-01-19 16:13:05',NULL);
 /*!40000 ALTER TABLE `blogs` ENABLE KEYS */;
 UNLOCK TABLES;
 

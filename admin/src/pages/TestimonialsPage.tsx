@@ -13,14 +13,14 @@ type TestimonialForm = {
   author: string
   content: string
   testimonial_date: string
-  is_active: boolean
+  is_home: boolean
 }
 
 const defaultForm: TestimonialForm = {
   author: '',
   content: '',
   testimonial_date: new Date().toISOString().split('T')[0],
-  is_active: true,
+  is_home: false,
 }
 
 export default function TestimonialsPage() {
@@ -37,7 +37,7 @@ export default function TestimonialsPage() {
     queryKey: ['testimonials', searchTerm],
     queryFn: async () => {
       const q = searchTerm ? `&q=${encodeURIComponent(searchTerm)}` : ''
-      const response = await api.get(`/testimonials?is_active=all${q}`)
+      const response = await api.get(`/testimonials${q ? `?${q.slice(1)}` : ''}`)
       return response.data.data
     },
     refetchOnWindowFocus: false,
@@ -57,7 +57,7 @@ export default function TestimonialsPage() {
         author: item.author || '',
         content: item.content || '',
         testimonial_date: item.testimonial_date || new Date().toISOString().split('T')[0],
-        is_active: !!item.is_active,
+        is_home: !!item.is_home,
       })
     } else {
       setEditingItem(null)
@@ -135,19 +135,19 @@ export default function TestimonialsPage() {
     const payload = {
       ...formData,
       testimonial_date: formData.testimonial_date || null,
-      is_active: formData.is_active ? 1 : 0,
+      is_home: formData.is_home ? 1 : 0,
     }
 
     saveMutation.mutate(payload)
   }
 
-  const toggleActive = async (item: any, value: boolean) => {
+  const toggleHome = async (item: any, value: boolean) => {
     try {
-      setList((prev) => prev.map((t) => (t.id === item.id ? { ...t, is_active: value } : t)))
-      await api.put(`/testimonials/${item.id}`, { is_active: value ? 1 : 0 })
+      setList((prev) => prev.map((t) => (t.id === item.id ? { ...t, is_home: value } : t)))
+      await api.put(`/testimonials/${item.id}`, { is_home: value ? 1 : 0 })
       queryClient.invalidateQueries({ queryKey: ['testimonials'] })
     } catch (error) {
-      console.error('Failed to update status', error)
+      console.error('Failed to update home flag', error)
       refetch()
     }
   }
@@ -236,13 +236,13 @@ export default function TestimonialsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Active</span>
-                      <Switch
-                        checked={!!item.is_active}
-                        onCheckedChange={(v) => toggleActive(item, v)}
-                        className="data-[state=checked]:bg-green-500"
-                        aria-label="Toggle testimonial visibility"
-                      />
+                        <span className="text-xs text-muted-foreground">Show on Home</span>
+                        <Switch
+                          checked={!!item.is_home}
+                          onCheckedChange={(v) => toggleHome(item, v)}
+                          className="data-[state=checked]:bg-green-500"
+                          aria-label="Toggle testimonial visibility"
+                        />
                     </div>
                   </div>
                 </CardHeader>
@@ -318,11 +318,11 @@ export default function TestimonialsPage() {
 
                 <div className="flex items-center gap-2 md:col-span-2">
                   <Switch
-                    checked={!!formData.is_active}
-                    onCheckedChange={(v) => setFormData((p) => ({ ...p, is_active: v }))}
+                    checked={!!formData.is_home}
+                    onCheckedChange={(v) => setFormData((p) => ({ ...p, is_home: v }))}
                     className="data-[state=checked]:bg-green-500"
                   />
-                  <span className="text-sm font-medium">Active (visible on site)</span>
+                  <span className="text-sm font-medium">Show on Home</span>
                 </div>
               </div>
 

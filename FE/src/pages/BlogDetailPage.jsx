@@ -5,10 +5,13 @@ import ContactSection from "../components/ContactSection";
 import PageHero from "../components/PageHero";
 import ButtonDali from "../components/ButtonDali";
 import SEO from "../components/SEO";
+import BlogsPage from "./BlogsPage";
 
 const BlogDetailPage = () => {
   const { slug } = useParams();
   const [blog, setBlog] = useState(null);
+  const [canonicalUrl, setCanonicalUrl] = useState(null);
+  const [showList, setShowList] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const apiBase = import.meta.env.VITE_API_URL || '/api';
@@ -19,27 +22,110 @@ const BlogDetailPage = () => {
     return url.startsWith('http') ? url : `${assetBase}${url}`;
   };
 
+  const buildMeta = (b) => {
+    if (!b) return null;
+    const meta = {};
+    meta.title = b.seoTitle || b.title;
+    meta.description =
+      b.seoDescription ||
+      b.description ||
+      b.subtitle ||
+      `Read ${b.title} - insights on Riviera Maya real estate from Dalila Gelsomino`;
+    meta.ogTitle = b.ogTitle || meta.title;
+    meta.ogDescription = b.ogDescription || meta.description;
+    meta.ogImage = b.ogImage
+      ? toAbsoluteUrl(b.ogImage)
+      : b.content_image
+      ? toAbsoluteUrl(b.content_image)
+      : b.featured_image
+      ? toAbsoluteUrl(b.featured_image)
+      : undefined;
+    meta.canonical = b.canonicalUrl || canonicalUrl || `https://buywithdali.com/blog/${slug}`;
+    return meta;
+  };
+
   useEffect(() => {
-    const fetchBlog = async () => {
+    let isMounted = true;
+
+    const parseSlugFromUrl = (url) => {
+      if (!url) return null;
       try {
-        setLoading(true);
-        setError(null);
-        const response = await api.get(`/blogs/slug/${slug}`);
-        
+        const parsed = url.startsWith('http') ? new URL(url).pathname : url;
+        const match = parsed.match(/\/blog\/([^/?#]+)/);
+        return match ? match[1] : null;
+      } catch (e) {
+        console.error('Failed to parse redirect target', e);
+        return null;
+      }
+    };
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      setShowList(false);
+
+      let slugToFetch = slug;
+      let canonical = null;
+
+      try {
+        const res = await fetch(`/api/redirects/resolve?urlOld=/blog/${slug}`);
+        if (res.ok) {
+          const data = await res.json();
+          const target = data?.data?.urlNew;
+          const targetSlug = parseSlugFromUrl(target);
+          // If the target is not a blog detail URL, go to that page (e.g., list page)
+          if (target && !targetSlug) {
+            if (target.includes('/category/blog')) {
+              if (!isMounted) return;
+              setShowList(true);
+              setCanonicalUrl(target.startsWith('http') ? target : `https://buywithdali.com${target}`);
+              setLoading(false);
+              return;
+            } else {
+              window.location.href = target;
+              return;
+            }
+          }
+          if (targetSlug && targetSlug !== slug) {
+            slugToFetch = targetSlug;
+            canonical = target.startsWith('http') ? target : `https://buywithdali.com${target}`;
+          }
+        }
+      } catch (e) {
+        console.error('Redirect resolve failed', e);
+      }
+
+      try {
+        const response = await api.get(`/blogs/slug/${slugToFetch}`);
+        if (!isMounted) return;
+
         if (response.success) {
           setBlog(response.data);
+          setCanonicalUrl(canonical || `https://buywithdali.com/blog/${slugToFetch}`);
+        } else if (slugToFetch !== slug) {
+          // fallback: attempt original slug if redirected slug missing
+          const fallback = await api.get(`/blogs/slug/${slug}`);
+          if (fallback.success) {
+            setBlog(fallback.data);
+            setCanonicalUrl(`https://buywithdali.com/blog/${slug}`);
+          } else {
+            setError('Blog not found');
+          }
         } else {
           setError('Blog not found');
         }
       } catch (err) {
         console.error('Error fetching blog:', err);
-        setError('Failed to load blog');
+        if (isMounted) setError('Failed to load blog');
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
-    fetchBlog();
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, [slug]);
 
   const formatDate = (dateString) => {
@@ -59,6 +145,10 @@ const BlogDetailPage = () => {
     );
   }
 
+  if (showList) {
+    return <BlogsPage />;
+  }
+
   if (error || !blog) {
     return (
       <div style={{ padding: "100px 5%", textAlign: "center" }}>
@@ -71,15 +161,22 @@ const BlogDetailPage = () => {
 
   return (
     <>
-      {blog && (
-        <SEO 
-          title={blog.title}
-          description={blog.description || blog.subtitle || `Read ${blog.title} - insights on Riviera Maya real estate from Dalila Gelsomino`}
-          keywords={`${blog.title}, Riviera Maya real estate, Tulum property, real estate blog`}
-          ogImage={blog.content_image ? toAbsoluteUrl(blog.content_image) : undefined}
-          canonicalUrl={`https://buywithdali.com/blog/${slug}`}
-        />
-      )}
+      {(() => {
+        const meta = buildMeta(blog);
+        if (!meta) return null;
+        return (
+          <SEO 
+            title={meta.title}
+            description={meta.description}
+            ogTitle={meta.ogTitle}
+            ogDescription={meta.ogDescription}
+            keywords={`${blog.title}, Riviera Maya real estate, Tulum property, real estate blog`}
+            ogImage={meta.ogImage}
+            canonicalUrl={meta.canonical}
+            ogType="article"
+          />
+        );
+      })()}
       <PageHero
         breadcrumb={
           <>
@@ -98,31 +195,28 @@ const BlogDetailPage = () => {
       <section className="blog-detail-section">
         <div className="blog-detail-container">
           <div className="blog-detail-layout">
-            {(() => {
-              const subtitle = blog.subtitle || blog.description;
-              return (
-                <div className="blog-detail-header">
-                  <h1 className="blog-detail-title">{blog.title}</h1>
-                  {subtitle && (
-                    <h2 className="blog-detail-subtitle">{subtitle}</h2>
-                  )}
-                </div>
-              );
-            })()}
+            <div className="blog-detail-header">
+              <h1 className="blog-detail-title short">{blog.title}</h1>
+              {(() => {
+                const subtitle = blog.subtitle || blog.description;
+                if (!subtitle) return null;
+                return <h2 className="blog-detail-subtitle">{subtitle}</h2>;
+              })()}
+            </div>
 
             {/* Content with floating image */}
             <div className="blog-detail-content">
               {blog.content_image ? (
                 <div className="blog-detail-image-large">
-                  <img src={toAbsoluteUrl(blog.content_image)} alt={blog.title} />
+                  <img src={toAbsoluteUrl(blog.content_image)} alt={blog.content_image_alt || blog.title} />
                 </div>
               ) : blog.featured_image ? (
                 <div className="blog-detail-image-inline">
-                  <img src={toAbsoluteUrl(blog.featured_image)} alt={blog.title} />
+                  <img src={toAbsoluteUrl(blog.featured_image)} alt={blog.featured_image_alt || blog.title} />
                 </div>
               ) : (
                 <div className="blog-detail-image-inline blog-detail-image-placeholder">
-                  <i className="fa fa-newspaper blog-detail-image-placeholder-icon"></i>
+                  <div className="placeholder-box" aria-hidden="true"></div>
                 </div>
               )}
               

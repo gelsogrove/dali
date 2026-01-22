@@ -25,7 +25,7 @@ export default function VideosPage() {
     const fetchVideos = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`${endpoints.videos}?is_active=true&per_page=100`);
+        const response = await api.get(`${endpoints.videos}?include_deleted=false&per_page=100`);
         if (!response?.success) {
           setError('Failed to load videos');
           return;
@@ -122,7 +122,7 @@ export default function VideosPage() {
                     {video.thumbnail_url ? (
                       <img 
                         src={toAbsoluteUrl(video.thumbnail_url)} 
-                        alt={video.title}
+                        alt={video.thumbnail_alt || video.title}
                         loading="lazy"
                         onError={(e) => {
                           e.target.style.display = 'none';

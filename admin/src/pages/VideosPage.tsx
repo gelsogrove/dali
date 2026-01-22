@@ -13,7 +13,8 @@ type VideoForm = {
   description: string
   video_url: string
   thumbnail_url: string
-  is_active: boolean
+  thumbnail_alt: string
+  is_home: boolean
 }
 
 export default function VideosPage() {
@@ -33,7 +34,8 @@ export default function VideosPage() {
     description: '',
     video_url: '',
     thumbnail_url: '',
-    is_active: true,
+    thumbnail_alt: '',
+    is_home: false,
   }
   const [formData, setFormData] = useState<VideoForm>({ ...defaultForm })
 
@@ -50,7 +52,7 @@ export default function VideosPage() {
     queryKey: ['videos', searchTerm],
     queryFn: async () => {
       const q = searchTerm ? `&q=${encodeURIComponent(searchTerm)}` : ''
-      const response = await api.get(`/videos?is_active=all${q}`)
+      const response = await api.get(`/videos?include_deleted=false${q}`)
       return response.data.data
     },
     refetchOnWindowFocus: false,
@@ -80,7 +82,8 @@ export default function VideosPage() {
         description: video.description || '',
         video_url: video.video_url || '',
         thumbnail_url: video.thumbnail_url || '',
-        is_active: !!video.is_active,
+        thumbnail_alt: video.thumbnail_alt || '',
+        is_home: !!video.is_home,
       })
       setImagePreview(toAbsoluteUrl(video.thumbnail_url))
     } else {
@@ -178,19 +181,19 @@ export default function VideosPage() {
         console.error('Failed to remove image:', error)
       }
     }
-    setFormData((p) => ({ ...p, thumbnail_url: '' }))
+    setFormData((p) => ({ ...p, thumbnail_url: '', thumbnail_alt: '' }))
     setImagePreview('')
   }
 
-  const toggleActive = async (video: any, value: boolean) => {
+  const toggleHome = async (video: any, value: boolean) => {
     try {
       setList((prev) =>
-        prev.map((v) => (v.id === video.id ? { ...v, is_active: value } : v))
+        prev.map((v) => (v.id === video.id ? { ...v, is_home: value } : v))
       )
-      await api.put(`/videos/${video.id}`, { is_active: value ? 1 : 0 })
+      await api.put(`/videos/${video.id}`, { is_home: value ? 1 : 0 })
       queryClient.invalidateQueries({ queryKey: ['videos'] })
     } catch (error) {
-      console.error('Failed to update status', error)
+      console.error('Failed to update home flag', error)
       refetch()
     }
   }
@@ -211,6 +214,10 @@ export default function VideosPage() {
 
     if (!effectiveThumb) {
       alert('Thumbnail is required. Please upload an image.')
+      return
+    }
+    if (!formData.thumbnail_alt || !formData.thumbnail_alt.trim()) {
+      alert('Thumbnail alt is required')
       return
     }
     if (!formData.title || !formData.title.trim()) {
@@ -243,6 +250,7 @@ export default function VideosPage() {
       ...formData,
       video_url: videoUrl,
       thumbnail_url: effectiveThumb,
+      thumbnail_alt: formData.thumbnail_alt,
     }
 
     if (!editingVideo) {
@@ -375,12 +383,12 @@ export default function VideosPage() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2 ml-4">
-                        <span className="text-xs text-muted-foreground">Active</span>
+                        <span className="text-xs text-muted-foreground">Show on Home</span>
                         <Switch
-                          checked={!!video.is_active}
-                          onCheckedChange={(v) => toggleActive(video, v)}
+                          checked={!!video.is_home}
+                          onCheckedChange={(v) => toggleHome(video, v)}
                           className="data-[state=checked]:bg-green-500"
-                          aria-label="Toggle video visibility"
+                          aria-label="Toggle video on home"
                         />
                       </div>
                     </div>
@@ -495,11 +503,11 @@ export default function VideosPage() {
                         </Button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                      <label className="cursor-pointer block">
-                        <div className="flex flex-col items-center">
-                          <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                    <label className="cursor-pointer block">
+                      <div className="flex flex-col items-center">
+                        <Upload className="h-8 w-8 text-gray-400 mb-2" />
                           <span className="text-sm text-gray-600">Click to upload</span>
                         </div>
                         <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} className="hidden" />
@@ -507,15 +515,24 @@ export default function VideosPage() {
                       {uploading && <p className="text-sm text-primary mt-2 text-center">Uploading...</p>}
                     </div>
                   )}
+                  <div className="space-y-2 pt-2">
+                    <label className="text-sm font-medium">Thumbnail Alt *</label>
+                    <Input
+                      value={formData.thumbnail_alt}
+                      onChange={(e) => setFormData((p) => ({ ...p, thumbnail_alt: e.target.value }))}
+                      required
+                      placeholder="Descrizione dell'immagine"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 md:col-span-2">
                   <Switch
-                    checked={!!formData.is_active}
-                    onCheckedChange={(v) => setFormData((p) => ({ ...p, is_active: v }))}
+                    checked={!!formData.is_home}
+                    onCheckedChange={(v) => setFormData((p) => ({ ...p, is_home: v }))}
                     className="data-[state=checked]:bg-green-500"
                   />
-                  <span className="text-sm font-medium">Active (visible on site)</span>
+                  <span className="text-sm font-medium">Show on Home</span>
                 </div>
               </div>
 
@@ -537,7 +554,7 @@ export default function VideosPage() {
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full space-y-4">
             <h3 className="text-xl font-semibold">Delete video?</h3>
             <p className="text-muted-foreground">
-              Are you sure you want to delete this video? The thumbnail will also be removed.
+              If the video is older than 24h it will be archived (not removed) and a redirect placeholder will be created for SEO safety.
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDeleteId(null)}>Close</Button>

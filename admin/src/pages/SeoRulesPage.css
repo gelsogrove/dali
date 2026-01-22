@@ -1,0 +1,267 @@
+/* SEO RULES PAGE STYLES */
+
+.seo-rules-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+/* Header */
+.seo-rules-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 50px 40px;
+  margin-bottom: 50px;
+  color: white;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+}
+
+.header-content h1 {
+  font-size: 48px;
+  font-weight: 800;
+  margin: 0 0 12px 0;
+  letter-spacing: -1px;
+}
+
+.header-content p {
+  font-size: 18px;
+  font-weight: 300;
+  margin: 0;
+  opacity: 0.95;
+}
+
+/* Grid Layout */
+.seo-rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 50px;
+}
+
+/* Rule Card */
+.seo-rule-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  background-color: white;
+  height: auto;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.seo-rule-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: inherit;
+  opacity: 0.3;
+}
+
+.seo-rule-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  border-color: currentColor;
+}
+
+/* Rule Header */
+.rule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.rule-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.rule-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Rule Description */
+.rule-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+  margin: 0;
+}
+
+/* Example Section */
+.rule-example {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.example-label {
+  color: #667eea;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 12px;
+}
+
+.example-item {
+  margin-bottom: 12px;
+}
+
+.example-item:last-child {
+  margin-bottom: 0;
+}
+
+.example-type {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.example-text {
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+  font-family: 'Courier New', monospace;
+}
+
+.example-item:nth-child(2) .example-text {
+  background-color: #f0fdf4;
+  border-color: #22c55e;
+}
+
+.example-item:nth-child(3) .example-text {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+}
+
+/* Footer Note */
+.seo-rules-footer {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  padding: 30px 40px;
+  margin-top: 40px;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.check-icon {
+  width: 32px;
+  height: 32px;
+  color: #667eea;
+  flex-shrink: 0;
+}
+
+.footer-content p {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.footer-content strong {
+  color: #667eea;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .seo-rules-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .seo-rules-header {
+    padding: 40px 30px;
+    margin-bottom: 40px;
+  }
+
+  .header-content h1 {
+    font-size: 36px;
+  }
+
+  .header-content p {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .seo-rules-container {
+    padding: 24px 16px;
+  }
+
+  .seo-rules-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .seo-rules-header {
+    padding: 32px 20px;
+    margin-bottom: 32px;
+    border-radius: 8px;
+  }
+
+  .header-content h1 {
+    font-size: 28px;
+  }
+
+  .header-content p {
+    font-size: 14px;
+  }
+
+  .seo-rules-footer {
+    padding: 24px 20px;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .check-icon {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .seo-rules-container {
+    padding: 16px 12px;
+  }
+
+  .header-content h1 {
+    font-size: 22px;
+  }
+
+  .rule-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .rule-description {
+    font-size: 13px;
+  }
+
+  .footer-content p {
+    font-size: 14px;
+  }
+}

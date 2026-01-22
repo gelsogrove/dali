@@ -41,6 +41,11 @@ RUN mkdir -p /var/www/html/uploads/properties \
     /var/www/html/uploads/galleries \
     /var/www/html/uploads/blogs \
     /var/www/html/uploads/temp \
+    /var/www/html/uploads/images \
+    /var/www/html/uploads/images/blog \
+    /var/www/html/uploads/images/video \
+    /var/www/html/uploads/images/properties \
+    /var/www/html/uploads/images/city \
     && chown -R www-data:www-data /var/www/html/uploads \
     && chmod -R 755 /var/www/html/uploads
 

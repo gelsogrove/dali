@@ -82,7 +82,7 @@
 }
 
 .video-row-body h2 {
-  font-family: var(--font-family-title) !important;
+  font-family: var(--font-family-default) !important;
   font-size: 32px !important;
   color: #c19280 !important;
   margin: 0;
@@ -92,7 +92,7 @@
 }
 
 .video-row-body h2 a {
-  font-family: var(--font-family-title) !important;
+  font-family: var(--font-family-default) !important;
   font-size: 32px !important;
   color: #c19280 !important;
   font-weight: 600 !important;
@@ -160,8 +160,8 @@
 }
 
 .fv-outline {
-  width: 70px;
-  height: 70px;
+  width: 7px;
+  height: 7px;
   border: 2px solid rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   display: flex;
@@ -176,7 +176,6 @@
 .video-row:hover .fv-outline {
   background: rgba(193, 146, 128, 0.25);
   border-color: rgba(193, 146, 128, 0.9);
-  transform: scale(1.15);
   box-shadow: 0 6px 30px rgba(193, 146, 128, 0.3);
 }
 

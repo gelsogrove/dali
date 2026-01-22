@@ -174,8 +174,8 @@ cd "$PROJECT_ROOT/api"
 # Copia file PHP essenziali
 cp index.php "$NEW_DIR/api/"
 
-# Copia directories (escludendo database.php locale)
-for dir in controllers middleware; do
+# Copia directories API (incluso lib con RedirectService)
+for dir in controllers middleware lib; do
     if [ -d "$dir" ]; then
         cp -r "$dir" "$NEW_DIR/api/"
     fi

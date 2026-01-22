@@ -96,15 +96,17 @@ CREATE TABLE IF NOT EXISTS `videos` (
   `video_url` VARCHAR(500) NOT NULL COMMENT 'URL to Vimeo embed',
   `video_type` ENUM('vimeo', 'youtube', 'upload', 'link') DEFAULT 'vimeo',
   `thumbnail_url` VARCHAR(255) NOT NULL,
+  `thumbnail_alt` VARCHAR(255) NOT NULL DEFAULT '',
   `display_order` INT DEFAULT 0,
-  `is_active` TINYINT(1) DEFAULT 1,
+  `is_home` TINYINT(1) NOT NULL DEFAULT 0,
   `created_by` INT UNSIGNED NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` DATETIME NULL,
   PRIMARY KEY (`id`),
   INDEX `idx_property_id` (`property_id`),
   INDEX `idx_display_order` (`display_order`),
-  INDEX `idx_is_active` (`is_active`),
+  INDEX `idx_is_home` (`is_home`),
   FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE SET NULL,
   FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -169,22 +171,62 @@ CREATE TABLE IF NOT EXISTS `activity_log` (
 CREATE TABLE IF NOT EXISTS `blogs` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `title` VARCHAR(255) NOT NULL,
+  `seoTitle` VARCHAR(255) NULL,
+  `seoDescription` TEXT NULL,
   `slug` VARCHAR(255) NOT NULL UNIQUE,
   `subtitle` VARCHAR(255) NULL,
   `description` TEXT NULL,
   `content` LONGTEXT NULL,
   `featured_image` VARCHAR(255) NULL,
-  `is_active` TINYINT(1) DEFAULT 1,
+  `featured_image_alt` VARCHAR(255) NOT NULL DEFAULT '',
+  `content_image` VARCHAR(255) NULL,
+  `content_image_alt` VARCHAR(255) NOT NULL DEFAULT '',
+  `is_home` TINYINT(1) NOT NULL DEFAULT 0,
   `display_order` INT DEFAULT 0,
   `published_date` DATE NULL,
   `created_by` INT UNSIGNED NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` DATETIME NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_slug` (`slug`),
-  INDEX `idx_is_active` (`is_active`),
+  INDEX `idx_is_home` (`is_home`),
   INDEX `idx_display_order` (`display_order`),
   INDEX `idx_published_date` (`published_date`),
+  FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
+-- Redirect Table
+-- =============================================
+CREATE TABLE IF NOT EXISTS `redirect` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `urlOld` VARCHAR(500) NOT NULL,
+  `urlNew` VARCHAR(500) NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_url_old` (`urlOld`),
+  INDEX `idx_url_new` (`urlNew`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================
+-- Testimonials Table
+-- =============================================
+CREATE TABLE IF NOT EXISTS `testimonials` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `author` VARCHAR(255) NOT NULL,
+  `content` TEXT NOT NULL,
+  `testimonial_date` DATE NULL,
+  `display_order` INT DEFAULT 0,
+  `is_home` TINYINT(1) NOT NULL DEFAULT 0,
+  `created_by` INT UNSIGNED NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `idx_display_order` (`display_order`),
+  INDEX `idx_is_home` (`is_home`),
+  INDEX `idx_testimonial_date` (`testimonial_date`),
   FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

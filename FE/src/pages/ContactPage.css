@@ -187,13 +187,13 @@
 .contact-cta-section {
   padding: 50px 5%;
   background: linear-gradient(135deg, #f9f6f3 0%, #fdfbf9 100%);
+  display: flex;
+  justify-content: center;
 }
 
 .contact-cta-wrapper {
-  max-width: 1400px;
-  margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 220px);
   gap: 20px;
 }
 

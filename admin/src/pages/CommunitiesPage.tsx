@@ -9,7 +9,7 @@ export default function CommunitiesPage() {
           <div className="flex justify-center">
             <Wrench className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h2 className="text-2xl font-semibold">Community — work in progress</h2>
+          <h2 className="text-2xl font-semibold">Landing Page — work in progress</h2>
           <p className="text-muted-foreground">
             This section will be available soon.
           </p>

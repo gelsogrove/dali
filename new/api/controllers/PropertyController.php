@@ -158,7 +158,7 @@ class PropertyController {
             // Get videos
             $videosQuery = "SELECT id, title, description, video_url, video_type, thumbnail_url, display_order 
                            FROM videos 
-                           WHERE property_id = ? AND is_active = 1
+                           WHERE property_id = ? AND deleted_at IS NULL
                            ORDER BY display_order ASC, id ASC";
             $videosResult = $this->db->executePrepared($videosQuery, [$id], 'i');
             $videos = [];

@@ -1,14 +1,19 @@
 <?php
 
-require_once __DIR__ . '/../config/database.php';
+$__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
+require_once $__baseDir . '/../config/database.php';
+$__redirectPath = realpath($__baseDir . '/../lib/RedirectService.php') ?: ($__baseDir . '/../lib/RedirectService.php');
+require_once $__redirectPath;
 
 class BlogController {
     private $db;
     private $conn;
+    private $redirectService;
 
     public function __construct() {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
+        $this->redirectService = new RedirectService($this->conn);
     }
 
     /**
@@ -20,16 +25,18 @@ class BlogController {
             $params = [];
             $types = '';
 
-            // Active filter - if not specified, show only active for public
-            if (isset($filters['is_active'])) {
-                if ($filters['is_active'] !== 'all') {
-                    $where[] = "is_active = ?";
-                    $params[] = $filters['is_active'] === 'true' || $filters['is_active'] === '1' ? 1 : 0;
-                    $types .= 'i';
-                }
-            } else {
-                // Default for public - only show active blogs
-                $where[] = "is_active = 1";
+            // Exclude soft deleted by default; only include when include_deleted is truthy
+            $includeDeleted = $filters['include_deleted'] ?? null;
+            $includeDeletedFlag = $includeDeleted === '1' || $includeDeleted === 'true' || $includeDeleted === 1 || $includeDeleted === true;
+            if (!$includeDeletedFlag) {
+                $where[] = "deleted_at IS NULL";
+            }
+
+            // is_home filter (optional)
+            if (isset($filters['is_home'])) {
+                $where[] = "is_home = ?";
+                $params[] = ($filters['is_home'] === 'true' || $filters['is_home'] === '1') ? 1 : 0;
+                $types .= 'i';
             }
 
             // Search filter
@@ -42,8 +49,9 @@ class BlogController {
 
             // Build query
             $whereClause = empty($where) ? '1=1' : implode(' AND ', $where);
-            $query = "SELECT id, title, slug, description, content, featured_image, content_image, is_active, 
-                     display_order, published_date, created_at, updated_at 
+            $query = "SELECT id, title, seoTitle, seoDescription, slug, subtitle, description, content, 
+                     featured_image, featured_image_alt, content_image, content_image_alt, is_home, 
+                     display_order, published_date, created_at, updated_at, deleted_at
                      FROM blogs 
                      WHERE $whereClause 
                      ORDER BY display_order ASC, published_date DESC, created_at DESC
@@ -102,7 +110,7 @@ class BlogController {
      */
     public function getById($id) {
         try {
-            $query = "SELECT * FROM blogs WHERE id = ? LIMIT 1";
+            $query = "SELECT * FROM blogs WHERE id = ? AND deleted_at IS NULL LIMIT 1";
             $result = $this->db->executePrepared($query, [$id], 'i');
 
             if (!$result || $result->num_rows === 0) {
@@ -123,7 +131,7 @@ class BlogController {
      */
     public function getBySlug($slug) {
         try {
-            $query = "SELECT * FROM blogs WHERE slug = ? AND is_active = 1 LIMIT 1";
+            $query = "SELECT * FROM blogs WHERE slug = ? AND deleted_at IS NULL LIMIT 1";
             $result = $this->db->executePrepared($query, [$slug], 's');
 
             if (!$result || $result->num_rows === 0) {
@@ -153,26 +161,42 @@ class BlogController {
             $slugSource = !empty($data['slug']) ? $data['slug'] : $data['title'];
             $slug = $this->generateSlug($slugSource);
 
+            // Validate alt when images are provided
+            if (!empty($data['featured_image']) && empty($data['featured_image_alt'])) {
+                return $this->errorResponse("Featured image alt is required", 400);
+            }
+            if (!empty($data['content_image']) && empty($data['content_image_alt'])) {
+                return $this->errorResponse("Content image alt is required", 400);
+            }
+
             // Insert blog
-            $query = "INSERT INTO blogs (title, slug, description, content, featured_image, content_image,
-                     is_active, display_order, published_date, created_by) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $query = "INSERT INTO blogs (title, seoTitle, seoDescription, ogTitle, ogDescription, ogImage, slug, subtitle, description, content, featured_image, featured_image_alt, content_image, content_image_alt,
+                     is_home, display_order, published_date, created_by) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $params = [
                 $data['title'],
+                $data['seoTitle'] ?? null,
+                $data['seoDescription'] ?? null,
+                $data['ogTitle'] ?? null,
+                $data['ogDescription'] ?? null,
+                $data['ogImage'] ?? null,
                 $slug,
+                $data['subtitle'] ?? null,
                 $data['description'] ?? null,
                 $data['content'] ?? null,
                 $data['featured_image'] ?? null,
+                $data['featured_image_alt'] ?? '',
                 $data['content_image'] ?? null,
-                $data['is_active'] ?? 1,
+                $data['content_image_alt'] ?? '',
+                $data['is_home'] ?? 0,
                 $data['display_order'] ?? 0,
                 $data['published_date'] ?? date('Y-m-d'),
                 $userId
             ];
 
-            // Types: s=string, i=integer
-            $types = 'ssssssiisi';
+            // Types: s=string, i=integer (14 strings + 2 ints + 1 string + 1 int)
+            $types = 'ssssssssssssssiisi';
 
             $result = $this->db->executePrepared($query, $params, $types);
 
@@ -203,11 +227,19 @@ class BlogController {
     public function update($id, $data, $userId) {
         try {
             // Check if blog exists
-            $checkQuery = "SELECT id FROM blogs WHERE id = ? LIMIT 1";
+            $checkQuery = "SELECT * FROM blogs WHERE id = ? AND deleted_at IS NULL LIMIT 1";
             $checkResult = $this->db->executePrepared($checkQuery, [$id], 'i');
 
             if (!$checkResult || $checkResult->num_rows === 0) {
                 return $this->errorResponse('Blog not found', 404);
+            }
+
+            // Validate alt when images are provided
+            if (isset($data['featured_image']) && !empty($data['featured_image']) && empty($data['featured_image_alt'])) {
+                return $this->errorResponse("Featured image alt is required", 400);
+            }
+            if (isset($data['content_image']) && !empty($data['content_image']) && empty($data['content_image_alt'])) {
+                return $this->errorResponse("Content image alt is required", 400);
             }
 
             // Build update query
@@ -215,11 +247,27 @@ class BlogController {
             $params = [];
             $types = '';
 
-            $allowedFields = ['title', 'description', 'content', 'featured_image', 'content_image',
-                            'is_active', 'display_order', 'published_date', 'slug'];
+            $allowedFields = [
+                'title',
+                'seoTitle',
+                'seoDescription',
+                'ogTitle',
+                'ogDescription',
+                'ogImage',
+                'subtitle',
+                'description',
+                'content',
+                'featured_image',
+                'featured_image_alt',
+                'content_image',
+                'content_image_alt',
+                'is_home',
+                'display_order',
+                'published_date'
+            ];
 
             foreach ($allowedFields as $field) {
-                if (isset($data[$field]) && $field !== 'slug') { // Skip slug, gestito dopo
+                if (array_key_exists($field, $data)) {
                     $updates[] = "$field = ?";
                     $params[] = $data[$field];
                     $types .= $this->getParamType($field);
@@ -228,15 +276,6 @@ class BlogController {
 
             if (empty($updates)) {
                 return $this->errorResponse('No valid fields to update', 400);
-            }
-
-            // Regenerate slug if title changed or custom slug provided
-            if (isset($data['title']) || isset($data['slug'])) {
-                $slugSource = !empty($data['slug']) ? $data['slug'] : $data['title'];
-                $slug = $this->generateSlug($slugSource, $id);
-                $updates[] = "slug = ?";
-                $params[] = $slug;
-                $types .= 's';
             }
 
             $params[] = $id;
@@ -266,30 +305,101 @@ class BlogController {
     public function delete($id, $userId) {
         try {
             // Fetch blog to know related assets
-            $fetch = $this->db->executePrepared("SELECT featured_image FROM blogs WHERE id = ? LIMIT 1", [$id], 'i');
-            $featured = null;
-            if ($fetch && $fetch->num_rows > 0) {
-                $featured = $fetch->fetch_assoc()['featured_image'] ?? null;
+            $fetch = $this->db->executePrepared(
+                "SELECT slug, featured_image, content_image, created_at, deleted_at FROM blogs WHERE id = ? LIMIT 1",
+                [$id],
+                'i'
+            );
+            if (!$fetch || $fetch->num_rows === 0) {
+                return $this->errorResponse('Blog not found', 404);
+            }
+            $blog = $fetch->fetch_assoc();
+
+            if (!empty($blog['deleted_at'])) {
+                // If it's already archived, hard delete and keep/ensure redirect placeholder
+                $urlOld = '/blog/' . $blog['slug'];
+                try {
+                    $existingRule = $this->redirectService->findByUrlOld($urlOld);
+                    if (!$existingRule) {
+                        $this->redirectService->create($urlOld, '');
+                    }
+                } catch (Exception $ex) {
+                    return $this->errorResponse('Redirect creation failed: ' . $ex->getMessage());
+                }
+
+                $query = "DELETE FROM blogs WHERE id = ?";
+                $result = $this->db->executePrepared($query, [$id], 'i');
+                if (!$result) {
+                    return $this->errorResponse('Failed to delete blog');
+                }
+
+                // Delete assets if present
+                if (!empty($blog['featured_image']) || !empty($blog['content_image'])) {
+                    require_once __DIR__ . '/UploadController.php';
+                    $uploader = new UploadController();
+                    if (!empty($blog['featured_image'])) {
+                        $uploader->deleteFile($blog['featured_image']);
+                    }
+                    if (!empty($blog['content_image'])) {
+                        $uploader->deleteFile($blog['content_image']);
+                    }
+                }
+
+                $this->logActivity($userId, 'delete', 'blog', $id, "Deleted archived blog ID: $id");
+                return $this->successResponse(['message' => 'Blog deleted (was already archived); redirect placeholder kept/ensured']);
             }
 
-            $query = "DELETE FROM blogs WHERE id = ?";
-            $result = $this->db->executePrepared($query, [$id], 'i');
+            $createdAt = new DateTime($blog['created_at']);
+            $now = new DateTime();
+            $hoursDiff = ($now->getTimestamp() - $createdAt->getTimestamp()) / 3600;
 
-            if (!$result) {
-                return $this->errorResponse('Failed to delete blog');
+            if ($hoursDiff < 24) {
+                $query = "DELETE FROM blogs WHERE id = ?";
+                $result = $this->db->executePrepared($query, [$id], 'i');
+
+                if (!$result) {
+                    return $this->errorResponse('Failed to delete blog');
+                }
+
+                // Delete assets if present
+                if (!empty($blog['featured_image']) || !empty($blog['content_image'])) {
+                    require_once __DIR__ . '/UploadController.php';
+                    $uploader = new UploadController();
+                    if (!empty($blog['featured_image'])) {
+                        $uploader->deleteFile($blog['featured_image']);
+                    }
+                    if (!empty($blog['content_image'])) {
+                        $uploader->deleteFile($blog['content_image']);
+                    }
+                }
+
+                $this->logActivity($userId, 'delete', 'blog', $id, "Deleted blog ID: $id");
+                return $this->successResponse(['message' => 'Blog deleted permanently (created < 24h)']);
             }
 
-            // Delete featured image and variants if present
-            if (!empty($featured)) {
-                require_once __DIR__ . '/UploadController.php';
-                $uploader = new UploadController();
-                $uploader->deleteFile($featured);
+            // Soft delete: keep row, hide from lists, create redirect placeholder
+            $stmt = $this->conn->prepare("UPDATE blogs SET deleted_at = NOW() WHERE id = ?");
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $stmt->close();
+
+            $urlOld = '/blog/' . $blog['slug'];
+            try {
+                $existingRule = $this->redirectService->findByUrlOld($urlOld);
+                if (!$existingRule) {
+                    $this->redirectService->create($urlOld, '');
+                }
+            } catch (Exception $ex) {
+                // Rollback soft delete if redirect fails
+                $this->conn->query("UPDATE blogs SET deleted_at = NULL WHERE id = " . (int)$id);
+                return $this->errorResponse('Redirect creation failed: ' . $ex->getMessage());
             }
 
-            // Log activity
-            $this->logActivity($userId, 'delete', 'blog', $id, "Deleted blog ID: $id");
+            $this->logActivity($userId, 'archive', 'blog', $id, "Archived blog ID: $id and created redirect placeholder");
 
-            return $this->successResponse(['message' => 'Blog deleted successfully']);
+            return $this->successResponse([
+                'message' => 'Blog archived for SEO. A redirect entry was created with empty urlNew; please set the destination.'
+            ]);
 
         } catch (Exception $e) {
             error_log("Error deleting blog: " . $e->getMessage());
@@ -361,7 +471,7 @@ class BlogController {
      * Get parameter type for bind_param
      */
     private function getParamType($field) {
-        $intFields = ['is_active', 'display_order'];
+        $intFields = ['is_home', 'display_order'];
         return in_array($field, $intFields) ? 'i' : 's';
     }
 
@@ -372,16 +482,25 @@ class BlogController {
         return [
             'id' => $blog['id'],
             'title' => $blog['title'],
+            'seoTitle' => $blog['seoTitle'] ?? null,
+            'seoDescription' => $blog['seoDescription'] ?? null,
+            'ogTitle' => $blog['ogTitle'] ?? null,
+            'ogDescription' => $blog['ogDescription'] ?? null,
+            'ogImage' => $blog['ogImage'] ?? null,
             'slug' => $blog['slug'],
+            'subtitle' => $blog['subtitle'] ?? null,
             'description' => $blog['description'],
             'content' => $blog['content'] ?? null,
             'featured_image' => $blog['featured_image'],
+            'featured_image_alt' => $blog['featured_image_alt'] ?? '',
             'content_image' => $blog['content_image'] ?? null,
-            'is_active' => (bool)$blog['is_active'],
+            'content_image_alt' => $blog['content_image_alt'] ?? '',
+            'is_home' => (bool)$blog['is_home'],
             'display_order' => (int)$blog['display_order'],
             'published_date' => $blog['published_date'],
             'created_at' => $blog['created_at'],
-            'updated_at' => $blog['updated_at']
+            'updated_at' => $blog['updated_at'],
+            'deleted_at' => $blog['deleted_at'] ?? null
         ];
     }
 

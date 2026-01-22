@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import PageHero from '../components/PageHero';
 import ContactSection from '../components/ContactSection';
 import TitlePage from '../components/TitlePage';
+import SEO from '../components/SEO';
 import { api, endpoints } from '../config/api';
 
 const formatDate = (value) => {
@@ -18,7 +19,7 @@ export default function TestimonialsPage() {
     const fetchTestimonials = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`${endpoints.testimonials}?is_active=true`);
+        const res = await api.get(`${endpoints.testimonials}`);
         if (res?.success) {
           const ordered = (res.data?.testimonials || []).sort(
             (a, b) => (a.display_order || 0) - (b.display_order || 0)
@@ -40,6 +41,11 @@ export default function TestimonialsPage() {
 
   return (
     <>
+      <SEO
+        title="Testimonials"
+        description="Hear from buyers and sellers who worked with Dalila Gelsomino in Riviera Maya. Real reviews about service, expertise, and results."
+        canonicalUrl="https://buywithdali.com/testimonials"
+      />
       <PageHero breadcrumb="» Testimonials" />
 
       <section className="testimonials-full-section">

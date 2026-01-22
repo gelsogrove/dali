@@ -23,6 +23,7 @@ import ListWithDaliPage from './pages/ListWithDaliPage';
 import CommunityPage from './pages/CommunityPage';
 import BuyersGuidePage from './pages/BuyersGuidePage';
 import ListingDetailPage from './pages/ListingDetailPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -68,6 +69,7 @@ export default function App() {
                 <Route path="/blogs" element={<BlogsPage />} />
                 <Route path="/blog/:slug" element={<BlogDetailPage />} />
                 <Route path="/listings/*" element={<ListingDetailPage />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </main>
             <Footer />

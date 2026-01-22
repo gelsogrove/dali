@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
-import CanvasImage from './CanvasImage';
 import ButtonDali from './ButtonDali';
 import TitlePage from './TitlePage';
 import { api, endpoints } from '../config/api';
@@ -10,6 +9,7 @@ export default function FeaturedVideos() {
   const [activeVideo, setActiveVideo] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [thumbErrors, setThumbErrors] = useState({});
   const apiBase = import.meta.env.VITE_API_URL || '/api';
   const assetBase = useMemo(() => apiBase.replace(/\/api$/, ''), [apiBase]);
 
@@ -22,7 +22,7 @@ export default function FeaturedVideos() {
     const fetchVideos = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`${endpoints.videos}?is_active=true&limit=5`);
+        const res = await api.get(`${endpoints.videos}?is_home=1&limit=5`);
         if (res?.success) {
           const list = (res.data?.videos || []).sort(
             (a, b) => (a.display_order || 0) - (b.display_order || 0)
@@ -111,7 +111,23 @@ export default function FeaturedVideos() {
                   }}
                 >
                   <div className="fv-item-bg">
-                    <CanvasImage src={toAbsoluteUrl(video.thumbnail_url)} width={1140} height={578} className="lazyload" />
+                    {video.thumbnail_url && !thumbErrors[video.id || video.video_url] ? (
+                      <img
+                        src={toAbsoluteUrl(video.thumbnail_url)}
+                        alt={video.thumbnail_alt || video.title}
+                        loading="lazy"
+                        onError={() =>
+                          setThumbErrors((prev) => ({
+                            ...prev,
+                            [video.id || video.video_url]: true,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <div className="fv-thumb-placeholder">
+                        <div className="placeholder-box" aria-hidden="true" />
+                      </div>
+                    )}
                   </div>
                   <div className="fv-play">
                     <div className="fv-outline">

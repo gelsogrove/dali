@@ -14,7 +14,9 @@ class UploadController {
         $this->uploadDir = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/uploads';
         
         // Create upload directories if they don't exist
-        $dirs = ['properties', 'videos', 'galleries', 'temp', 'blogs'];
+        $legacyDirs = ['properties', 'videos', 'galleries', 'temp', 'blogs'];
+        $imageDirs = ['images', 'images/blog', 'images/video', 'images/properties', 'images/city'];
+        $dirs = array_merge($legacyDirs, $imageDirs);
         foreach ($dirs as $dir) {
             $path = $this->uploadDir . '/' . $dir;
             if (!is_dir($path)) {
@@ -42,7 +44,7 @@ class UploadController {
             
             // Generate unique filename with timestamp + random + slug
             $filename = $this->generateUniqueFilename($extension, 'property', $originalName);
-            $basePath = $this->uploadDir . '/properties';
+            $basePath = $this->uploadDir . '/images/properties';
 
             // Create image versions
             $versions = [
@@ -75,7 +77,7 @@ class UploadController {
                     return $this->errorResponse('Failed to process image');
                 }
 
-                $urls[$version] = '/uploads/properties/' . $versionFilename;
+                $urls[$version] = '/uploads/images/properties/' . $versionFilename;
             }
 
             return $this->successResponse([
@@ -160,7 +162,7 @@ class UploadController {
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
             $filename = $this->generateUniqueFilename($extension, 'video-thumb', $originalName);
-            $basePath = $this->uploadDir . '/videos';
+            $basePath = $this->uploadDir . '/images/video';
 
             $versions = [
                 'original' => ['width' => 1600, 'quality' => 90],
@@ -189,7 +191,7 @@ class UploadController {
                     return $this->errorResponse('Failed to process image');
                 }
 
-                $urls[$version] = '/uploads/videos/' . $versionFilename;
+                $urls[$version] = '/uploads/images/video/' . $versionFilename;
             }
 
             return $this->successResponse([
@@ -358,7 +360,7 @@ class UploadController {
      */
     private function generateVideoThumbnail($videoPath) {
         $thumbnailFilename = pathinfo($videoPath, PATHINFO_FILENAME) . '_thumb.jpg';
-        $thumbnailPath = $this->uploadDir . '/videos/' . $thumbnailFilename;
+        $thumbnailPath = $this->uploadDir . '/images/video/' . $thumbnailFilename;
 
         // Use FFmpeg to generate thumbnail at 2 seconds
         $command = "ffmpeg -i " . escapeshellarg($videoPath) . " -ss 00:00:02 -vframes 1 -q:v 2 " . escapeshellarg($thumbnailPath) . " 2>&1";
@@ -366,7 +368,7 @@ class UploadController {
         exec($command, $output, $returnCode);
 
         if ($returnCode === 0 && file_exists($thumbnailPath)) {
-            return '/uploads/videos/' . $thumbnailFilename;
+            return '/uploads/images/video/' . $thumbnailFilename;
         }
 
         return null;
@@ -404,7 +406,7 @@ class UploadController {
             
             // Generate unique filename with timestamp + random + slug
             $filename = $this->generateUniqueFilename($extension, 'blog', $originalName);
-            $basePath = $this->uploadDir . '/blogs';
+            $basePath = $this->uploadDir . '/images/blog';
 
             // Create image versions for blog
             $versions = [
@@ -436,7 +438,7 @@ class UploadController {
                     return $this->errorResponse('Failed to process image');
                 }
 
-                $urls[$version] = '/uploads/blogs/' . $versionFilename;
+                $urls[$version] = '/uploads/images/blog/' . $versionFilename;
             }
 
             return $this->successResponse([

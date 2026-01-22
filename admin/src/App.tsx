@@ -15,6 +15,8 @@ import VideosPage from './pages/VideosPage'
 import CommunitiesPage from './pages/CommunitiesPage'
 import LinkGenerationPage from './pages/LinkGenerationPage'
 import TestimonialsPage from './pages/TestimonialsPage'
+import RedirectsPage from './pages/RedirectsPage'
+import SeoRulesPage from './pages/SeoRulesPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
@@ -113,9 +115,11 @@ function App() {
         <Route path="photogallery/:id/edit" element={<PhotoGalleryFormPage />} />
         <Route path="videos" element={<VideosPage />} />
         <Route path="testimonials" element={<TestimonialsPage />} />
+        <Route path="redirects" element={<RedirectsPage />} />
         <Route path="feedbacks" element={<Navigate to="/testimonials" replace />} />
         <Route path="community" element={<CommunitiesPage />} />
         <Route path="link-generation" element={<LinkGenerationPage />} />
+        <Route path="seo-rules" element={<SeoRulesPage />} />
       </Route>
     </Routes>
   )

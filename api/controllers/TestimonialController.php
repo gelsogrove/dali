@@ -21,15 +21,10 @@ class TestimonialController {
             $params = [];
             $types = '';
 
-            // Active filter - public defaults to active only
-            if (isset($filters['is_active'])) {
-                if ($filters['is_active'] !== 'all') {
-                    $where[] = "is_active = ?";
-                    $params[] = ($filters['is_active'] === 'true' || $filters['is_active'] === '1') ? 1 : 0;
-                    $types .= 'i';
-                }
-            } else {
-                $where[] = "is_active = 1";
+            if (isset($filters['is_home'])) {
+                $where[] = "is_home = ?";
+                $params[] = ($filters['is_home'] === 'true' || $filters['is_home'] === '1') ? 1 : 0;
+                $types .= 'i';
             }
 
             // Search by author or content
@@ -52,7 +47,7 @@ class TestimonialController {
             }
             $offset = ($page - 1) * $perPage;
 
-            $query = "SELECT id, author, content, testimonial_date, display_order, is_active, created_at, updated_at
+            $query = "SELECT id, author, content, testimonial_date, display_order, is_home, created_at, updated_at
                       FROM testimonials
                       WHERE $whereClause
                       ORDER BY display_order ASC, testimonial_date DESC, created_at DESC
@@ -142,7 +137,7 @@ class TestimonialController {
                 ? (int)$data['display_order']
                 : $this->getNextDisplayOrder();
 
-            $query = "INSERT INTO testimonials (author, content, testimonial_date, display_order, is_active, created_by)
+            $query = "INSERT INTO testimonials (author, content, testimonial_date, display_order, is_home, created_by)
                       VALUES (?, ?, ?, ?, ?, ?)";
 
             $params = [
@@ -150,7 +145,7 @@ class TestimonialController {
                 $data['content'],
                 $data['testimonial_date'] ?? null,
                 $displayOrder,
-                isset($data['is_active']) ? (int)$data['is_active'] : 1,
+                isset($data['is_home']) ? (int)$data['is_home'] : 0,
                 $userId,
             ];
 
@@ -186,7 +181,7 @@ class TestimonialController {
             $params = [];
             $types = '';
 
-            $allowed = ['author', 'content', 'testimonial_date', 'display_order', 'is_active'];
+            $allowed = ['author', 'content', 'testimonial_date', 'display_order', 'is_home'];
             foreach ($allowed as $field) {
                 if (array_key_exists($field, $data)) {
                     $fields[] = "$field = ?";
@@ -278,18 +273,29 @@ class TestimonialController {
             `content` TEXT NOT NULL,
             `testimonial_date` DATE NULL,
             `display_order` INT DEFAULT 0,
-            `is_active` TINYINT(1) DEFAULT 1,
+            `is_home` TINYINT(1) NOT NULL DEFAULT 0,
             `created_by` INT UNSIGNED NULL,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`),
             INDEX `idx_display_order` (`display_order`),
-            INDEX `idx_is_active` (`is_active`),
+            INDEX `idx_is_home` (`is_home`),
             INDEX `idx_testimonial_date` (`testimonial_date`),
             FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
         $this->conn->query($sql);
+
+        // ensure new column exists if table was old
+        $col = $this->conn->query("SHOW COLUMNS FROM testimonials LIKE 'is_home'");
+        if (!$col || $col->num_rows === 0) {
+            $this->conn->query("ALTER TABLE testimonials ADD COLUMN is_home TINYINT(1) NOT NULL DEFAULT 0 AFTER display_order");
+        }
+
+        $dropActive = $this->conn->query("SHOW COLUMNS FROM testimonials LIKE 'is_active'");
+        if ($dropActive && $dropActive->num_rows > 0) {
+            $this->conn->query("ALTER TABLE testimonials DROP COLUMN is_active");
+        }
     }
 
     private function getNextDisplayOrder() {
@@ -308,7 +314,7 @@ class TestimonialController {
             'content' => $row['content'],
             'testimonial_date' => $row['testimonial_date'],
             'display_order' => isset($row['display_order']) ? (int)$row['display_order'] : 0,
-            'is_active' => isset($row['is_active']) ? (bool)$row['is_active'] : true,
+            'is_home' => isset($row['is_home']) ? (bool)$row['is_home'] : false,
             'created_at' => $row['created_at'] ?? null,
             'updated_at' => $row['updated_at'] ?? null,
         ];
@@ -317,7 +323,7 @@ class TestimonialController {
     private function getParamType($field) {
         switch ($field) {
             case 'display_order':
-            case 'is_active':
+            case 'is_home':
                 return 'i';
             default:
                 return 's';

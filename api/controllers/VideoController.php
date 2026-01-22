@@ -1,17 +1,21 @@
 <?php
 
-require_once __DIR__ . '/../config/database.php';
+$__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
+require_once $__baseDir . '/../config/database.php';
+$__redirectPath = realpath($__baseDir . '/../lib/RedirectService.php') ?: ($__baseDir . '/../lib/RedirectService.php');
+require_once $__redirectPath;
 
 class VideoController {
     private $db;
     private $conn;
-    private $hasIsActive = false;
     private $hasCreatedBy = false;
+    private $redirectService;
 
     public function __construct() {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
         $this->ensureSchema();
+        $this->redirectService = new RedirectService($this->conn);
     }
 
     /**
@@ -23,18 +27,16 @@ class VideoController {
             $params = [];
             $types = '';
 
-            // Visibility filter
-            if ($this->hasIsActive) {
-                if (isset($filters['is_active']) && $filters['is_active'] !== 'all') {
-                    $where[] = "is_active = ?";
-                    $params[] = ($filters['is_active'] === 'true' || $filters['is_active'] === '1') ? 1 : 0;
-                    $types .= 'i';
-                } else {
-                    // Default for public - only active
-                    if (!isset($filters['is_active'])) {
-                        $where[] = "is_active = 1";
-                    }
-                }
+            // Exclude soft deleted by default
+            if (empty($filters['include_deleted'])) {
+                $where[] = "deleted_at IS NULL";
+            }
+
+            // is_home filter
+            if (isset($filters['is_home'])) {
+                $where[] = "is_home = ?";
+                $params[] = ($filters['is_home'] === 'true' || $filters['is_home'] === '1') ? 1 : 0;
+                $types .= 'i';
             }
 
             // Search filter (title + description)
@@ -64,11 +66,7 @@ class VideoController {
             }
             $offset = ($page - 1) * $perPage;
 
-            $selectColumns = "id, property_id, title, description, video_url, video_type, thumbnail_url, display_order";
-            if ($this->hasIsActive) {
-                $selectColumns .= ", is_active";
-            }
-            $selectColumns .= ", created_at, updated_at";
+            $selectColumns = "id, property_id, title, description, video_url, video_type, thumbnail_url, thumbnail_alt, display_order, is_home, created_at, updated_at, deleted_at";
 
             $query = "SELECT $selectColumns 
                       FROM videos 
@@ -134,7 +132,7 @@ class VideoController {
      */
     public function getById($id) {
         try {
-            $query = "SELECT * FROM videos WHERE id = ? LIMIT 1";
+            $query = "SELECT * FROM videos WHERE id = ? AND deleted_at IS NULL LIMIT 1";
             $result = $this->db->executePrepared($query, [$id], 'i');
 
             if (!$result || $result->num_rows === 0) {
@@ -166,11 +164,14 @@ class VideoController {
             if (empty($data['thumbnail_url'])) {
                 return $this->errorResponse('Thumbnail image is required', 400);
             }
+            if (empty($data['thumbnail_alt'])) {
+                return $this->errorResponse('Thumbnail alt text is required', 400);
+            }
 
             $displayOrder = isset($data['display_order']) ? (int)$data['display_order'] : $this->getNextDisplayOrder();
 
-            $columns = ['property_id', 'title', 'description', 'video_url', 'video_type', 'thumbnail_url', 'display_order'];
-            $placeholders = ['?', '?', '?', '?', '?', '?', '?'];
+            $columns = ['property_id', 'title', 'description', 'video_url', 'video_type', 'thumbnail_url', 'thumbnail_alt', 'display_order', 'is_home'];
+            $placeholders = ['?', '?', '?', '?', '?', '?', '?', '?', '?'];
             $params = [
                 $data['property_id'] ?? null,
                 $data['title'],
@@ -178,16 +179,11 @@ class VideoController {
                 $data['video_url'],
                 $data['video_type'] ?? 'vimeo',
                 $data['thumbnail_url'],
+                $data['thumbnail_alt'],
                 $displayOrder,
+                isset($data['is_home']) ? (int)$data['is_home'] : 0,
             ];
-            $types = 'isssssi';
-
-            if ($this->hasIsActive) {
-                $columns[] = 'is_active';
-                $placeholders[] = '?';
-                $params[] = isset($data['is_active']) ? (int)$data['is_active'] : 1;
-                $types .= 'i';
-            }
+            $types = 'issssssii';
 
             if ($this->hasCreatedBy) {
                 $columns[] = 'created_by';
@@ -221,24 +217,26 @@ class VideoController {
      */
     public function update($id, $data, $userId) {
         try {
-            $check = $this->db->executePrepared("SELECT id FROM videos WHERE id = ? LIMIT 1", [$id], 'i');
+            $check = $this->db->executePrepared("SELECT * FROM videos WHERE id = ? AND deleted_at IS NULL LIMIT 1", [$id], 'i');
             if (!$check || $check->num_rows === 0) {
                 return $this->errorResponse('Video not found', 404);
             }
 
-            $allowed = ['property_id', 'title', 'description', 'video_url', 'video_type', 'thumbnail_url', 'display_order'];
-            if ($this->hasIsActive) {
-                $allowed[] = 'is_active';
+            if (!empty($data['video_url']) && strpos($data['video_url'], 'vimeo.com') === false) {
+                return $this->errorResponse('Video URL must be a Vimeo link', 400);
             }
+
+            if (isset($data['thumbnail_url']) && !empty($data['thumbnail_url']) && empty($data['thumbnail_alt'])) {
+                return $this->errorResponse('Thumbnail alt text is required', 400);
+            }
+
+            $allowed = ['property_id', 'title', 'description', 'video_url', 'video_type', 'thumbnail_url', 'thumbnail_alt', 'display_order', 'is_home'];
             $updates = [];
             $params = [];
             $types = '';
 
             foreach ($allowed as $field) {
                 if (array_key_exists($field, $data)) {
-                    if ($field === 'video_url' && !empty($data[$field]) && strpos($data[$field], 'vimeo.com') === false) {
-                        return $this->errorResponse('Video URL must be a Vimeo link', 400);
-                    }
                     $updates[] = "$field = ?";
                     $params[] = $data[$field];
                     $types .= $this->getParamType($field);
@@ -273,25 +271,56 @@ class VideoController {
      */
     public function delete($id, $userId) {
         try {
-            $fetch = $this->db->executePrepared("SELECT thumbnail_url FROM videos WHERE id = ? LIMIT 1", [$id], 'i');
-            $thumb = null;
-            if ($fetch && $fetch->num_rows > 0) {
-                $thumb = $fetch->fetch_assoc()['thumbnail_url'] ?? null;
+            $fetch = $this->db->executePrepared("SELECT thumbnail_url, created_at, deleted_at FROM videos WHERE id = ? LIMIT 1", [$id], 'i');
+            if (!$fetch || $fetch->num_rows === 0) {
+                return $this->errorResponse('Video not found', 404);
+            }
+            $row = $fetch->fetch_assoc();
+            if (!empty($row['deleted_at'])) {
+                return $this->errorResponse('Video already archived', 400);
             }
 
-            $result = $this->db->executePrepared("DELETE FROM videos WHERE id = ?", [$id], 'i');
-            if (!$result) {
-                return $this->errorResponse('Failed to delete video');
+            $createdAt = new DateTime($row['created_at']);
+            $now = new DateTime();
+            $hoursDiff = ($now->getTimestamp() - $createdAt->getTimestamp()) / 3600;
+
+            if ($hoursDiff < 24) {
+                $result = $this->db->executePrepared("DELETE FROM videos WHERE id = ?", [$id], 'i');
+                if (!$result) {
+                    return $this->errorResponse('Failed to delete video');
+                }
+
+                if (!empty($row['thumbnail_url'])) {
+                    require_once __DIR__ . '/UploadController.php';
+                    $uploader = new UploadController();
+                    $uploader->deleteFile($row['thumbnail_url']);
+                }
+
+                $this->logActivity($userId, 'delete', 'video', $id, "Deleted video ID: $id");
+                return $this->successResponse(['message' => 'Video deleted permanently (created < 24h)']);
             }
 
-            if (!empty($thumb)) {
-                require_once __DIR__ . '/UploadController.php';
-                $uploader = new UploadController();
-                $uploader->deleteFile($thumb);
+            // Soft delete + redirect placeholder
+            $stmt = $this->conn->prepare("UPDATE videos SET deleted_at = NOW() WHERE id = ?");
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $stmt->close();
+
+            $urlOld = '/videos/' . $id;
+            try {
+                $existingRule = $this->redirectService->findByUrlOld($urlOld);
+                if (!$existingRule) {
+                    $this->redirectService->create($urlOld, '');
+                }
+            } catch (Exception $ex) {
+                $this->conn->query("UPDATE videos SET deleted_at = NULL WHERE id = " . (int)$id);
+                return $this->errorResponse('Redirect creation failed: ' . $ex->getMessage());
             }
 
-            $this->logActivity($userId, 'delete', 'video', $id, "Deleted video ID: $id");
-            return $this->successResponse(['message' => 'Video deleted successfully']);
+            $this->logActivity($userId, 'archive', 'video', $id, "Archived video ID: $id and created redirect placeholder");
+            return $this->successResponse([
+                'message' => 'Video archived for SEO. A redirect entry was created with empty urlNew; please set the destination.'
+            ]);
         } catch (Exception $e) {
             error_log("Error deleting video: " . $e->getMessage());
             return $this->errorResponse('An error occurred');
@@ -341,7 +370,7 @@ class VideoController {
      * Param type helper
      */
     private function getParamType($field) {
-        $intFields = ['property_id', 'display_order', 'is_active'];
+        $intFields = ['property_id', 'display_order', 'is_home'];
         return in_array($field, $intFields) ? 'i' : 's';
     }
 
@@ -358,9 +387,11 @@ class VideoController {
             'video_type' => $video['video_type'] ?? 'vimeo',
             'thumbnail_url' => $video['thumbnail_url'],
             'display_order' => (int)$video['display_order'],
-            'is_active' => $this->hasIsActive ? (bool)$video['is_active'] : true,
+            'thumbnail_alt' => $video['thumbnail_alt'] ?? '',
+            'is_home' => isset($video['is_home']) ? (bool)$video['is_home'] : false,
             'created_at' => $video['created_at'] ?? null,
             'updated_at' => $video['updated_at'] ?? null,
+            'deleted_at' => $video['deleted_at'] ?? null,
         ];
     }
 
@@ -398,15 +429,6 @@ class VideoController {
      */
     private function ensureSchema() {
         try {
-            // is_active column
-            $col = $this->conn->query("SHOW COLUMNS FROM videos LIKE 'is_active'");
-            if ($col && $col->num_rows > 0) {
-                $this->hasIsActive = true;
-            } else {
-                $this->conn->query("ALTER TABLE videos ADD COLUMN is_active TINYINT(1) DEFAULT 1");
-                $this->hasIsActive = true;
-            }
-
             // created_by column
             $col2 = $this->conn->query("SHOW COLUMNS FROM videos LIKE 'created_by'");
             if ($col2 && $col2->num_rows > 0) {
@@ -414,6 +436,24 @@ class VideoController {
             } else {
                 $this->conn->query("ALTER TABLE videos ADD COLUMN created_by INT UNSIGNED NULL DEFAULT NULL");
                 $this->hasCreatedBy = true;
+            }
+
+            // thumbnail_alt
+            $col3 = $this->conn->query("SHOW COLUMNS FROM videos LIKE 'thumbnail_alt'");
+            if (!$col3 || $col3->num_rows === 0) {
+                $this->conn->query("ALTER TABLE videos ADD COLUMN thumbnail_alt VARCHAR(255) NOT NULL DEFAULT '' AFTER thumbnail_url");
+            }
+
+            // is_home
+            $col4 = $this->conn->query("SHOW COLUMNS FROM videos LIKE 'is_home'");
+            if (!$col4 || $col4->num_rows === 0) {
+                $this->conn->query("ALTER TABLE videos ADD COLUMN is_home TINYINT(1) NOT NULL DEFAULT 0 AFTER display_order");
+            }
+
+            // deleted_at
+            $col5 = $this->conn->query("SHOW COLUMNS FROM videos LIKE 'deleted_at'");
+            if (!$col5 || $col5->num_rows === 0) {
+                $this->conn->query("ALTER TABLE videos ADD COLUMN deleted_at DATETIME NULL AFTER updated_at");
             }
         } catch (Exception $e) {
             error_log('VideoController schema check failed: ' . $e->getMessage());

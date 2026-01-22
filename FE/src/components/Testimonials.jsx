@@ -17,7 +17,7 @@ export default function Testimonials() {
     const fetchTestimonials = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`${endpoints.testimonials}?is_active=true`);
+        const res = await api.get(`${endpoints.testimonials}?is_home=1`);
         if (res?.success) {
           const ordered = (res.data?.testimonials || []).sort(
             (a, b) => (a.display_order || 0) - (b.display_order || 0)

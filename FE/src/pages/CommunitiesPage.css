@@ -1,0 +1,216 @@
+/* ==================== COMMUNITIES PAGE ==================== */
+
+/* ===== Communities Intro Section ===== */
+.communities-intro {
+  padding: 60px 0 0;
+  background: var(--color-bg-white);
+  text-align: center;
+}
+
+.communities-intro-copy {
+  max-width: 800px;
+  margin: 0 auto;
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+  padding: 0 5%;
+}
+
+/* ===== Communities Grid Section ===== */
+.communities-grid-section {
+  padding: var(--section-padding);
+  background: var(--color-bg-white);
+}
+
+.communities-grid-wrapper {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 5%;
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+}
+
+/* ===== City Container ===== */
+.communities-city {
+  border: var(--border-width-thin) solid var(--color-border-light);
+  padding: 28px;
+  box-shadow: var(--shadow-medium);
+  background: var(--color-bg-white);
+  border-radius: var(--border-radius-small);
+}
+
+.communities-city-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.communities-city-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  font-weight: var(--font-weight-bold);
+  font-size: 12px;
+  color: #c0b4af;
+  font-family: var(--font-family-heading);
+}
+
+.communities-city-title-link {
+  text-decoration: none;
+}
+
+.communities-city-title-link:hover {
+  color: var(--color-accent);
+}
+
+.communities-city-title-link h3 {
+  margin: 4px 0 0;
+  font-size: 28px;
+  letter-spacing: 0.5px;
+  font-family: var(--font-family-title);
+  color: var(--color-primary);
+  transition: color var(--transition-fast);
+  font-weight: var(--font-weight-medium);
+}
+
+.communities-city-title-link:hover h3 {
+  color: var(--color-accent);
+}
+
+.communities-count {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  padding: 8px 18px;
+  background: var(--color-bg-light);
+  border-radius: var(--border-radius-small);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ===== Community Cards Grid ===== */
+.communities-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--card-gap);
+}
+
+/* ===== Individual Community Card ===== */
+.community-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-white);
+  border: var(--border-width-thin) solid var(--color-border-light);
+  border-radius: var(--border-radius-small);
+  overflow: hidden;
+  text-decoration: none;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-light);
+}
+
+.community-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-large);
+  border-color: var(--color-accent);
+}
+
+.community-card-image {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.community-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.community-card:hover img {
+  transform: scale(1.05);
+}
+
+.community-card-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+  pointer-events: none;
+}
+
+.community-card-body {
+  padding: var(--card-padding);
+}
+
+.community-card h4 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  letter-spacing: 0.6px;
+  font-family: var(--font-family-title);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.community-card-link {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  color: var(--color-accent);
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ===== Placeholder for missing images ===== */
+.blog-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+}
+
+.placeholder-box {
+  width: 60px;
+  height: 60px;
+  border: 2px solid #d0d0d0;
+  border-radius: var(--border-radius-small);
+  background: transparent;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 991px) {
+  .communities-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .communities-grid-section {
+    padding: 70px 0 50px;
+  }
+
+  .communities-city {
+    padding: 22px;
+  }
+
+  .communities-city-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .communities-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .communities-city-title-link h3 {
+    font-size: 24px;
+  }
+}

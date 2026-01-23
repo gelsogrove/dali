@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import PageHero from '../components/PageHero';
-import ContactSection from '../components/ContactSection';
+import ContactWithCta from '../components/ContactWithCta';
 import TitlePage from '../components/TitlePage';
 import { api } from '../config/api';
+import './CommunitiesPage.css';
 
 const toSlug = (href) => {
   if (!href) return '';
@@ -135,7 +136,7 @@ export default function CommunitiesPage() {
         </div>
       </section>
 
-      <ContactSection />
+      <ContactWithCta />
     </>
   );
 }

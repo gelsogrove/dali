@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import PageHero from '../components/PageHero';
-import ContactSection from '../components/ContactSection';
+import ContactWithCta from '../components/ContactWithCta';
 import TitlePage from '../components/TitlePage';
 import SEO from '../components/SEO';
 import { api, endpoints } from '../config/api';
@@ -85,7 +85,7 @@ export default function TestimonialsPage() {
           ))}
         </div>
       </section>
-      <ContactSection />
+      <ContactWithCta />
     </>
   );
 }

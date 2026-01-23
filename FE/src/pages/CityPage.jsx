@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PageHero from '../components/PageHero';
-import ContactSection from '../components/ContactSection';
+import ContactWithCta from '../components/ContactWithCta';
 import SEO from '../components/SEO';
 import { api } from '../config/api';
 
@@ -183,7 +183,7 @@ export default function CityPage() {
         </div>
       </section>
 
-      <ContactSection />
+      <ContactWithCta />
     </>
   );
 }

@@ -261,6 +261,12 @@ function handleUploadRoutes($segments, $method) {
                 $result = $controller->uploadVideoImage($_FILES['image'] ?? null);
                 echo json_encode($result);
                 break;
+
+            case 'video-thumbnail':
+                // alias used by admin
+                $result = $controller->uploadVideoImage($_FILES['image'] ?? null);
+                echo json_encode($result);
+                break;
             
             case 'blog-image':
                 $result = $controller->uploadBlogImage($_FILES['image'] ?? null);

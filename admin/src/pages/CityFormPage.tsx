@@ -145,11 +145,11 @@ export default function CityFormPage() {
 
   const uploadImage = async (file: File, target: 'cover_image' | 'content_image') => {
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
+      console.warn('Please select an image file')
       return
     }
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image must be smaller than 10MB')
+      console.warn('Image must be smaller than 10MB')
       return
     }
     const setUploading = target === 'cover_image' ? setUploadingCover : setUploadingContent
@@ -164,7 +164,6 @@ export default function CityFormPage() {
       }
     } catch (err) {
       console.error(err)
-      alert('Upload failed')
     } finally {
       setUploading(false)
     }
@@ -176,15 +175,17 @@ export default function CityFormPage() {
     if (!confirm('Remove this image?')) return
     try {
       await api.delete(`/upload/file?url=${encodeURIComponent(current)}`)
-      setFormData((prev) => ({
-        ...prev,
-        [target]: '',
-        ...(target === 'cover_image' ? { cover_image_alt: '' } : { content_image_alt: '' }),
-      }))
     } catch (err) {
       console.error(err)
-      alert('Failed to remove image')
+      // Continue anyway - file may not exist anymore
     }
+    
+    // Remove image reference even if delete failed
+    setFormData((prev) => ({
+      ...prev,
+      [target]: '',
+      ...(target === 'cover_image' ? { cover_image_alt: '' } : { content_image_alt: '' }),
+    }))
   }
 
   return (

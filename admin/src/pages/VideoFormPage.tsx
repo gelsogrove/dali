@@ -104,12 +104,12 @@ export default function VideoFormPage() {
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
+      console.warn('Please select an image file')
       return
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image must be smaller than 10MB')
+      console.warn('Image must be smaller than 10MB')
       return
     }
 
@@ -130,7 +130,6 @@ export default function VideoFormPage() {
       setImagePreview(toAbsoluteUrl(imageUrl))
     } catch (error) {
       console.error('Upload failed:', error)
-      alert('Image upload failed')
     } finally {
       setUploading(false)
     }
@@ -142,12 +141,14 @@ export default function VideoFormPage() {
 
     try {
       await api.delete(`/upload/file?url=${encodeURIComponent(formData.thumbnail_url)}`)
-      setFormData((prev) => ({ ...prev, thumbnail_url: '', thumbnail_alt: '' }))
-      setImagePreview('')
     } catch (error) {
       console.error('Failed to delete image:', error)
-      alert('Image delete failed')
+      // Continue anyway - file may not exist anymore
     }
+    
+    // Remove image reference even if delete failed
+    setFormData((prev) => ({ ...prev, thumbnail_url: '', thumbnail_alt: '' }))
+    setImagePreview('')
   }
 
   return (

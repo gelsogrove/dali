@@ -176,7 +176,13 @@ export default function CitiesPage() {
                 <CardContent className="p-0">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
-                      {/* Additional info could go here */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/areas?city_id=${city.id}`)}
+                      >
+                        View Areas
+                      </Button>
                     </div>
                     
                     <div className="flex gap-2">

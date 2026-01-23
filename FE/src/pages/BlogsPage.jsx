@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import ContactSection from '../components/ContactSection';
+import ContactWithCta from '../components/ContactWithCta';
 import PageHero from '../components/PageHero';
 import TitleHeader from '../components/TitleHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -126,7 +126,7 @@ export default function BlogsPage() {
         </div>
       </section>
 
-      <ContactSection />
+      <ContactWithCta />
     </>
   );
 }

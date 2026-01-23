@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
+import './FeaturedCities.css';
 import ButtonDali from './ButtonDali';
 import { api } from '../config/api';
 
@@ -84,112 +85,125 @@ export default function FeaturedCities() {
         
         {!loading && grouped.length > 0 && (
           <div className="fc-cities-wrapper">
-            {/* City Slider - one city at a time */}
-            <Splide
-              ref={citiesSliderRef}
-              options={{
-                type: grouped.length > 1 ? 'loop' : 'slide',
-                perPage: 1,
-                perMove: 1,
-                gap: 0,
-                pagination: false,
-                arrows: false,
-                autoplay: false,
-                drag: grouped.length > 1,
-                speed: 600,
-              }}
-            >
-              {grouped.map(({ city, areas, idx }) => (
-                <SplideSlide key={city.id || idx}>
-                  <div className="fc-item">
-                    {/* City name with prev/next controls for areas */}
-                    <div className="fc-controls">
-                      {areas.length > 3 && (
-                        <button
-                          className="prev"
-                          onClick={() => handleAreaPrev(city.id || idx)}
-                          aria-label="Previous Area"
-                        >
-                          <span className="hidden">Previous Featured Communities Slide</span>
-                          <i className="ai-font-arrow-b"></i>
-                        </button>
-                      )}
-                      <h3>{city.title || city.name}</h3>
-                      {areas.length > 3 && (
-                        <button
-                          className="next"
-                          onClick={() => handleAreaNext(city.id || idx)}
-                          aria-label="Next Area"
-                        >
-                          <span className="hidden">Next Featured Communities Slide</span>
-                          <i className="ai-font-arrow-b"></i>
-                        </button>
-                      )}
-                    </div>
+            {/* All cities displayed vertically - like original site */}
+            {grouped.map(({ city, areas, idx }) => (
+              <div key={city.id || idx} className="fc-city-section">
+                {/* City name with prev/next controls - show if more than 3 areas */}
+                <div className="fc-controls">
+                  {areas.length > 3 && (
+                    <button
+                      className="prev"
+                      onClick={() => handleAreaPrev(city.id || idx)}
+                      aria-label="Previous Area"
+                    >
+                      <span className="hidden">Previous Featured Communities Slide</span>
+                      <i className="ai-font-arrow-b"></i>
+                    </button>
+                  )}
+                  <h3>{city.title || city.name}</h3>
+                  {areas.length > 3 && (
+                    <button
+                      className="next"
+                      onClick={() => handleAreaNext(city.id || idx)}
+                      aria-label="Next Area"
+                    >
+                      <span className="hidden">Next Featured Communities Slide</span>
+                      <i className="ai-font-arrow-b"></i>
+                    </button>
+                  )}
+                </div>
 
-                    {/* Areas Slider - 3 visible at a time */}
-                    <div className="fc-grid" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
-                      <Splide
-                        ref={(instance) => {
-                          if (instance) areaSliderRefs.current[city.id || idx] = instance;
-                        }}
-                        options={{
-                          type: areas.length > 3 ? 'loop' : 'slide',
-                          perPage: 3,
-                          perMove: 1,
-                          gap: '5px',
-                          pagination: false,
-                          arrows: false,
-                          autoplay: true,
-                          interval: 5000,
-                          pauseOnHover: true,
-                          pauseOnFocus: true,
-                          drag: areas.length > 3,
-                          breakpoints: {
-                            991: {
-                              perPage: 2,
-                              gap: '5px',
-                            },
-                            767: {
-                              perPage: 1,
-                              gap: '5px',
-                            },
+                {/* Slider if more than 1 area, otherwise static */}
+                <div className="fc-grid" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
+                  {areas.length > 1 ? (
+                    <Splide
+                      ref={(instance) => {
+                        if (instance) areaSliderRefs.current[city.id || idx] = instance;
+                      }}
+                      options={{
+                        type: 'loop',
+                        perPage: 3,
+                        perMove: 1,
+                        gap: '20px',
+                        pagination: false,
+                        arrows: false,
+                        autoplay: true,
+                        interval: 5000,
+                        pauseOnHover: true,
+                        pauseOnFocus: true,
+                        drag: true,
+                        breakpoints: {
+                          991: {
+                            perPage: 2,
+                            gap: '12px',
                           },
-                        }}
-                      >
-                        {areas.map((community) => (
-                          <SplideSlide key={`${community.slug}-${community.city_id || idx}`}>
-                            <div className="fc-list">
-                              <a href={`/community/${city.slug}/${community.slug}`}>
-                                <div className="fc-item-image">
-                                  {community.cover_image && !thumbErrors[`${community.slug}-${community.city_id || idx}`] ? (
-                                    <img
-                                      src={toAbsoluteUrl(community.cover_image)}
-                                      alt={community.title}
-                                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                                      onError={() =>
-                                        setThumbErrors((prev) => ({ ...prev, [`${community.slug}-${community.city_id || idx}`]: true }))
-                                      }
-                                    />
-                                  ) : (
-                                    <div className="blog-placeholder" style={{ height: '100%' }}>
-                                      <div className="placeholder-box" aria-hidden="true" />
-                                    </div>
-                                  )}
+                          767: {
+                            perPage: 1,
+                            gap: '12px',
+                          },
+                        },
+                      }}
+                    >
+                      {areas.map((community) => (
+                        <SplideSlide key={`${community.slug}-${community.city_id || idx}`}>
+                          <div className="fc-list">
+                            <a href={`/community/${city.slug}/${community.slug}`}>
+                              <div className="fc-item-image">
+                                {community.cover_image && !thumbErrors[`${community.slug}-${community.city_id || idx}`] ? (
+                                  <img
+                                    src={toAbsoluteUrl(community.cover_image)}
+                                    alt={community.title}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                    onError={() =>
+                                      setThumbErrors((prev) => ({ ...prev, [`${community.slug}-${community.city_id || idx}`]: true }))
+                                    }
+                                  />
+                                ) : (
+                                  <div className="blog-placeholder" style={{ height: '100%' }}>
+                                    <div className="placeholder-box" aria-hidden="true" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="fc-item-overlay">
+                                <strong>{community.title}</strong>
+                              </div>
+                            </a>
+                          </div>
+                        </SplideSlide>
+                      ))}
+                    </Splide>
+                  ) : (
+                    <div className="fc-grid-static">
+                      {areas.map((community) => (
+                        <div key={`${community.slug}-${community.city_id || idx}`} className="fc-list">
+                          <a href={`/community/${city.slug}/${community.slug}`}>
+                            <div className="fc-item-image">
+                              {community.cover_image && !thumbErrors[`${community.slug}-${community.city_id || idx}`] ? (
+                                <img
+                                  src={toAbsoluteUrl(community.cover_image)}
+                                  alt={community.title}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                  onError={() =>
+                                    setThumbErrors((prev) => ({ ...prev, [`${community.slug}-${community.city_id || idx}`]: true }))
+                                  }
+                                />
+                              ) : (
+                                <div className="blog-placeholder" style={{ height: '100%' }}>
+                                  <div className="placeholder-box" aria-hidden="true" />
                                 </div>
-                                <div className="fc-item-overlay">
-                                  <strong>{community.title}</strong>
-                                </div>
-                              </a>
+                              )}
                             </div>
-                          </SplideSlide>
-                        ))}
-                      </Splide>
+                            <div className="fc-item-overlay">
+                              <strong>{community.title}</strong>
+                            </div>
+                          </a>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                </SplideSlide>
-              ))}
-            </Splide>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

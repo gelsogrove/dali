@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import './VideosPage.css';
 import PageHero from '../components/PageHero';
 import TitleHeader from '../components/TitleHeader';
-import ContactSection from '../components/ContactSection';
+import ContactWithCta from '../components/ContactWithCta';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ButtonDali from '../components/ButtonDali';
 import SEO from '../components/SEO';
@@ -134,7 +134,7 @@ export default function VideosPage() {
                         <div className="placeholder-box" aria-hidden="true" />
                       </div>
                     )}
-                    <div className="fv-play" style={{ pointerEvents: 'none' }}>
+                    <div className="fv-play" aria-hidden="true">
                       <div className="fv-outline">
                         <div className="fv-inline">
                           <i className="ai-font-play-button-a"></i>
@@ -174,7 +174,7 @@ export default function VideosPage() {
         </div>
       </section>
 
-      <ContactSection />
+      <ContactWithCta />
 
       {activeVideo && (
         <div className="fv-modal" role="dialog" aria-modal="true" onClick={() => setActiveVideo(null)}>

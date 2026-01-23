@@ -8,7 +8,7 @@
   margin-left: auto !important;
   margin-right: auto !important;
   margin-bottom: var(--title-margin-bottom);
-  padding: 0;
+  padding: 0px 0 40px;
 }
 
 .title-header.title-header--center {

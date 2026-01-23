@@ -1,6 +1,6 @@
 import PageHero from '../components/PageHero';
 import FeaturedProperties from '../components/FeaturedProperties';
-import ContactSection from '../components/ContactSection';
+import ContactWithCta from '../components/ContactWithCta';
 
 export default function ActivePropertiesPage() {
   return (
@@ -11,7 +11,7 @@ export default function ActivePropertiesPage() {
           <FeaturedProperties activeTab="active" paginate pageSize={12} />
         </div>
       </section>
-      <ContactSection />
+      <ContactWithCta />
     </>
   );
 }

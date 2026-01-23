@@ -140,13 +140,13 @@ export default function BlogFormPage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
+      console.warn('Please select an image file')
       return
     }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image must be smaller than 10MB')
+      console.warn('Image must be smaller than 10MB')
       return
     }
 
@@ -171,7 +171,6 @@ export default function BlogFormPage() {
       setPreviewFn(toAbsoluteUrl(imageUrl))
     } catch (error) {
       console.error('Upload failed:', error)
-      alert('Image upload failed')
     } finally {
       setUploadingFn(false)
     }
@@ -185,20 +184,22 @@ export default function BlogFormPage() {
 
     try {
       await api.delete(`/upload/file?url=${encodeURIComponent(currentUrl)}`)
-      setFormData((prev) => ({
-        ...prev,
-        ...(target === 'featured'
-          ? { featured_image: '', featured_image_alt: '' }
-          : { content_image: '', content_image_alt: '' }),
-      }))
-      if (target === 'featured') {
-        setImagePreview('')
-      } else {
-        setContentImagePreview('')
-      }
     } catch (error) {
       console.error('Failed to delete image:', error)
-      alert('Image delete failed')
+      // Continue anyway - file may not exist anymore
+    }
+    
+    // Remove image reference from form even if delete failed
+    setFormData((prev) => ({
+      ...prev,
+      ...(target === 'featured'
+        ? { featured_image: '', featured_image_alt: '' }
+        : { content_image: '', content_image_alt: '' }),
+    }))
+    if (target === 'featured') {
+      setImagePreview('')
+    } else {
+      setContentImagePreview('')
     }
   }
 

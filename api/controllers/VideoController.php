@@ -286,15 +286,13 @@ class VideoController {
                 return $this->errorResponse('Video not found', 404);
             }
             $row = $fetch->fetch_assoc();
-            if (!empty($row['deleted_at'])) {
-                return $this->errorResponse('Video already archived', 400);
-            }
 
             $createdAt = new DateTime($row['created_at']);
             $now = new DateTime();
             $hoursDiff = ($now->getTimestamp() - $createdAt->getTimestamp()) / 3600;
 
-            if ($hoursDiff < 24) {
+            // Se già archiviato O creato < 24h fa, facciamo hard delete
+            if (!empty($row['deleted_at']) || $hoursDiff < 24) {
                 $result = $this->db->executePrepared("DELETE FROM videos WHERE id = ?", [$id], 'i');
                 if (!$result) {
                     return $this->errorResponse('Failed to delete video');
@@ -311,7 +309,8 @@ class VideoController {
                 // Regenerate sitemap
                 $this->sitemapService->generateSitemap();
                 
-                return $this->successResponse(['message' => 'Video deleted permanently (created < 24h)']);
+                $reason = !empty($row['deleted_at']) ? 'already archived' : 'created < 24h';
+                return $this->successResponse(['message' => "Video deleted permanently ($reason)"]);
             }
 
             // Soft delete + redirect placeholder

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api, endpoints } from "../config/api";
-import ContactSection from "../components/ContactSection";
+import ContactWithCta from "../components/ContactWithCta";
 import PageHero from "../components/PageHero";
 import ButtonDali from "../components/ButtonDali";
 import SEO from "../components/SEO";
@@ -231,7 +231,7 @@ const BlogDetailPage = () => {
         </div>
       </section>
       
-      <ContactSection />
+      <ContactWithCta />
     </>
   );
 };

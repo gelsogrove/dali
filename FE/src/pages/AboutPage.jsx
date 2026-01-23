@@ -1,9 +1,8 @@
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import { aboutContent, aboutTestimonials, aboutCTA } from '../data/aboutData';
-import ContactSection from '../components/ContactSection';
+import ContactWithCta from '../components/ContactWithCta';
 import PageHero from '../components/PageHero';
 import { contactInfo } from '../data/homeData';
-import ContactCtaGrid from '../components/ContactCtaGrid';
 import ButtonDali from '../components/ButtonDali';
 
 export default function AboutPage() {
@@ -103,10 +102,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Shared CTA grid */}
-      <ContactCtaGrid />
-
-      <ContactSection />
+      <ContactWithCta />
     </>
   );
 }

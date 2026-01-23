@@ -35,7 +35,7 @@ const ctaItems = [
     ),
   },
   {
-    title: 'Property Value',
+    title: 'Buyer Guide',
     description: 'Get a free valuation estimate',
     href: '/contact-us',
     icon: (

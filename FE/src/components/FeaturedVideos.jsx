@@ -56,7 +56,19 @@ export default function FeaturedVideos() {
     };
   }, [activeVideo]);
 
-  const showArrows = items.length > 2;
+  const handleVideoPrev = () => {
+    if (sliderRef.current) {
+      sliderRef.current.go('<');
+    }
+  };
+
+  const handleVideoNext = () => {
+    if (sliderRef.current) {
+      sliderRef.current.go('>');
+    }
+  };
+
+  const showArrows = items.length > 3;
   const hasItems = items.length > 0;
 
   return (
@@ -73,110 +85,158 @@ export default function FeaturedVideos() {
             Videos coming soon.
           </div>
         )}
+        
+        {/* Controls: prev/next (only if >3 videos) */}
+        {hasItems && showArrows && (
+          <div className="fv-controls" data-aos="fade-down" data-aos-duration="1000" data-aos-delay="300">
+            <button
+              className="prev"
+              onClick={handleVideoPrev}
+              aria-label="Previous Video"
+            >
+              <span className="hidden">Previous Featured Video Slide</span>
+              <i className="ai-font-arrow-b"></i>
+            </button>
+            <button
+              className="next"
+              onClick={handleVideoNext}
+              aria-label="Next Video"
+            >
+              <span className="hidden">Next Featured Video Slide</span>
+              <i className="ai-font-arrow-b"></i>
+            </button>
+          </div>
+        )}
+
+        {/* Conditional: Slider if >3, static grid if ≤3 */}
         {hasItems && (
-          <Splide
-            ref={sliderRef}
-            className="fv-grid"
-            options={{
-              perPage: 2,
-              gap: '30px',
-              pagination: false,
-              arrows: false,
-              type: items.length > 2 ? 'loop' : 'slide',
-              autoplay: items.length > 1,
-              interval: 6000,
-              breakpoints: {
-                1200: { perPage: 2 },
-                768: { perPage: 1 },
-              },
-            }}
-            data-aos="fade-up"
-            data-aos-duration="1000"
-            data-aos-delay="300"
-          >
-            {items.map((video, index) => (
-              <SplideSlide key={video.id || video.video_url || index} className="fv-list">
-                <a
-                  href={video.video_url}
-                  className="aios-video-popup"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Featured Video #${index + 1}`}
-                  data-aos="zoom-in"
-                  data-aos-duration="1000"
-                  data-aos-delay="200"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveVideo(video);
-                  }}
-                >
-                  <div className="fv-item-bg">
-                    {video.thumbnail_url && !thumbErrors[video.id || video.video_url] ? (
-                      <img
-                        src={toAbsoluteUrl(video.thumbnail_url)}
-                        alt={video.thumbnail_alt || video.title}
-                        loading="lazy"
-                        onError={() =>
-                          setThumbErrors((prev) => ({
-                            ...prev,
-                            [video.id || video.video_url]: true,
-                          }))
-                        }
-                      />
-                    ) : (
-                      <div className="fv-thumb-placeholder">
-                        <div className="placeholder-box" aria-hidden="true" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="fv-play">
-                    <div className="fv-outline">
-                      <div className="fv-inline">
-                        <i className="ai-font-play-button-a"></i>
-                      </div>
+          <div className="fv-grid" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
+            {items.length > 3 ? (
+              <Splide
+                ref={sliderRef}
+                options={{
+                  type: 'loop',
+                  perPage: 3,
+                  perMove: 1,
+                  gap: '0px',
+                  pagination: false,
+                  arrows: false,
+                  autoplay: true,
+                  interval: 6000,
+                  pauseOnHover: true,
+                  pauseOnFocus: true,
+                  drag: true,
+                  breakpoints: {
+                    991: {
+                      perPage: 2,
+                      gap: '0px',
+                    },
+                    767: {
+                      perPage: 1,
+                      gap: '0px',
+                    },
+                  },
+                }}
+              >
+                {items.map((video, index) => (
+                  <SplideSlide key={video.id || video.video_url || index}>
+                    <div className="fv-list">
+                      <a
+                        href={video.video_url}
+                        className="aios-video-popup"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Featured Video #${index + 1}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setActiveVideo(video);
+                        }}
+                      >
+                        <div className="fv-item-bg">
+                          {video.thumbnail_url && !thumbErrors[video.id || video.video_url] ? (
+                            <img
+                              src={toAbsoluteUrl(video.thumbnail_url)}
+                              alt={video.thumbnail_alt || video.title}
+                              loading="lazy"
+                              onError={() =>
+                                setThumbErrors((prev) => ({
+                                  ...prev,
+                                  [video.id || video.video_url]: true,
+                                }))
+                              }
+                            />
+                          ) : (
+                            <div className="fv-thumb-placeholder">
+                              <div className="placeholder-box" aria-hidden="true" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="fv-play">
+                          <div className="fv-outline">
+                            <div className="fv-inline">
+                              <i className="ai-font-play-button-a"></i>
+                            </div>
+                          </div>
+                        </div>
+                      </a>
                     </div>
+                  </SplideSlide>
+                ))}
+              </Splide>
+            ) : (
+              <div className="fv-grid-static">
+                {items.map((video, index) => (
+                  <div key={video.id || video.video_url || index} className="fv-list">
+                    <a
+                      href={video.video_url}
+                      className="aios-video-popup"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Featured Video #${index + 1}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveVideo(video);
+                      }}
+                    >
+                      <div className="fv-item-bg">
+                        {video.thumbnail_url && !thumbErrors[video.id || video.video_url] ? (
+                          <img
+                            src={toAbsoluteUrl(video.thumbnail_url)}
+                            alt={video.thumbnail_alt || video.title}
+                            loading="lazy"
+                            onError={() =>
+                              setThumbErrors((prev) => ({
+                                ...prev,
+                                [video.id || video.video_url]: true,
+                              }))
+                            }
+                          />
+                        ) : (
+                          <div className="fv-thumb-placeholder">
+                            <div className="placeholder-box" aria-hidden="true" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="fv-play">
+                        <div className="fv-outline">
+                          <div className="fv-inline">
+                            <i className="ai-font-play-button-a"></i>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
                   </div>
-                </a>
-              </SplideSlide>
-            ))}
-          </Splide>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {hasItems && (
-          <div id="fv" className="fv-link fc-controls fv-controls" data-aos="fade-down" data-aos-duration="1000" data-aos-delay="300">
-            {showArrows && (
-              <a
-                href="#"
-                className="prev"
-                aria-label="Previous Featured Video Slide"
-                onClick={(e) => {
-                  e.preventDefault();
-                  sliderRef.current?.go('<');
-                }}
-              >
-                <span className="hidden">Prev</span>
-                <i className="ai-font-arrow-b"></i>
-              </a>
-            )}
-
+          <div className="fv-link" data-aos="fade-down" data-aos-duration="1000" data-aos-delay="300">
             <ButtonDali href="/videos">
               View All Videos
             </ButtonDali>
-
-            {showArrows && (
-              <a
-                href="#"
-                className="next"
-                aria-label="Next Featured Video Slide"
-                onClick={(e) => {
-                  e.preventDefault();
-                  sliderRef.current?.go('>');
-                }}
-              >
-                <span className="hidden">Next</span>
-                <i className="ai-font-arrow-b"></i>
-              </a>
-            )}
           </div>
         )}
       </div>

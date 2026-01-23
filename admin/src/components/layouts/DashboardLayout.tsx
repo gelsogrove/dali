@@ -16,15 +16,13 @@ export default function DashboardLayout() {
   }
 
   const navigation = [
-    { name: 'Blogs', href: '/blogs', icon: BookOpen },
     { name: 'Properties', href: '/properties', icon: FileText },
     { name: 'Link Generation', href: '/link-generation', icon: Link2, nested: true },
+    { name: 'Blogs', href: '/blogs', icon: BookOpen },
     { name: 'Videos', href: '/videos', icon: Video },
     { name: 'Testimonials', href: '/testimonials', icon: MessageSquare },
     { name: 'Landing Page', href: '/landing-pages', icon: MapPin },
     { name: 'Cities', href: '/cities', icon: MapPin, nested: true },
-    { name: 'Areas', href: '/areas', icon: MapPin, nested: true },
-    { name: 'Buyers Guide (WIP)', href: '/buyers-guide', icon: MapPin, nested: true },
   ]
 
   const utilityNav = [
@@ -52,14 +50,15 @@ export default function DashboardLayout() {
 
         <nav className="flex-1 p-4 space-y-2">
           {navigation.map((item) => (
-            <Link
+            <button
               key={item.name}
-              to={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors ${item.nested ? 'pl-8 text-sm' : ''}`}
+              type="button"
+              onClick={() => navigate(item.href)}
+              className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors ${item.nested ? 'pl-8 text-sm' : ''}`}
             >
               <item.icon className="h-5 w-5" />
               {sidebarOpen && <span>{item.name}</span>}
-            </Link>
+            </button>
           ))}
 
           <div className="border-t border-gray-200 my-3"></div>

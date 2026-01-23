@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import PageHero from '../components/PageHero';
-import ContactSection from '../components/ContactSection';
+import ContactWithCta from '../components/ContactWithCta';
 import TitlePage from '../components/TitlePage';
 import { featuredCities } from '../data/homeData';
 
@@ -74,7 +74,7 @@ export default function CommunityPage() {
         </div>
       </section>
 
-      <ContactSection />
+      <ContactWithCta />
     </>
   );
 }

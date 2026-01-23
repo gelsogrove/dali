@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import './PropertiesPage.css';
 import PageHero from '../components/PageHero';
 import FeaturedProperties from '../components/FeaturedProperties';
-import ContactSection from '../components/ContactSection';
+import ContactWithCta from '../components/ContactWithCta';
 import { api } from '../config/api';
 
 export default function PropertiesPage() {
@@ -37,7 +37,7 @@ export default function PropertiesPage() {
       ) : (
         <FeaturedProperties activeTab="active" paginate pageSize={12} items={properties} />
       )}
-      <ContactSection />
+      <ContactWithCta />
     </>
   );
 }

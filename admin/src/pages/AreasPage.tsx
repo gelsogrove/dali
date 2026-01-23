@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,7 @@ type Area = {
   slug: string
   subtitle?: string
   is_home: number
+  cover_image?: string
   cover_image_url?: string
   cover_image_alt?: string
   display_order?: number
@@ -28,6 +29,7 @@ export default function AreasPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [list, setList] = useState<Area[]>([])
+  const location = useLocation()
   const API_BASE = import.meta.env.VITE_API_URL || '/api'
   const assetBase = useMemo(() => API_BASE.replace(/\/api$/, ''), [API_BASE])
   const toAbsoluteUrl = (url?: string) => {
@@ -56,10 +58,13 @@ export default function AreasPage() {
 
   const areas: Area[] = useMemo(() => {
     const term = search.toLowerCase()
+    const params = new URLSearchParams(location.search)
+    const cityFilter = params.get('city_id')
     return areasData
       .filter((a: Area) => !term || a.title.toLowerCase().includes(term) || a.slug.toLowerCase().includes(term))
+      .filter((a: Area) => !cityFilter || String(a.city_id) === cityFilter)
       .sort((a: Area, b: Area) => (a.display_order ?? 0) - (b.display_order ?? 0))
-  }, [areasData, search])
+  }, [areasData, search, location.search])
 
   useEffect(() => {
     setList(areas.map((a, i) => ({ ...a, display_order: a.display_order ?? i + 1 })))

@@ -84,7 +84,7 @@ class AuthController {
 
         } catch (Exception $e) {
             error_log("Login error: " . $e->getMessage() . " | Trace: " . $e->getTraceAsString());
-            return $this->errorResponse('An error occurred during login. Please try again or contact support.', 500);
+            return $this->errorResponse('An error occurred during login', 500);
         }
     }
 
@@ -153,10 +153,10 @@ class AuthController {
         $query = "INSERT INTO sessions (user_id, token, refresh_token, ip_address, user_agent, expires_at) 
                  VALUES (?, ?, ?, ?, ?, ?)";
         
-        $this->db->executePrepared($query, 
-            [$userId, $token, $refreshToken, $ipAddress, $userAgent, $expiresAt],
-            'isssss'
-        );
+        // Store variables to pass by reference
+        $params = [$userId, $token, $refreshToken, $ipAddress, $userAgent, $expiresAt];
+        
+        $this->db->executePrepared($query, $params, 'isssss');
     }
 
     /**

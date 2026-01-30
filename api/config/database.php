@@ -1,5 +1,8 @@
 <?php
 
+// Load environment variables
+require_once __DIR__ . '/../load-env.php';
+
 class Database {
     private $host;
     private $db_name;
@@ -64,7 +67,14 @@ class Database {
         }
 
         if (!empty($params)) {
-            if (!$stmt->bind_param($types, ...$params)) {
+            // PHP 7.4 fix: Create an array of references to avoid pass-by-reference errors
+            // This ensures each parameter is a variable reference, not an expression
+            $bindParams = [$types];
+            foreach ($params as $key => $value) {
+                $bindParams[] = &$params[$key];
+            }
+            
+            if (!call_user_func_array([$stmt, 'bind_param'], $bindParams)) {
                 $error = "Bind failed: " . $stmt->error;
                 error_log($error);
                 $stmt->close();

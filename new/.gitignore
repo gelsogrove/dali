@@ -1,0 +1,12 @@
+# File temporanei
+.DS_Store
+Thumbs.db
+*.log
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Config locale (non committare credenziali!)
+api/.env

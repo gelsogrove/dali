@@ -2,85 +2,67 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://buywithdali.com/</loc>
-    <lastmod>2026-01-23T08:54:44+00:00</lastmod>
+    <lastmod>2026-01-30T14:46:45+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://buywithdali.com/about</loc>
-    <lastmod>2026-01-23T08:54:44+00:00</lastmod>
+    <lastmod>2026-01-30T14:46:45+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://buywithdali.com/contact</loc>
-    <lastmod>2026-01-23T08:54:44+00:00</lastmod>
+    <lastmod>2026-01-30T14:46:45+00:00</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://buywithdali.com/properties</loc>
-    <lastmod>2026-01-23T08:54:44+00:00</lastmod>
+    <lastmod>2026-01-30T14:46:45+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://buywithdali.com/blog</loc>
-    <lastmod>2026-01-23T08:54:44+00:00</lastmod>
+    <lastmod>2026-01-30T14:46:45+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://buywithdali.com/videos</loc>
-    <lastmod>2026-01-23T08:54:44+00:00</lastmod>
+    <lastmod>2026-01-30T14:46:45+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://buywithdali.com/communities</loc>
-    <lastmod>2026-01-23T08:54:44+00:00</lastmod>
+    <lastmod>2026-01-30T14:46:45+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://buywithdali.com/privacy-policy</loc>
-    <lastmod>2026-01-23T08:54:44+00:00</lastmod>
+    <lastmod>2026-01-30T14:46:45+00:00</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://buywithdali.com/blog/miami-real-estate-market-trends-2026</loc>
-    <lastmod>2026-01-22 18:08:57</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://buywithdali.com/blog/s</loc>
-    <lastmod>2026-01-22 16:38:08</lastmod>
+    <lastmod>2026-01-23 09:50:44</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://buywithdali.com/blog/ultimate-guide-selling-home-fast</loc>
-    <lastmod>2026-01-22 14:08:06</lastmod>
+    <lastmod>2026-01-23 09:50:44</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://buywithdali.com/property/luxury-waterfront-villa</loc>
-    <lastmod>2026-01-19 11:24:56</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://buywithdali.com/property/modern-downtown-condo</loc>
-    <lastmod>2026-01-19 11:24:56</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://buywithdali.com/property/charming-family-home</loc>
-    <lastmod>2026-01-19 11:24:56</lastmod>
+    <loc>https://buywithdali.com/blog/s</loc>
+    <lastmod>2026-01-23 09:50:44</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -103,6 +85,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://buywithdali.com/community/area2</loc>
+    <lastmod>2026-01-23 10:15:18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://buywithdali.com/community/area4</loc>
     <lastmod>2026-01-22 23:20:05</lastmod>
     <changefreq>monthly</changefreq>
@@ -110,12 +98,6 @@
   </url>
   <url>
     <loc>https://buywithdali.com/community/sdds</loc>
-    <lastmod>2026-01-22 23:04:32</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://buywithdali.com/community/area2</loc>
     <lastmod>2026-01-22 23:04:32</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

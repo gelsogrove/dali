@@ -7,6 +7,7 @@ import DashboardLayout from './components/layouts/DashboardLayout'
 import DashboardPage from './pages/DashboardPage'
 import PropertiesPage from './pages/PropertiesPage'
 import PropertyFormPage from './pages/PropertyFormPage'
+import PropertyJsonImportPage from './pages/PropertyJsonImportPage'
 import BlogsPage from './pages/BlogsPage'
 import BlogFormPage from './pages/BlogFormPage'
 import PhotoGalleryPage from './pages/PhotoGalleryPage'
@@ -114,6 +115,8 @@ function App() {
         <Route index element={<DashboardPage />} />
         <Route path="properties" element={<PropertiesPage />} />
         <Route path="properties/new" element={<PropertyFormPage />} />
+        <Route path="properties/import-json" element={<PropertyJsonImportPage />} />
+        <Route path="properties/:id" element={<PropertyFormPage />} />
         <Route path="properties/:id/edit" element={<PropertyFormPage />} />
         <Route path="blogs" element={<BlogsPage />} />
         <Route path="blogs/new" element={<BlogFormPage />} />

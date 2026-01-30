@@ -6,7 +6,7 @@ class UploadController {
     // Configurazioni upload - definite direttamente nel codice
     private $allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
     private $allowedVideoTypes = ['video/mp4', 'video/mpeg', 'video/quicktime'];
-    private $maxImageSize = 10485760; // 10MB (10 * 1024 * 1024 bytes)
+    private $maxImageSize = 5242880; // 5MB (5 * 1024 * 1024 bytes)
     private $maxVideoSize = 104857600; // 100MB (100 * 1024 * 1024 bytes)
 
     public function __construct() {
@@ -82,6 +82,7 @@ class UploadController {
 
             return $this->successResponse([
                 'filename' => $filename,
+                'url' => $urls['original'],
                 'urls' => $urls,
                 'size' => filesize($basePath . '/' . $filename),
                 'dimensions' => getimagesize($basePath . '/' . $filename)

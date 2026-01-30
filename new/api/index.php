@@ -32,6 +32,7 @@ ini_set('log_errors', 1);
 // Autoload controllers
 require_once __DIR__ . '/controllers/AuthController.php';
 require_once __DIR__ . '/controllers/PropertyController.php';
+require_once __DIR__ . '/controllers/PropertyPhotoController.php';
 require_once __DIR__ . '/controllers/UploadController.php';
 require_once __DIR__ . '/controllers/HomeController.php';
 require_once __DIR__ . '/controllers/BlogController.php';
@@ -76,6 +77,10 @@ try {
         
         case 'properties':
             handlePropertyRoutes($segments, $method);
+            break;
+        
+        case 'property-photos':
+            handlePropertyPhotoRoutes($segments, $method);
             break;
         
         case 'upload':
@@ -190,28 +195,93 @@ function handlePropertyRoutes($segments, $method) {
     
     switch ($method) {
         case 'GET':
-            // Public endpoint - no auth required for listing
-            if (isset($segments[1]) && is_numeric($segments[1])) {
+            // Special endpoints
+            if (isset($segments[1])) {
+                // GET /api/properties/tags - Get predefined tags
+                if ($segments[1] === 'tags') {
+                    $result = $controller->getPredefinedTags();
+                    echo json_encode($result);
+                    break;
+                }
+                
+                // GET /api/properties/popular-tags - Get popular tags
+                if ($segments[1] === 'popular-tags') {
+                    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
+                    $result = $controller->getPopularTags($limit);
+                    echo json_encode($result);
+                    break;
+                }
+                
+                // GET /api/properties/:id/export-json - Export as JSON
+                if (isset($segments[2]) && $segments[2] === 'export-json') {
+                    $user = $auth->authenticate();
+                    if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                        $result = $controller->exportAsJson($segments[1]);
+                        echo json_encode($result);
+                    }
+                    break;
+                }
+                
+                // GET /api/properties/:id/landing-pages - Get associated landing pages
+                if (isset($segments[2]) && $segments[2] === 'landing-pages') {
+                    $result = $controller->getPropertyLandingPages($segments[1]);
+                    echo json_encode($result);
+                    break;
+                }
+                
+                // GET /api/properties/:id or /api/properties/:slug - Get single property
                 $result = $controller->getById($segments[1]);
+                echo json_encode($result);
             } else {
+                // GET /api/properties - Get all with filters
                 $filters = $_GET;
                 $result = $controller->getAll($filters);
+                echo json_encode($result);
             }
-            echo json_encode($result);
             break;
         
         case 'POST':
             $user = $auth->authenticate();
-            if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
-                $data = json_decode(file_get_contents('php://input'), true);
-                $result = $controller->create($data, $user['user_id']);
-                echo json_encode($result);
+            if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
+                break;
             }
+            
+            // POST /api/properties/reorder - Reorder properties
+            if (isset($segments[1]) && $segments[1] === 'reorder') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $result = $controller->reorder($data['order'] ?? []);
+                echo json_encode($result);
+                break;
+            }
+            
+            // POST /api/properties/import-json - Import from JSON
+            if (isset($segments[1]) && $segments[1] === 'import-json') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $validateOnly = isset($_GET['validate_only']) && $_GET['validate_only'] === 'true';
+                $result = $controller->importFromJson($data, $user['user_id'], $validateOnly);
+                echo json_encode($result);
+                break;
+            }
+            
+            // POST /api/properties - Create new property
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->create($data, $user['user_id']);
+            echo json_encode($result);
             break;
         
         case 'PUT':
             $user = $auth->authenticate();
             if ($user && $auth->checkRole($user, ['admin', 'editor']) && isset($segments[1])) {
+                // PUT /api/properties/:id/landing-pages - Update landing pages associations
+                if (isset($segments[2]) && $segments[2] === 'landing-pages') {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $landingPages = $data['landing_pages'] ?? [];
+                    $result = $controller->updatePropertyLandingPages($segments[1], $landingPages);
+                    echo json_encode($result);
+                    break;
+                }
+                
+                // PUT /api/properties/:id - Update property
                 $data = json_decode(file_get_contents('php://input'), true);
                 $result = $controller->update($segments[1], $data, $user['user_id']);
                 echo json_encode($result);
@@ -800,6 +870,102 @@ function handlePhotoGalleryRoutes($segments, $method) {
             echo json_encode($result);
             break;
             
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+}
+
+/**
+ * Handle property photo routes
+ */
+function handlePropertyPhotoRoutes($segments, $method) {
+    $controller = new PropertyPhotoController();
+    $auth = new AuthMiddleware();
+    
+    switch ($method) {
+        case 'GET':
+            // GET /api/property-photos/property/:propertyId - Get photos for a property
+            if (isset($segments[1]) && $segments[1] === 'property' && !empty($segments[2])) {
+                $result = $controller->getByPropertyId($segments[2]);
+                echo json_encode($result);
+                break;
+            }
+            
+            // GET /api/property-photos/:id - Get single photo
+            if (!empty($segments[1]) && is_numeric($segments[1])) {
+                $result = $controller->getById($segments[1]);
+                echo json_encode($result);
+                break;
+            }
+            
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid request']);
+            break;
+        
+        case 'POST':
+            $user = $auth->authenticate();
+            if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
+                break;
+            }
+            
+            // POST /api/property-photos/reorder - Reorder photos
+            if (isset($segments[1]) && $segments[1] === 'reorder') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $items = $data['items'] ?? [];
+                $result = $controller->reorder($items);
+                echo json_encode($result);
+                break;
+            }
+            
+            // POST /api/property-photos - Create new photo
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->create($data);
+            echo json_encode($result);
+            break;
+        
+        case 'PUT':
+            $user = $auth->authenticate();
+            if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
+                break;
+            }
+            
+            // PUT /api/property-photos/:id/set-cover - Set as cover
+            if (!empty($segments[1]) && isset($segments[2]) && $segments[2] === 'set-cover') {
+                $result = $controller->setCover($segments[1]);
+                echo json_encode($result);
+                break;
+            }
+            
+            // PUT /api/property-photos/:id - Update photo
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Photo ID required']);
+                break;
+            }
+            
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->update($segments[1], $data);
+            echo json_encode($result);
+            break;
+        
+        case 'DELETE':
+            $user = $auth->authenticate();
+            if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
+                break;
+            }
+            
+            // DELETE /api/property-photos/:id - Delete photo
+            if (empty($segments[1])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Photo ID required']);
+                break;
+            }
+            
+            $result = $controller->delete($segments[1]);
+            echo json_encode($result);
+            break;
+        
         default:
             http_response_code(405);
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);

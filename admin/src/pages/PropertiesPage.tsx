@@ -158,11 +158,14 @@ function SortablePropertyCard({
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Show in Home</span>
+                  <span className={`text-xs ${!property.is_active ? 'text-gray-400' : 'text-muted-foreground'}`}>
+                    Show in Home
+                  </span>
                   <Switch
                     checked={!!property.show_in_home}
                     onCheckedChange={(v) => onToggleHome(property, v)}
-                    className="data-[state=checked]:bg-blue-500"
+                    disabled={!property.is_active}
+                    className="data-[state=checked]:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="Toggle show in home"
                   />
                 </div>
@@ -373,12 +376,18 @@ export default function PropertiesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const toggleActive = async (property: Property, value: boolean) => {
+    // Se si disattiva la pubblicazione, disattivare anche show_in_home
+    const updates: any = { is_active: value };
+    if (!value && property.show_in_home) {
+      updates.show_in_home = 0;
+    }
+    
     // Optimistic update
     setList((prev) =>
-      prev.map((p) => (p.id === property.id ? { ...p, is_active: value } : p))
+      prev.map((p) => (p.id === property.id ? { ...p, is_active: value, ...(updates.show_in_home !== undefined ? { show_in_home: false } : {}) } : p))
     )
     try {
-      const response = await api.put(`/properties/${property.id}`, { is_active: value })
+      const response = await api.put(`/properties/${property.id}`, updates)
       if (response.data?.success === false) {
         throw new Error(response.data.error || 'Failed to update')
       }
@@ -391,12 +400,19 @@ export default function PropertiesPage() {
       setTimeout(() => setErrorMessage(null), 5000)
       // Revert on error
       setList((prev) =>
-        prev.map((p) => (p.id === property.id ? { ...p, is_active: !value } : p))
+        prev.map((p) => (p.id === property.id ? { ...p, is_active: !value, ...(updates.show_in_home !== undefined ? { show_in_home: true } : {}) } : p))
       )
     }
   }
 
   const toggleHome = async (property: Property, value: boolean) => {
+    // Non permettere di attivare show_in_home se la proprietà non è pubblicata
+    if (value && !property.is_active) {
+      setErrorMessage('Cannot show in home: property must be published first');
+      setTimeout(() => setErrorMessage(null), 3000);
+      return;
+    }
+    
     // Optimistic update
     setList((prev) =>
       prev.map((p) => (p.id === property.id ? { ...p, show_in_home: value } : p))

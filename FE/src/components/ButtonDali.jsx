@@ -1,6 +1,20 @@
-export default function ButtonDali({ children, href, onClick, className = '', target, rel, type = 'button' }) {
+import { Link } from 'react-router-dom';
+
+export default function ButtonDali({ children, href, to, onClick, className = '', target, rel, type = 'button' }) {
   const baseClass = 'button-dali';
   const combinedClass = `${baseClass} ${className}`.trim();
+
+  if (to) {
+    return (
+      <Link 
+        to={to} 
+        className={combinedClass}
+        onClick={onClick}
+      >
+        {children}
+      </Link>
+    );
+  }
 
   if (href) {
     return (

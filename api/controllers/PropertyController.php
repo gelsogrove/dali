@@ -541,6 +541,19 @@ class PropertyController {
             $isPartialUpdate = count($data) <= 2 && 
                                count(array_diff(array_keys($data), $partialUpdateFields)) === 0;
 
+            // Validazione logica: non si può avere show_in_home=true se is_active=false
+            $currentIsActive = isset($data['is_active']) ? !empty($data['is_active']) : !empty($existing['is_active']);
+            $newShowInHome = isset($data['show_in_home']) ? !empty($data['show_in_home']) : !empty($existing['show_in_home']);
+            
+            if ($newShowInHome && !$currentIsActive) {
+                return $this->errorResponse('Cannot show in home: property must be published (is_active) first', 400);
+            }
+            
+            // Se si disattiva is_active, disattivare anche show_in_home automaticamente
+            if (isset($data['is_active']) && empty($data['is_active']) && !empty($existing['show_in_home'])) {
+                $data['show_in_home'] = 0;
+            }
+
             // Validate data (skip full validation for partial updates)
             $validation = $this->validatePropertyData($data, true, $isPartialUpdate);
             if ($validation !== true) {

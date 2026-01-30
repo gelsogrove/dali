@@ -308,8 +308,17 @@ export default function PropertyGalleryUpload({ propertyId }: PropertyGalleryUpl
               htmlFor="photo-upload"
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md cursor-pointer hover:bg-primary/90 transition-colors"
             >
-              <Upload className="w-4 h-4" />
-              {uploading ? 'Uploading...' : 'Upload Photos'}
+              {uploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  Upload Photos
+                </>
+              )}
             </Label>
             <Input
               id="photo-upload"

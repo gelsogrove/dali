@@ -228,7 +228,11 @@ export default function PhotoGalleryFormPage() {
                   id="image-upload"
                 />
                 <label htmlFor="image-upload" className="cursor-pointer">
-                  <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  {uploading ? (
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4" />
+                  ) : (
+                    <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  )}
                   <p className="text-sm font-medium mb-1">
                     {uploading ? 'Uploading...' : 'Click to upload or drag here'}
                   </p>

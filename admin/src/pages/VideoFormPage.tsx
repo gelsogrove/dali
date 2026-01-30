@@ -257,8 +257,17 @@ export default function VideoFormPage() {
                       onClick={() => thumbnailInputRef.current?.click()}
                       disabled={uploading}
                     >
-                      <Upload className="mr-2 h-4 w-4" />
-                      {uploading ? 'Uploading...' : 'Upload Thumbnail'}
+                      {uploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent mr-2" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Thumbnail
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}

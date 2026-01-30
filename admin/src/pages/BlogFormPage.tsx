@@ -328,7 +328,10 @@ export default function BlogFormPage() {
                         className="hidden"
                       />
                       {uploading && (
-                        <p className="text-sm text-primary mt-2">Uploading...</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                          <p className="text-sm text-primary">Uploading...</p>
+                        </div>
                       )}
                     </div>
                   )}
@@ -393,7 +396,10 @@ export default function BlogFormPage() {
                         className="hidden"
                       />
                       {uploadingContent && (
-                        <p className="text-sm text-primary mt-2">Uploading...</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                          <p className="text-sm text-primary">Uploading...</p>
+                        </div>
                       )}
                     </div>
                   )}

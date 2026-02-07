@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>eChatbot Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 40px;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      h1 {
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>eChatbot Widget Test Page</h1>
+    <p>This is a test page for the eChatbot widget. The chat icon should appear in the bottom right corner.</p>
+    
+    <!-- eChatbot Widget -->
+    <script>
+      window.eChatbotConfig = {
+        workspaceId: "a9e6349b-0fff-43c4-bb2f-b52eba43655a",
+        title: "Chat with us",
+        primaryColor: "#e9cf95",
+        icon: "message",
+        language: "en"
+      };
+    </script>
+    <script src="https://www.echatbot.ai/widget.js" async></script>
+  </body>
+</html>

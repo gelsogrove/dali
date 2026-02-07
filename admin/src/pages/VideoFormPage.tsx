@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { ArrowLeft, Upload, X } from 'lucide-react'
+import SafeImage from '@/components/SafeImage'
 
 export default function VideoFormPage() {
   const { id } = useParams()
@@ -72,10 +73,6 @@ export default function VideoFormPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.video_url.includes('vimeo.com')) {
-      alert('Video URL must be a Vimeo link')
-      return
-    }
     if (!formData.thumbnail_url) {
       alert('Thumbnail image is required')
       return
@@ -207,7 +204,7 @@ export default function VideoFormPage() {
 
               <div className="space-y-2">
                 <label htmlFor="video_url" className="text-sm font-medium">
-                  Vimeo Video URL *
+                  Video URL *
                 </label>
                 <Input
                   id="video_url"
@@ -215,11 +212,11 @@ export default function VideoFormPage() {
                   type="url"
                   value={formData.video_url}
                   onChange={handleChange}
-                  placeholder="https://player.vimeo.com/video/..."
+                  placeholder="YouTube, Instagram, or Vimeo URL"
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  Must be a Vimeo player URL
+                  Supports YouTube, Instagram Reels, and Vimeo
                 </p>
               </div>
 
@@ -227,7 +224,7 @@ export default function VideoFormPage() {
                 <label className="text-sm font-medium">Thumbnail Image *</label>
                 {imagePreview ? (
                   <div className="relative w-full">
-                    <img
+                    <SafeImage
                       src={imagePreview}
                       alt="Thumbnail preview"
                       className="w-full max-w-md rounded-md"

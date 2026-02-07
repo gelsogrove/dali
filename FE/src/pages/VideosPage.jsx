@@ -5,15 +5,16 @@ import TitleHeader from '../components/TitleHeader';
 import ContactWithCta from '../components/ContactWithCta';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ButtonDali from '../components/ButtonDali';
+import SafeImage from '../components/SafeImage';
 import SEO from '../components/SEO';
 import { api, endpoints } from '../config/api';
+import { getEmbedUrl } from '../utils/videoHelpers';
 
 export default function VideosPage() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeVideo, setActiveVideo] = useState(null);
-  const [imageErrors, setImageErrors] = useState({});
   const apiBase = import.meta.env.VITE_API_URL || '/api';
   const assetBase = useMemo(() => apiBase.replace(/\/api$/, ''), [apiBase]);
 
@@ -120,20 +121,13 @@ export default function VideosPage() {
                     rel="noopener noreferrer"
                     style={{ position: 'relative', display: 'block', width: '100%', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }}
                   >
-                    {video.thumbnail_url && !imageErrors[video.id] ? (
-                      <img 
-                        src={toAbsoluteUrl(video.thumbnail_url)} 
-                        alt={video.thumbnail_alt || video.title}
-                        loading="lazy"
-                        onError={() =>
-                          setImageErrors((prev) => ({ ...prev, [video.id]: true }))
-                        }
-                      />
-                    ) : (
-                      <div className="video-placeholder">
-                        <div className="placeholder-box" aria-hidden="true" />
-                      </div>
-                    )}
+                    <SafeImage
+                      src={toAbsoluteUrl(video.thumbnail_url)} 
+                      alt={video.thumbnail_alt || video.title}
+                      loading="lazy"
+                      placeholder="gradient"
+                      style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
+                    />
                     <div className="fv-play" aria-hidden="true">
                       <div className="fv-outline">
                         <div className="fv-inline">
@@ -184,7 +178,7 @@ export default function VideosPage() {
             </button>
             <div className="fv-modal-inner">
               <iframe
-                src={`${activeVideo.video_url}?autoplay=1`}
+                src={`${getEmbedUrl(activeVideo.video_url)}?autoplay=1`}
                 title={activeVideo.title || 'Video'}
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture"

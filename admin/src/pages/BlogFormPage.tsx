@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { ArrowLeft, Upload, X } from 'lucide-react'
+import SafeImage from '@/components/SafeImage'
 import TrixEditor from '@/components/TrixEditor'
 
 export default function BlogFormPage() {
@@ -286,7 +287,7 @@ export default function BlogFormPage() {
                   </div>
                   {imagePreview ? (
                     <div className="relative inline-block">
-                      <img
+                      <SafeImage
                         src={imagePreview}
                         alt="Preview"
                         style={{ width: '340px', height: '250px' }}
@@ -354,7 +355,7 @@ export default function BlogFormPage() {
                   </div>
                   {contentImagePreview ? (
                     <div className="relative inline-block">
-                      <img
+                      <SafeImage
                         src={contentImagePreview}
                         alt="Content preview"
                         style={{ width: '340px', height: '250px' }}

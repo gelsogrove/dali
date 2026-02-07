@@ -1,25 +1,170 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ImageWithOverlay from './ImageWithOverlay';
 import TitleHeader from './TitleHeader';
-import { featuredProperties } from '../data/homeData';
 import ButtonDali from './ButtonDali';
+import LoadingSpinner from './LoadingSpinner';
+import { api, endpoints } from '../config/api';
 
-export default function FeaturedProperties({ activeTab = 'properties', paginate = false, pageSize = 12, items }) {
-  const data = items || featuredProperties;
+/**
+ * FeaturedProperties - Mostra griglia di proprietà da API
+ * 
+ * Props:
+ * - activeTab: 'properties' | 'active' | 'new' - Tab attivo
+ * - paginate: boolean - Mostra paginazione
+ * - pageSize: number - Elementi per pagina
+ * - showTitle: boolean - Mostra header "Properties"
+ * - disableAnimations: boolean - Disabilita animazioni AOS
+ */
+export default function FeaturedProperties({ 
+  activeTab = 'properties', 
+  paginate = false, 
+  pageSize = 12,
+  showTitle = true,
+  disableAnimations = false
+}) {
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const totalPages = paginate ? Math.max(1, Math.ceil(data.length / pageSize)) : 1;
-  const start = paginate ? (page - 1) * pageSize : 0;
-  const end = paginate ? start + pageSize : data.length;
-  const visible = data.slice(start, end);
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        
+        // Costruire query params
+        const params = new URLSearchParams();
+        params.append('is_active', '1');
+        params.append('per_page', pageSize.toString());
+        params.append('page', page.toString());
+        
+        // Filtrare per tipo se specificato
+        if (activeTab === 'active') {
+          params.append('property_type', 'active');
+        } else if (activeTab === 'new') {
+          params.append('property_type', 'development');
+        } else {
+          // Homepage: solo show_in_home, ordinati per order
+          params.append('show_in_home', '1');
+        }
+        
+        const response = await api.get(`${endpoints.properties}?${params.toString()}`);
+        
+        if (response.success && response.data) {
+          setProperties(response.data.properties || []);
+          if (response.data.pagination) {
+            setTotalPages(response.data.pagination.total_pages || 1);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching properties:', err);
+        setError('Unable to load properties');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, [page, pageSize, activeTab]);
 
   const isActive = (tab) => activeTab === tab;
+
+  // Formattare prezzo in USD
+  const formatPrice = (property) => {
+    if (property.price_on_demand) {
+      return 'Price on Request';
+    }
+    
+    // Se development con range
+    if (property.property_type === 'development' && property.price_from_usd && property.price_to_usd) {
+      return `USD ${Number(property.price_from_usd).toLocaleString('en-US')} - ${Number(property.price_to_usd).toLocaleString('en-US')}`;
+    }
+    
+    // Prezzo singolo
+    const price = property.price_usd;
+    if (price) {
+      return `USD ${Number(price).toLocaleString('en-US')}`;
+    }
+    
+    return 'Price on Request';
+  };
+
+  // Formattare bedrooms/bathrooms
+  const formatBeds = (property) => {
+    if (property.property_type === 'development') {
+      if (property.bedrooms_min && property.bedrooms_max && property.bedrooms_min !== property.bedrooms_max) {
+        return `${property.bedrooms_min}-${property.bedrooms_max}`;
+      }
+      return property.bedrooms_min || property.bedrooms_max || property.bedrooms || null;
+    }
+    return property.bedrooms || null;
+  };
+
+  const formatBaths = (property) => {
+    if (property.property_type === 'development') {
+      if (property.bathrooms_min && property.bathrooms_max && property.bathrooms_min !== property.bathrooms_max) {
+        return `${property.bathrooms_min}-${property.bathrooms_max}`;
+      }
+      return property.bathrooms_min || property.bathrooms_max || property.bathrooms || null;
+    }
+    return property.bathrooms || null;
+  };
+
+  // Status label
+  const getStatusLabel = (property) => {
+    if (property.status === 'sold') return 'SOLD';
+    if (property.status === 'reserved') return 'RESERVED';
+    return 'FOR SALE';
+  };
+
+  if (loading && properties.length === 0) {
+    return (
+      <section id="featured-properties">
+        <div className="fp-container">
+          {showTitle && <TitleHeader kicker="Featured" title="Properties" className="fp-title" />}
+          <div className="fp-links" {...(!disableAnimations && showTitle && { 'data-aos': 'fade-up', 'data-aos-duration': '1000', 'data-aos-delay': '300' })}>
+            <ButtonDali href="/active-properties" className={isActive('active') ? 'active' : ''}>
+              Active Properties
+            </ButtonDali>
+            <ButtonDali href="/new-developments" className={isActive('new') ? 'active' : ''}>
+              New Developments
+            </ButtonDali>
+          </div>
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <LoadingSpinner />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || properties.length === 0) {
+    return (
+      <section id="featured-properties">
+        <div className="fp-container">
+          {showTitle && <TitleHeader kicker="Featured" title="Properties" className="fp-title" />}
+          <div className="fp-links" {...(!disableAnimations && showTitle && { 'data-aos': 'fade-up', 'data-aos-duration': '1000', 'data-aos-delay': '300' })}>
+            <ButtonDali href="/active-properties" className={isActive('active') ? 'active' : ''}>
+              Active Properties
+            </ButtonDali>
+            <ButtonDali href="/new-developments" className={isActive('new') ? 'active' : ''}>
+              New Developments
+            </ButtonDali>
+          </div>
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <p>{error || 'No properties available'}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="featured-properties">
       <div className="fp-container">
-        <TitleHeader kicker="Featured" title="Properties" className="fp-title" />
-        <div className="fp-links" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
+        {showTitle && <TitleHeader kicker="Featured" title="Properties" className="fp-title" />}
+        <div className="fp-links" {...(!disableAnimations && showTitle && { 'data-aos': 'fade-up', 'data-aos-duration': '1000', 'data-aos-delay': '300' })}>
           <ButtonDali href="/active-properties" className={isActive('active') ? 'active' : ''}>
             Active Properties
           </ButtonDali>
@@ -27,49 +172,39 @@ export default function FeaturedProperties({ activeTab = 'properties', paginate 
             New Developments
           </ButtonDali>
         </div>
-        <div className="fp-grid" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
-          {visible.map((item) => {
-            // Extract slug from href if not already present
-            let link = item.href || '#';
-            if (item.slug) {
-              link = `/listings/${item.slug}/`;
-            } else if (link.includes('/listings/')) {
-              // Extract slug from full URL: https://...com/listings/slug-name/...
-              const match = link.match(/\/listings\/([^/]+)\//);
-              if (match) {
-                link = `/listings/${match[1]}/`;
-              }
-            }
-
-            const location = item.location || item.city || '';
+        <div className="fp-grid" {...(!disableAnimations && showTitle && { 'data-aos': 'fade-up', 'data-aos-duration': '1000', 'data-aos-delay': '300' })}>
+          {properties.map((property) => {
+            const link = `/listings/${property.slug}/`;
+            const location = property.city || property.neighborhood || '';
+            const coverImage = property.cover_image_url; // SafeImage gestirà il fallback
 
             return (
-            <div className="fp-list" key={item.href || item.id}>
-              <a href={link} rel="noopener noreferrer">
-                <ImageWithOverlay 
-                  src={item.image} 
-                  alt={item.title}
-                  className="fp-list-item-image"
-                  beds={item.beds}
-                  baths={item.baths}
-                  size={item.size}
-                  status="FOR SALE"
-                  location={location}
-                >
-                  <div className="fp-item-price">
-                    <h3>{item.price || 'Price on Request'}</h3>
-                  </div>
-                  <div className="fp-item-address">
-                    <h4>{item.title}</h4>
-                  </div>
-                </ImageWithOverlay>
-              </a>
-            </div>
+              <div className="fp-list" key={property.id}>
+                <a href={link}>
+                  <ImageWithOverlay 
+                    src={coverImage} 
+                    alt={property.title}
+                    className="fp-list-item-image"
+                    beds={formatBeds(property)}
+                    baths={formatBaths(property)}
+                    size={property.sqm}
+                    status={getStatusLabel(property)}
+                    location={location}
+                  >
+                    <div className="fp-item-price">
+                      <h3>{formatPrice(property)}</h3>
+                    </div>
+                    <div className="fp-item-address">
+                      <h4>{property.title}</h4>
+                    </div>
+                  </ImageWithOverlay>
+                </a>
+              </div>
             );
           })}
         </div>
         {paginate && totalPages > 1 && (
-          <div className="fp-pagination" data-aos="fade-up" data-aos-duration="800" data-aos-delay="300">
+          <div className="fp-pagination" {...(!disableAnimations && showTitle && { 'data-aos': 'fade-up', 'data-aos-duration': '800', 'data-aos-delay': '300' })}>
             <button
               className="fp-page-btn"
               onClick={() => setPage((p) => Math.max(1, p - 1))}

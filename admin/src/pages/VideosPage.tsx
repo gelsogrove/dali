@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Plus, Edit, Trash2, GripVertical } from 'lucide-react'
+import SafeImage from '@/components/SafeImage'
 
 export default function VideosPage() {
   const queryClient = useQueryClient()
@@ -15,7 +16,6 @@ export default function VideosPage() {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [readyAfterDelay, setReadyAfterDelay] = useState(false)
-  const [thumbErrors, setThumbErrors] = useState<Record<string, boolean>>({})
 
   const API_BASE = import.meta.env.VITE_API_URL || '/api'
   const assetBase = useMemo(() => API_BASE.replace(/\/api$/, ''), [API_BASE])
@@ -189,18 +189,11 @@ export default function VideosPage() {
                   <div className="text-xs text-muted-foreground text-center mt-1">#{index + 1}</div>
                 </div>
 
-                {video.thumbnail_url && !thumbErrors[video.id] ? (
-                  <img
-                    src={toAbsoluteUrl(video.thumbnail_url)}
-                    alt={video.thumbnail_alt || video.title}
-                    className="w-48 h-48 object-cover my-4 mr-4 rounded-lg"
-                    onError={() => setThumbErrors((prev) => ({ ...prev, [video.id]: true }))}
-                  />
-                ) : (
-                  <div className="w-48 h-48 flex items-center justify-center flex-shrink-0 my-4 mr-4 rounded-lg border border-dashed border-gray-300 bg-gradient-to-br from-blue-50 to-cyan-50">
-                    <div className="placeholder-box w-full h-full rounded-md"></div>
-                  </div>
-                )}
+                <SafeImage
+                  src={toAbsoluteUrl(video.thumbnail_url)}
+                  alt={video.thumbnail_alt || video.title}
+                  className="w-48 h-48 object-cover my-4 mr-4 rounded-lg"
+                />
                 
                 <div className="flex-1 py-4 pr-4">
                   <CardHeader className="p-0 pb-4">

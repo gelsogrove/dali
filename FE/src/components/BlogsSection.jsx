@@ -3,11 +3,11 @@ import { Splide, SplideSlide } from '@splidejs/react-splide';
 import { api } from '../config/api';
 import ButtonDali from './ButtonDali';
 import CanvasImage from './CanvasImage';
+import SafeImage from './SafeImage';
 
 export default function BlogsSection() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [imageErrors, setImageErrors] = useState({});
   const apiBase = import.meta.env.VITE_API_URL || '/api';
   const assetBase = useMemo(() => apiBase.replace(/\/api$/, ''), [apiBase]);
 
@@ -79,21 +79,13 @@ export default function BlogsSection() {
                   <SplideSlide key={blog.id || blog.slug} className="blog-item">
                     <div className="blog-image">
                       <a href={`/blog/${blog.slug}`} aria-label={blog.title}>
-                        {blog.featured_image && !imageErrors[blog.id || blog.slug] ? (
-                          <img
-                            src={toAbsoluteUrl(blog.featured_image)}
-                            alt={blog.featured_image_alt || blog.title}
-                            loading="lazy"
-                            style={{ width: '100%', height: '260px', objectFit: 'cover', display: 'block' }}
-                            onError={() =>
-                              setImageErrors((prev) => ({ ...prev, [blog.id || blog.slug]: true }))
-                            }
-                          />
-                        ) : (
-                          <div className="blog-placeholder blog-placeholder-home">
-                            <div className="placeholder-box" aria-hidden="true" />
-                          </div>
-                        )}
+                        <SafeImage
+                          src={toAbsoluteUrl(blog.featured_image)}
+                          alt={blog.featured_image_alt || blog.title}
+                          loading="lazy"
+                          placeholder="gradient"
+                          style={{ width: '100%', height: '260px', objectFit: 'cover', display: 'block' }}
+                        />
                       </a>
                     </div>
                   <div className="blog-item-content">

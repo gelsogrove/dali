@@ -1,42 +1,43 @@
-import { useState, useEffect } from 'react';
-import './PropertiesPage.css';
 import PageHero from '../components/PageHero';
-import FeaturedProperties from '../components/FeaturedProperties';
 import ContactWithCta from '../components/ContactWithCta';
-import { api } from '../config/api';
+import ButtonDali from '../components/ButtonDali';
+import SEO from '../components/SEO';
 
 export default function PropertiesPage() {
-  const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/properties');
-        if (response.success) {
-          setProperties(response.data.properties || []);
-        }
-      } catch (err) {
-        console.error('Error fetching properties:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProperties();
-  }, []);
-
   return (
     <>
+      <SEO
+        title="Properties for Sale in Riviera Maya"
+        description="Discover luxury properties for sale in Riviera Maya. Browse apartments, villas, condos, and homes in Tulum, Playa del Carmen, Puerto Aventuras with expert guidance."
+        keywords="properties for sale Riviera Maya, Tulum homes, Playa del Carmen condos, luxury villas Mexico, real estate Mexico"
+        ogTitle="Properties - Buy With Dali"
+        ogDescription="Explore our complete selection of luxury properties in Mexico's Riviera Maya."
+        canonicalUrl="https://buywithdali.com/properties"
+        breadcrumbs={[
+          { name: 'Home', url: 'https://buywithdali.com/' },
+          { name: 'Properties', url: 'https://buywithdali.com/properties' }
+        ]}
+      />
       <PageHero breadcrumb="» Properties" />
-      {loading ? (
-        <div style={{ padding: '100px 5%', textAlign: 'center' }}>
-          <p>Loading properties...</p>
+      <section className="properties-body">
+        <div className="container">
+          <div style={{ 
+            display: 'flex', 
+            gap: '20px', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            padding: '60px 0',
+            flexWrap: 'wrap'
+          }}>
+            <ButtonDali href="/active-properties">
+              Active Properties
+            </ButtonDali>
+            <ButtonDali href="/new-developments">
+              New Developments
+            </ButtonDali>
+          </div>
         </div>
-      ) : (
-        <FeaturedProperties activeTab="active" paginate pageSize={12} items={properties} />
-      )}
+      </section>
       <ContactWithCta />
     </>
   );

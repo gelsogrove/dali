@@ -143,10 +143,10 @@ const PREDEFINED_TAGS = {
 interface TagPickerProps {
   selectedTags: string[]
   onChange: (tags: string[]) => void
-  maxTags?: number
+  maxTags?: number  // OPTIONAL - se non passato = UNLIMITED
 }
 
-export default function TagPicker({ selectedTags, onChange, maxTags = 20 }: TagPickerProps) {
+export default function TagPicker({ selectedTags, onChange, maxTags }: TagPickerProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [customTag, setCustomTag] = useState('')
 
@@ -167,7 +167,8 @@ export default function TagPicker({ selectedTags, onChange, maxTags = 20 }: TagP
   }, [searchTerm])
 
   const addTag = (tag: string) => {
-    if (selectedTags.length >= maxTags) {
+    // Check max limit ONLY if specified
+    if (maxTags !== undefined && selectedTags.length >= maxTags) {
       return
     }
 
@@ -191,7 +192,8 @@ export default function TagPicker({ selectedTags, onChange, maxTags = 20 }: TagP
       return
     }
 
-    if (selectedTags.length >= maxTags) {
+    // Check max limit ONLY if specified
+    if (maxTags !== undefined && selectedTags.length >= maxTags) {
       return
     }
 
@@ -211,7 +213,7 @@ export default function TagPicker({ selectedTags, onChange, maxTags = 20 }: TagP
       {/* Selected Tags */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justif{maxTags !== undefined ? `/${maxTags}` : '' mb-3">
             <h3 className="text-sm font-medium">
               Selected Tags ({selectedTags.length}/{maxTags})
             </h3>
@@ -298,7 +300,7 @@ export default function TagPicker({ selectedTags, onChange, maxTags = 20 }: TagP
                     <div className="flex flex-wrap gap-2 pt-2">
                       {tags.map((tag) => {
                         const isSelected = selectedTags.includes(tag)
-                        const isDisabled = !isSelected && selectedTags.length >= maxTags
+                        const isDisabled = !isSelected && maxTags !== undefined && selectedTags.length >= maxTags
 
                         return (
                           <Button

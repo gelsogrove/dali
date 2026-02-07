@@ -1,23 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import PageHero from '../components/PageHero';
 import ContactWithCta from '../components/ContactWithCta';
 import SEO from '../components/SEO';
-import { api } from '../config/api';
-
-const mockProperties = [
-  { title: 'Boutique Villa', price: '$780,000', location: 'Tulum' },
-  { title: 'Canal-view Condo', price: '$640,000', location: 'Playa del Carmen' },
-  { title: 'Jungle Loft', price: '$520,000', location: 'Tulum' },
-  { title: 'Beachfront Suite', price: '$1,050,000', location: 'Riviera Maya' },
-  { title: 'Modern Duplex', price: '$690,000', location: 'Cancun' },
-  { title: 'Golf Residence', price: '$880,000', location: 'Playacar' },
-];
+import ImageWithOverlay from '../components/ImageWithOverlay';
+import SafeImage from '../components/SafeImage';
+import { api, endpoints } from '../config/api';
 
 export default function AreaPage() {
   const { citySlug, areaSlug } = useParams();
   const [area, setArea] = useState(null);
   const [city, setCity] = useState(null);
+  const [properties, setProperties] = useState([]);
+  const [loadingProperties, setLoadingProperties] = useState(false);
   const [coverError, setCoverError] = useState(false);
   const [contentError, setContentError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -59,6 +54,28 @@ export default function AreaPage() {
   useEffect(() => {
     load();
   }, [citySlug, areaSlug]);
+
+  // Carica properties associate all'area
+  useEffect(() => {
+    if (!area) return;
+    
+    const loadProperties = async () => {
+      setLoadingProperties(true);
+      try {
+        // Cerca properties per neighborhood (area title)
+        const response = await api.get(`${endpoints.properties}?is_active=1&neighborhood=${encodeURIComponent(area.title)}&per_page=50`);
+        if (response.success && response.data?.properties) {
+          setProperties(response.data.properties);
+        }
+      } catch (err) {
+        console.error('Error loading properties:', err);
+      } finally {
+        setLoadingProperties(false);
+      }
+    };
+    
+    loadProperties();
+  }, [area]);
 
   const meta = useMemo(() => {
     if (!area) return null;
@@ -180,21 +197,54 @@ export default function AreaPage() {
 
       <section className="community-properties">
         <div className="community-detail-wrapper">
-          <h2 className="community-props-title">Featured Properties</h2>
-          <div className="community-props-grid">
-            {mockProperties.map((p, idx) => (
-              <div key={idx} className="property-card">
-                <div className="property-thumb">
-                  <div className="placeholder-box" aria-hidden="true" />
-                </div>
-                <div className="property-body">
-                  <p className="property-location text-muted-foreground text-xs uppercase tracking-wide">{p.location}</p>
-                  <h3 className="property-title">{p.title}</h3>
-                  <p className="property-price">{p.price}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <h2 className="community-props-title">Featured Properties in {area.title}</h2>
+          
+          {loadingProperties ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <p>Loading properties...</p>
+            </div>
+          ) : properties.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <p>No properties available in this area yet.</p>
+            </div>
+          ) : (
+            <div className="community-props-grid">
+              {properties.map((property) => {
+                const link = `/listings/${property.slug}/`;
+                const coverImage = property.cover_image_url; // SafeImage gestisce fallback
+                const priceLabel = property.price_on_demand 
+                  ? 'Price on Request'
+                  : property.price_usd 
+                    ? `USD ${Number(property.price_usd).toLocaleString('en-US')}`
+                    : 'Contact for pricing';
+                
+                return (
+                  <div key={property.id} className="property-card">
+                    <Link to={link}>
+                      <div className="property-thumb">
+                        <ImageWithOverlay
+                          src={coverImage}
+                          alt={property.title}
+                          beds={property.bedrooms}
+                          baths={property.bathrooms}
+                          size={property.sqm ? `${property.sqm} m²` : null}
+                          status={property.status === 'sold' ? 'SOLD' : property.status === 'reserved' ? 'RESERVED' : 'FOR SALE'}
+                          location={property.neighborhood || property.city}
+                        >
+                          <div className="property-price">
+                            <h3>{priceLabel}</h3>
+                          </div>
+                          <div className="property-title">
+                            <h4>{property.title}</h4>
+                          </div>
+                        </ImageWithOverlay>
+                      </div>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 

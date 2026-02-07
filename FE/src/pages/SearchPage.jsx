@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ButtonDali from '../components/ButtonDali';
 import { Link } from 'react-router-dom';
 import { api, endpoints } from '../config/api';
+import SafeImage from '../components/SafeImage';
 import './SearchPage.css';
 
 export default function SearchPage() {
@@ -14,7 +15,6 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showResults, setShowResults] = useState(false);
-  const [imageErrors, setImageErrors] = useState({});
   const apiBase = import.meta.env.VITE_API_URL || '/api';
   const assetBase = useMemo(() => apiBase.replace(/\/api$/, ''), [apiBase]);
 
@@ -97,9 +97,15 @@ export default function SearchPage() {
     <>
       <SEO 
         title="Search Properties"
-        description="Search luxury real estate in Riviera Maya, Tulum, Playa del Carmen. Filter by price, location, bedrooms, and amenities to find your dream property."
-        keywords="search properties Riviera Maya, Tulum real estate search, property finder Playa del Carmen, luxury homes search Mexico"
+        description="Search luxury real estate in Riviera Maya, Tulum, Playa del Carmen. Filter by property type, category, price, and location to find your dream property in Mexico."
+        keywords="search properties Riviera Maya, Tulum real estate search, property finder Playa del Carmen, luxury homes search Mexico, condos for sale, villas Mexico"
+        ogTitle="Search Properties - Buy With Dali"
+        ogDescription="Find your perfect property in Mexico's Riviera Maya. Advanced search with filters for type, category, and location."
         canonicalUrl="https://buywithdali.com/search"
+        breadcrumbs={[
+          { name: 'Home', url: 'https://buywithdali.com/' },
+          { name: 'Search Properties', url: 'https://buywithdali.com/search' }
+        ]}
       />
       <PageHero breadcrumb="» Search" />
       
@@ -128,12 +134,8 @@ export default function SearchPage() {
                   className="search-select"
                 >
                   <option value="">All Types</option>
-                  <option value="house">House</option>
-                  <option value="apartment">Apartment</option>
-                  <option value="condo">Condo</option>
-                  <option value="villa">Villa</option>
-                  <option value="land">Land</option>
-                  <option value="commercial">Commercial</option>
+                  <option value="active">Active Property</option>
+                  <option value="development">New Development</option>
                 </select>
 
                 <select
@@ -143,10 +145,13 @@ export default function SearchPage() {
                   className="search-select"
                 >
                   <option value="">All Categories</option>
-                  <option value="luxury">Luxury</option>
-                  <option value="beachfront">Beachfront</option>
-                  <option value="investment">Investment</option>
-                  <option value="new_development">New Development</option>
+                  <option value="apartment">Apartment</option>
+                  <option value="house">House</option>
+                  <option value="villa">Villa</option>
+                  <option value="condo">Condo</option>
+                  <option value="penthouse">Penthouse</option>
+                  <option value="land">Land</option>
+                  <option value="commercial">Commercial</option>
                 </select>
 
                 <select
@@ -217,24 +222,54 @@ export default function SearchPage() {
                       property.status === 'sold' ? 'Sold' :
                       property.status === 'reserved' ? 'Reserved' : property.status;
 
+                    // Format price in USD
+                    const formatPrice = () => {
+                      if (property.price_on_demand) return 'Price on Request';
+                      if (property.property_type === 'development' && property.price_from_usd && property.price_to_usd) {
+                        return `USD ${Number(property.price_from_usd).toLocaleString('en-US')} - ${Number(property.price_to_usd).toLocaleString('en-US')}`;
+                      }
+                      if (property.price_usd) {
+                        return `USD ${Number(property.price_usd).toLocaleString('en-US')}`;
+                      }
+                      return 'Price on Request';
+                    };
+
+                    // Format beds/baths for developments
+                    const formatBeds = () => {
+                      if (property.property_type === 'development') {
+                        if (property.bedrooms_min && property.bedrooms_max && property.bedrooms_min !== property.bedrooms_max) {
+                          return `${property.bedrooms_min}-${property.bedrooms_max}`;
+                        }
+                        return property.bedrooms_min || property.bedrooms_max || property.bedrooms;
+                      }
+                      return property.bedrooms;
+                    };
+
+                    const formatBaths = () => {
+                      if (property.property_type === 'development') {
+                        if (property.bathrooms_min && property.bathrooms_max && property.bathrooms_min !== property.bathrooms_max) {
+                          return `${property.bathrooms_min}-${property.bathrooms_max}`;
+                        }
+                        return property.bathrooms_min || property.bathrooms_max || property.bathrooms;
+                      }
+                      return property.bathrooms;
+                    };
+
+                    const beds = formatBeds();
+                    const baths = formatBaths();
+                    const propertyLink = `/listings/${property.slug}/`;
+
                     return (
                       <article key={property.id} className="property-row">
                         <div className="property-row-media">
-                          <Link to={`/properties/${property.slug}`}>
-                            {property.cover_image_url && !imageErrors[property.id] ? (
-                              <img 
-                                src={toAbsoluteUrl(property.cover_image_url)} 
-                                alt={property.title}
-                                loading="lazy"
-                                onError={() =>
-                                  setImageErrors((prev) => ({ ...prev, [property.id]: true }))
-                                }
-                              />
-                            ) : (
-                              <div className="property-placeholder">
-                                <div className="placeholder-box" aria-hidden="true" />
-                              </div>
-                            )}
+                          <Link to={propertyLink}>
+                            <SafeImage
+                              src={toAbsoluteUrl(property.cover_image_url)}
+                              alt={property.title}
+                              loading="lazy"
+                              placeholder="gradient"
+                              style={{ width: '100%', height: 'auto' }}
+                            />
                             {property.status && (
                               <span className={`property-status ${statusBadgeClass}`}>
                                 {statusLabel}
@@ -247,38 +282,34 @@ export default function SearchPage() {
                             {property.city && <span className="property-location">{property.city}</span>}
                           </div>
                           <h2>
-                            <Link to={`/properties/${property.slug}`}>
+                            <Link to={propertyLink}>
                               {property.title}
                             </Link>
                           </h2>
                           {property.description && (
                             <p className="property-description">
-                              {property.description.length > 150 
-                                ? `${property.description.substring(0, 150)}...` 
-                                : property.description}
+                              {property.description.replace(/<[^>]+>/g, '').length > 150 
+                                ? `${property.description.replace(/<[^>]+>/g, '').substring(0, 150)}...` 
+                                : property.description.replace(/<[^>]+>/g, '')}
                             </p>
                           )}
                           <div className="property-details">
-                            {property.price_usd && (
-                              <span className="property-price">
-                                ${property.price_usd.toLocaleString('en-US')} USD
-                              </span>
-                            )}
+                            <span className="property-price">{formatPrice()}</span>
                             <div className="property-features">
-                              {property.bedrooms && (
+                              {beds && (
                                 <span className="feature-item">
-                                  🛏️ {property.bedrooms} {property.bedrooms === 1 ? 'Bed' : 'Beds'}
+                                  🛏️ {beds} {beds === 1 ? 'Bed' : 'Beds'}
                                 </span>
                               )}
-                              {property.bathrooms && (
+                              {baths && (
                                 <span className="feature-item">
-                                  🚿 {property.bathrooms} {property.bathrooms === 1 ? 'Bath' : 'Baths'}
+                                  🚿 {baths} {baths === 1 ? 'Bath' : 'Baths'}
                                 </span>
                               )}
                             </div>
                           </div>
                           <div className="property-row-actions">
-                            <ButtonDali to={`/properties/${property.slug}`}>
+                            <ButtonDali to={propertyLink}>
                               View Details
                             </ButtonDali>
                           </div>

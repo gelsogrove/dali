@@ -50,6 +50,7 @@ h6 {
 
 /* ===== Paragraphs ===== */
 p {
+  font-family: var(--font-family-default);
   font-size: var(--font-size-body);
   line-height: var(--line-height-normal);
   margin: 0 0 20px 0;

@@ -3,20 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import PageHero from '../components/PageHero';
 import ContactWithCta from '../components/ContactWithCta';
 import SEO from '../components/SEO';
-import { api } from '../config/api';
-
-const mockProperties = [
-  { title: 'Luxury Beachfront Condo', price: '$1,200,000', location: 'Riviera Maya' },
-  { title: 'Modern Villa with Pool', price: '$980,000', location: 'Tulum' },
-  { title: 'Downtown Penthouse', price: '$1,450,000', location: 'Playa del Carmen' },
-  { title: 'Cozy Jungle Retreat', price: '$720,000', location: 'Tulum' },
-  { title: 'Golf Course Residence', price: '$1,050,000', location: 'Playacar' },
-  { title: 'Oceanview Apartment', price: '$890,000', location: 'Cancun' },
-];
+import ImageWithOverlay from '../components/ImageWithOverlay';
+import SafeImage from '../components/SafeImage';
+import { api, endpoints } from '../config/api';
 
 export default function CityPage() {
   const { citySlug } = useParams();
   const [city, setCity] = useState(null);
+  const [properties, setProperties] = useState([]);
+  const [loadingProperties, setLoadingProperties] = useState(false);
   const [coverError, setCoverError] = useState(false);
   const [contentError, setContentError] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -50,6 +45,28 @@ export default function CityPage() {
   useEffect(() => {
     load();
   }, [citySlug]);
+
+  // Carica properties associate alla city
+  useEffect(() => {
+    if (!city) return;
+    
+    const loadProperties = async () => {
+      setLoadingProperties(true);
+      try {
+        // Cerca properties per city
+        const response = await api.get(`${endpoints.properties}?is_active=1&city=${encodeURIComponent(city.title)}&per_page=50`);
+        if (response.success && response.data?.properties) {
+          setProperties(response.data.properties);
+        }
+      } catch (err) {
+        console.error('Error loading properties:', err);
+      } finally {
+        setLoadingProperties(false);
+      }
+    };
+    
+    loadProperties();
+  }, [city]);
 
   const meta = useMemo(() => {
     if (!city) return null;
@@ -123,11 +140,12 @@ export default function CityPage() {
           </div>
           
           <div className="community-hero">
-            {city.cover_image && !coverError ? (
-              <img
+            {city.cover_image ? (
+              <SafeImage
                 src={toAbsoluteUrl(city.cover_image)}
                 alt={city.cover_image_alt || city.title}
-                onError={() => setCoverError(true)}
+                placeholder="gradient"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
               <div className="blog-placeholder">
@@ -142,44 +160,70 @@ export default function CityPage() {
                 dangerouslySetInnerHTML={{ __html: city.fullContent }}
               />
             )}
-            {city.content_image && !contentError ? (
+            {city.content_image ? (
               <div className="community-content-image">
-                <img
+                <SafeImage
                   src={toAbsoluteUrl(city.content_image)}
                   alt={city.content_image_alt || city.title}
-                  onError={() => setContentError(true)}
+                  placeholder="gradient"
+                  style={{ width: '100%', borderRadius: '8px' }}
                 />
               </div>
-            ) : (
-              city.content_image && (
-                <div className="community-content-image">
-                  <div className="blog-placeholder">
-                    <div className="placeholder-box" aria-hidden="true" />
-                  </div>
-                </div>
-              )
-            )}
+            ) : null}
           </div>
         </div>
       </section>
 
       <section className="community-properties">
         <div className="community-detail-wrapper">
-          <h2 className="community-props-title">Featured Properties</h2>
-          <div className="community-props-grid">
-            {mockProperties.map((p, idx) => (
-              <div key={idx} className="property-card">
-                <div className="property-thumb">
-                  <div className="placeholder-box" aria-hidden="true" />
-                </div>
-                <div className="property-body">
-                  <p className="property-location text-muted-foreground text-xs uppercase tracking-wide">{p.location}</p>
-                  <h3 className="property-title">{p.title}</h3>
-                  <p className="property-price">{p.price}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <h2 className="community-props-title">Featured Properties in {city.title}</h2>
+          
+          {loadingProperties ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <p>Loading properties...</p>
+            </div>
+          ) : properties.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <p>No properties available in this area yet.</p>
+            </div>
+          ) : (
+            <div className="community-props-grid">
+              {properties.map((property) => {
+                const link = `/listings/${property.slug}/`;
+                const coverImage = property.cover_image_url; // SafeImage gestisce fallback
+                const priceLabel = property.price_on_demand 
+                  ? 'Price on Request'
+                  : property.price_usd 
+                    ? `USD ${Number(property.price_usd).toLocaleString('en-US')}`
+                    : 'Contact for pricing';
+                
+                return (
+                  <div key={property.id} className="property-card">
+                    <Link to={link}>
+                      <div className="property-thumb">
+                        <ImageWithOverlay
+                          src={coverImage}
+                          alt={property.title}
+                          beds={property.bedrooms}
+                          baths={property.bathrooms}
+                          size={property.sqm ? `${property.sqm} m²` : null}
+                          status={property.status === 'sold' ? 'SOLD' : property.status === 'reserved' ? 'RESERVED' : 'FOR SALE'}
+                          location={property.neighborhood || property.city}
+                        >
+                          <div className="property-price">
+                            <h3>{priceLabel}</h3>
+                          </div>
+                          <div className="property-title">
+                            <h4>{property.title}</h4>
+                          </div>
+                        </ImageWithOverlay>
+                      </div>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 

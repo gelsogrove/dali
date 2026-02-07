@@ -5,6 +5,7 @@ import ContactWithCta from "../components/ContactWithCta";
 import PageHero from "../components/PageHero";
 import ButtonDali from "../components/ButtonDali";
 import SEO from "../components/SEO";
+import SafeImage from "../components/SafeImage";
 import BlogsPage from "./BlogsPage";
 
 const BlogDetailPage = () => {
@@ -208,11 +209,21 @@ const BlogDetailPage = () => {
             <div className="blog-detail-content">
               {blog.content_image ? (
                 <div className="blog-detail-image-large">
-                  <img src={toAbsoluteUrl(blog.content_image)} alt={blog.content_image_alt || blog.title} />
+                  <SafeImage
+                    src={toAbsoluteUrl(blog.content_image)} 
+                    alt={blog.content_image_alt || blog.title}
+                    placeholder="gradient"
+                    style={{ width: '100%', borderRadius: '8px' }}
+                  />
                 </div>
               ) : blog.featured_image ? (
                 <div className="blog-detail-image-inline">
-                  <img src={toAbsoluteUrl(blog.featured_image)} alt={blog.featured_image_alt || blog.title} />
+                  <SafeImage
+                    src={toAbsoluteUrl(blog.featured_image)} 
+                    alt={blog.featured_image_alt || blog.title}
+                    placeholder="gradient"
+                    style={{ width: '100%', borderRadius: '8px' }}
+                  />
                 </div>
               ) : (
                 <div className="blog-detail-image-inline blog-detail-image-placeholder">

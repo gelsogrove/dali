@@ -38,6 +38,15 @@
   box-sizing: border-box;
 }
 
+/* FORZA GLACIAL INDIFFERENCE SU TUTTO */
+*:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+  font-family: var(--font-family-default) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-title) !important;
+}
+
 body {
   margin: 0;
   background: #ffffff;
@@ -62,17 +71,15 @@ a {
 /* ===== Token-based Base Typography ===== */
 body,
 p,
+div,
 li,
 span,
+a,
 button,
 input,
 select,
 textarea {
   font-family: var(--font-family-default) !important;
-}
-
-a {
-  font-family: var(--font-family-default);
 }
 
 p,

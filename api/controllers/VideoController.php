@@ -162,9 +162,13 @@ class VideoController {
             if (empty($data['video_url'])) {
                 return $this->errorResponse('Video URL is required', 400);
             }
-            if (strpos($data['video_url'], 'vimeo.com') === false) {
-                return $this->errorResponse('Video URL must be a Vimeo link', 400);
+            
+            // Auto-detect video type from URL
+            $videoType = $this->detectVideoType($data['video_url']);
+            if (!$videoType) {
+                return $this->errorResponse('Video URL must be from YouTube, Instagram, or Vimeo', 400);
             }
+            
             if (empty($data['thumbnail_url'])) {
                 return $this->errorResponse('Thumbnail image is required', 400);
             }
@@ -181,7 +185,7 @@ class VideoController {
                 $data['title'],
                 $data['description'] ?? null,
                 $data['video_url'],
-                $data['video_type'] ?? 'vimeo',
+                $videoType,
                 $data['thumbnail_url'],
                 $data['thumbnail_alt'],
                 $displayOrder,
@@ -229,8 +233,13 @@ class VideoController {
                 return $this->errorResponse('Video not found', 404);
             }
 
-            if (!empty($data['video_url']) && strpos($data['video_url'], 'vimeo.com') === false) {
-                return $this->errorResponse('Video URL must be a Vimeo link', 400);
+            // Auto-detect video type if URL is being updated
+            if (!empty($data['video_url'])) {
+                $videoType = $this->detectVideoType($data['video_url']);
+                if (!$videoType) {
+                    return $this->errorResponse('Video URL must be from YouTube, Instagram, or Vimeo', 400);
+                }
+                $data['video_type'] = $videoType;
             }
 
             if (isset($data['thumbnail_url']) && !empty($data['thumbnail_url']) && empty($data['thumbnail_alt'])) {
@@ -476,5 +485,34 @@ class VideoController {
             error_log('VideoController schema check failed: ' . $e->getMessage());
             // Proceed without breaking API; fall back to available columns
         }
+    }
+
+    /**
+     * Auto-detect video type from URL
+     * @param string $url Video URL
+     * @return string|null 'youtube', 'instagram', 'vimeo', or null if unknown
+     */
+    private function detectVideoType($url) {
+        if (empty($url)) {
+            return null;
+        }
+
+        // YouTube
+        if (strpos($url, 'youtube.com') !== false || strpos($url, 'youtu.be') !== false) {
+            return 'youtube';
+        }
+
+        // Instagram
+        if (strpos($url, 'instagram.com') !== false) {
+            return 'instagram';
+        }
+
+        // Vimeo
+        if (strpos($url, 'vimeo.com') !== false) {
+            return 'vimeo';
+        }
+
+        // Unknown platform
+        return null;
     }
 }

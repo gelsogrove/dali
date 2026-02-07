@@ -1,8 +1,8 @@
 -- ============================================================================
 -- DALILA PROPERTY MANAGEMENT SYSTEM - COMPLETE DATABASE SCHEMA
 -- ============================================================================
--- Version: 2.0.0
--- Date: 2026-01-30
+-- Version: 2.1.0
+-- Date: 2026-02-04
 -- MariaDB 10.6+ / MySQL 8.0+
 -- ============================================================================
 
@@ -62,14 +62,21 @@ CREATE TABLE IF NOT EXISTS `properties` (
   `price_usd` DECIMAL(15,2) NULL COMMENT 'Primary price in USD',
   `price_mxn` DECIMAL(15,2) NULL COMMENT 'Auto-calculated from USD',
   `exchange_rate` DECIMAL(10,4) NULL DEFAULT 18.50 COMMENT 'USD to MXN rate',
+  `price_base_currency` ENUM('USD', 'MXN') DEFAULT 'USD' COMMENT 'Primary currency for price input',
   `price_on_demand` TINYINT(1) DEFAULT 0,
   `price_negotiable` TINYINT(1) DEFAULT 0,
-  `price_from_usd` DECIMAL(15,2) NULL COMMENT 'For developments - starting price',
-  `price_to_usd` DECIMAL(15,2) NULL COMMENT 'For developments - max price',
+  `price_from_usd` DECIMAL(15,2) NULL COMMENT 'For developments - starting price USD',
+  `price_to_usd` DECIMAL(15,2) NULL COMMENT 'For developments - max price USD',
+  `price_from_mxn` DECIMAL(15,2) NULL COMMENT 'For developments - starting price MXN',
+  `price_to_mxn` DECIMAL(15,2) NULL COMMENT 'For developments - max price MXN',
   
   -- Physical Specs
-  `bedrooms` INT NULL,
-  `bathrooms` DECIMAL(3,1) NULL,
+  `bedrooms` ENUM('studio', '1', '2', '3', '4', '5+') NULL,
+  `bedrooms_min` ENUM('studio', '1', '2', '3', '4', '5+') NULL COMMENT 'Min bedrooms for developments',
+  `bedrooms_max` ENUM('studio', '1', '2', '3', '4', '5+') NULL COMMENT 'Max bedrooms for developments',
+  `bathrooms` ENUM('1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5+') NULL,
+  `bathrooms_min` ENUM('1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5+') NULL COMMENT 'Min bathrooms for developments',
+  `bathrooms_max` ENUM('1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5+') NULL COMMENT 'Max bathrooms for developments',
   `sqm` DECIMAL(10,2) NULL COMMENT 'Square meters',
   `sqft` DECIMAL(10,2) NULL COMMENT 'Auto-calculated from sqm',
   `lot_size_sqm` DECIMAL(10,2) NULL,
@@ -86,6 +93,7 @@ CREATE TABLE IF NOT EXISTS `properties` (
   `address` VARCHAR(255) NULL,
   `neighborhood` VARCHAR(255) NULL,
   `city` VARCHAR(100) NULL,
+  `state` VARCHAR(100) NULL,
   `country` VARCHAR(100) NULL,
   `latitude` DECIMAL(10,8) NULL,
   `longitude` DECIMAL(11,8) NULL,
@@ -94,6 +102,7 @@ CREATE TABLE IF NOT EXISTS `properties` (
   -- Admin & Display
   `is_active` TINYINT(1) DEFAULT 0 COMMENT 'Published status',
   `featured` TINYINT(1) DEFAULT 0,
+  `show_in_home` TINYINT(1) DEFAULT 0 COMMENT 'Show in homepage featured section',
   `order` INT DEFAULT 0 COMMENT 'Display order in lists',
   `views_count` INT DEFAULT 0,
   
@@ -122,6 +131,10 @@ CREATE TABLE IF NOT EXISTS `properties` (
   INDEX `idx_order` (`order`),
   INDEX `idx_created_at` (`created_at`),
   INDEX `idx_deleted_at` (`deleted_at`),
+  INDEX `idx_bedrooms_min` (`bedrooms_min`),
+  INDEX `idx_bedrooms_max` (`bedrooms_max`),
+  INDEX `idx_bathrooms_min` (`bathrooms_min`),
+  INDEX `idx_bathrooms_max` (`bathrooms_max`),
   
   FOREIGN KEY (`created_by`) REFERENCES `admin_users` (`id`) ON DELETE SET NULL,
   
@@ -132,6 +145,24 @@ CREATE TABLE IF NOT EXISTS `properties` (
   CHECK (`longitude` IS NULL OR (`longitude` BETWEEN -180 AND 180))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='Complete properties table with all required fields';
+
+-- ============================================================================
+-- PROPERTY CATEGORIES TABLE (Many-to-Many for Developments)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS `property_categories` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `property_id` INT UNSIGNED NOT NULL,
+  `category` ENUM('apartment', 'house', 'villa', 'condo', 'penthouse', 'land', 'commercial') NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_property_category` (`property_id`, `category`),
+  INDEX `idx_property` (`property_id`),
+  INDEX `idx_category` (`category`),
+  CONSTRAINT `fk_property_categories_property` 
+    FOREIGN KEY (`property_id`) 
+    REFERENCES `properties` (`id`) 
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Multiple categories for development properties';
 
 -- ============================================================================
 -- PROPERTY PHOTOS TABLE
@@ -392,6 +423,133 @@ COMMENT='Audit trail for all admin actions';
 -- ENABLE FOREIGN KEY CHECKS
 -- ============================================================================
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================================================
+-- TRIGGERS - PRICE CONVERSION & AUTO-CALCULATIONS
+-- ============================================================================
+
+-- Trigger bidirezionale INSERT
+DELIMITER $$
+
+CREATE TRIGGER properties_price_calculation_bidirectional
+BEFORE INSERT ON properties
+FOR EACH ROW
+BEGIN
+    -- Validazione exchange rate (richiesto per conversioni)
+    IF NEW.exchange_rate IS NULL OR NEW.exchange_rate <= 0 THEN
+        SET NEW.exchange_rate = 20.0;
+    END IF;
+    
+    -- Default base currency
+    IF NEW.price_base_currency IS NULL THEN
+        SET NEW.price_base_currency = 'USD';
+    END IF;
+    
+    -- Skip se price_on_demand
+    IF NEW.price_on_demand = 0 OR NEW.price_on_demand IS NULL THEN
+        
+        -- Base Currency = USD: calcolare MXN da USD
+        IF NEW.price_base_currency = 'USD' THEN
+            IF NEW.price_usd IS NOT NULL AND NEW.price_usd > 0 THEN
+                SET NEW.price_mxn = ROUND(NEW.price_usd * NEW.exchange_rate, 2);
+            END IF;
+            
+            IF NEW.price_from_usd IS NOT NULL AND NEW.price_from_usd > 0 THEN
+                SET NEW.price_from_mxn = ROUND(NEW.price_from_usd * NEW.exchange_rate, 2);
+            END IF;
+            
+            IF NEW.price_to_usd IS NOT NULL AND NEW.price_to_usd > 0 THEN
+                SET NEW.price_to_mxn = ROUND(NEW.price_to_usd * NEW.exchange_rate, 2);
+            END IF;
+        END IF;
+        
+        -- Base Currency = MXN: calcolare USD da MXN
+        IF NEW.price_base_currency = 'MXN' THEN
+            IF NEW.price_mxn IS NOT NULL AND NEW.price_mxn > 0 THEN
+                SET NEW.price_usd = ROUND(NEW.price_mxn / NEW.exchange_rate, 2);
+            END IF;
+            
+            IF NEW.price_from_mxn IS NOT NULL AND NEW.price_from_mxn > 0 THEN
+                SET NEW.price_from_usd = ROUND(NEW.price_from_mxn / NEW.exchange_rate, 2);
+            END IF;
+            
+            IF NEW.price_to_mxn IS NOT NULL AND NEW.price_to_mxn > 0 THEN
+                SET NEW.price_to_usd = ROUND(NEW.price_to_mxn / NEW.exchange_rate, 2);
+            END IF;
+        END IF;
+        
+    END IF;
+    
+    -- Auto-calcolare sqft da sqm
+    IF NEW.sqm IS NOT NULL AND NEW.sqm > 0 THEN
+        SET NEW.sqft = ROUND(NEW.sqm * 10.764, 2);
+    END IF;
+END$$
+
+-- Trigger bidirezionale UPDATE
+CREATE TRIGGER properties_price_update_bidirectional
+BEFORE UPDATE ON properties
+FOR EACH ROW
+BEGIN
+    -- Validazione exchange rate
+    IF NEW.exchange_rate IS NULL OR NEW.exchange_rate <= 0 THEN
+        SET NEW.exchange_rate = 20.0;
+    END IF;
+    
+    -- Skip se price_on_demand
+    IF NEW.price_on_demand = 0 OR NEW.price_on_demand IS NULL THEN
+        
+        -- Base Currency = USD
+        IF NEW.price_base_currency = 'USD' THEN
+            IF NEW.price_usd != OLD.price_usd OR NEW.exchange_rate != OLD.exchange_rate THEN
+                IF NEW.price_usd IS NOT NULL AND NEW.price_usd > 0 THEN
+                    SET NEW.price_mxn = ROUND(NEW.price_usd * NEW.exchange_rate, 2);
+                END IF;
+            END IF;
+            
+            IF NEW.price_from_usd != OLD.price_from_usd OR NEW.exchange_rate != OLD.exchange_rate THEN
+                IF NEW.price_from_usd IS NOT NULL AND NEW.price_from_usd > 0 THEN
+                    SET NEW.price_from_mxn = ROUND(NEW.price_from_usd * NEW.exchange_rate, 2);
+                END IF;
+            END IF;
+            
+            IF NEW.price_to_usd != OLD.price_to_usd OR NEW.exchange_rate != OLD.exchange_rate THEN
+                IF NEW.price_to_usd IS NOT NULL AND NEW.price_to_usd > 0 THEN
+                    SET NEW.price_to_mxn = ROUND(NEW.price_to_usd * NEW.exchange_rate, 2);
+                END IF;
+            END IF;
+        END IF;
+        
+        -- Base Currency = MXN
+        IF NEW.price_base_currency = 'MXN' THEN
+            IF NEW.price_mxn != OLD.price_mxn OR NEW.exchange_rate != OLD.exchange_rate THEN
+                IF NEW.price_mxn IS NOT NULL AND NEW.price_mxn > 0 THEN
+                    SET NEW.price_usd = ROUND(NEW.price_mxn / NEW.exchange_rate, 2);
+                END IF;
+            END IF;
+            
+            IF NEW.price_from_mxn != OLD.price_from_mxn OR NEW.exchange_rate != OLD.exchange_rate THEN
+                IF NEW.price_from_mxn IS NOT NULL AND NEW.price_from_mxn > 0 THEN
+                    SET NEW.price_from_usd = ROUND(NEW.price_from_mxn / NEW.exchange_rate, 2);
+                END IF;
+            END IF;
+            
+            IF NEW.price_to_mxn != OLD.price_to_mxn OR NEW.exchange_rate != OLD.exchange_rate THEN
+                IF NEW.price_to_mxn IS NOT NULL AND NEW.price_to_mxn > 0 THEN
+                    SET NEW.price_to_usd = ROUND(NEW.price_to_mxn / NEW.exchange_rate, 2);
+                END IF;
+            END IF;
+        END IF;
+        
+    END IF;
+    
+    -- Auto-calcolare sqft da sqm
+    IF NEW.sqm IS NOT NULL AND NEW.sqm > 0 AND NEW.sqm != OLD.sqm THEN
+        SET NEW.sqft = ROUND(NEW.sqm * 10.764, 2);
+    END IF;
+END$$
+
+DELIMITER ;
 
 -- ============================================================================
 -- DEFAULT ADMIN USER

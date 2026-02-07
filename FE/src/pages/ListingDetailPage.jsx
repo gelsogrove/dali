@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import CanvasImage from '../components/CanvasImage';
 import ContactSection from '../components/ContactSection';
+import SEO from '../components/SEO';
+import SafeImage from '../components/SafeImage';
 import { api } from '../config/api';
 import { listingDetails } from '../data/listingDetails';
 import { listingContent } from '../data/listingContent';
@@ -17,6 +19,7 @@ export default function ListingDetailPage() {
   const [expandedSection, setExpandedSection] = useState(null);
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
   const slug = useMemo(() => {
@@ -30,12 +33,18 @@ export default function ListingDetailPage() {
       
       try {
         setLoading(true);
-        const response = await api.get(`/properties/slug/${slug}`);
-        if (response.success) {
+        setNotFound(false);
+        const response = await api.get(`/properties/${slug}`);
+        if (response.success && response.data) {
           setProperty(response.data);
+        } else {
+          // Property not found - show 404 (redirect check is global in App.jsx)
+          setNotFound(true);
         }
       } catch (err) {
         console.error('Error fetching property:', err);
+        // Property not found - show 404 (redirect check is global in App.jsx)
+        setNotFound(true);
       } finally {
         setLoading(false);
       }
@@ -55,11 +64,74 @@ export default function ListingDetailPage() {
       }
     : listingDetails[slug];
 
-  useEffect(() => {
-    if (detail?.title) {
-      document.title = `${detail.title} | Buy With Dali`;
-    }
-  }, [detail]);
+  // Base URL for canonical and OG URLs
+  const siteUrl = "https://buywithdali.com";
+  const propertyUrl = `${siteUrl}/listings/${slug}/`;
+  
+  // Build absolute image URL
+  const getAbsoluteImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${siteUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  // SEO fields from database - COMPLETE
+  const seoData = property ? {
+    // Title: use seo_title or fallback to property title with location
+    title: property.seo_title || `${property.title}${property.city ? ` in ${property.city}` : ''}`,
+    
+    // Description: use seo_description or build from property data
+    description: property.seo_description || (() => {
+      const parts = [];
+      if (property.property_type === 'development') {
+        parts.push('New development');
+      } else {
+        parts.push('Property for sale');
+      }
+      if (property.city) parts.push(`in ${property.city}`);
+      if (property.bedrooms) parts.push(`${property.bedrooms} bedrooms`);
+      if (property.bathrooms) parts.push(`${property.bathrooms} bathrooms`);
+      if (property.sqm) parts.push(`${property.sqm} sqm`);
+      if (property.price_usd && !property.price_on_demand) {
+        parts.push(`USD ${Number(property.price_usd).toLocaleString('en-US')}`);
+      }
+      return parts.join(' • ') + '. Contact Buy With Dali for more information.';
+    })(),
+    
+    // Keywords: use seo_keywords or build from tags and property data
+    keywords: property.seo_keywords || [
+      property.title,
+      property.city,
+      property.neighborhood,
+      property.country,
+      property.property_category,
+      'real estate',
+      'property for sale',
+      'Riviera Maya',
+      ...(property.tags || [])
+    ].filter(Boolean).join(', '),
+    
+    // Open Graph
+    ogTitle: property.og_title || property.title,
+    ogDescription: property.og_description || property.seo_description || property.description?.replace(/<[^>]+>/g, '').slice(0, 200),
+    ogImage: getAbsoluteImageUrl(property.og_image || property.cover_image_url || property.featured_image),
+    ogImageAlt: property.cover_image_alt || `${property.title} - ${property.city || 'Riviera Maya'} property`,
+    
+    // Canonical URL - use the slug-based URL
+    canonicalUrl: propertyUrl,
+    
+    // Full property data for Schema.org
+    property: property,
+    
+    // Breadcrumbs for structured data
+    breadcrumbs: [
+      { name: 'Home', url: siteUrl },
+      { name: property.property_type === 'development' ? 'New Developments' : 'Properties', 
+        url: property.property_type === 'development' ? `${siteUrl}/new-developments` : `${siteUrl}/active-properties` },
+      { name: property.city || 'Property', url: propertyUrl },
+      { name: property.title, url: propertyUrl }
+    ]
+  } : null;
 
   useEffect(() => {
     if (mainSliderRef.current && mainSliderRef.current.splide) {
@@ -80,23 +152,52 @@ export default function ListingDetailPage() {
     );
   }
 
-  if (!detail) {
+  if (notFound || !detail) {
     return (
-      <section className="listing-not-found">
-        <div className="container">
-          <h1>Listing not found</h1>
-          <p>The listing you are looking for is unavailable.</p>
-          <a href="/properties" className="default-button">
-            Back to Properties
-          </a>
-        </div>
-      </section>
+      <>
+        <SEO 
+          title="Property Not Found"
+          description="The property you are looking for is no longer available or has been moved."
+          canonicalUrl={`https://buywithdali.com${pathname}`}
+        />
+        <section className="listing-not-found">
+          <div className="container" style={{ padding: '100px 5%', textAlign: 'center' }}>
+            <h1>Property Not Found</h1>
+            <p>The property you are looking for is no longer available or has been moved.</p>
+            <p style={{ marginTop: '20px' }}>
+              <a href="/active-properties" className="default-button">
+                View Active Properties
+              </a>
+            </p>
+            <p style={{ marginTop: '15px' }}>
+              <a href="/new-developments" className="default-button" style={{ marginLeft: '10px' }}>
+                View New Developments
+              </a>
+            </p>
+          </div>
+        </section>
+      </>
     );
   }
 
   const galleryUrls = (property.galleryUrls && property.galleryUrls.length ? property.galleryUrls : []).filter(Boolean);
-  const heroImage = detail.heroImage || galleryUrls[0] || property.image;
-  const heroGallery = heroImage ? [heroImage, ...galleryUrls.filter((url) => url !== heroImage)] : galleryUrls;
+  
+  // Use photos array with alt_text if available, otherwise fallback to galleryUrls
+  const photos = property.photos && property.photos.length > 0 
+    ? property.photos.map(photo => ({
+        url: photo.url,
+        alt: photo.alt_text || `${property.title} - ${property.city || 'Riviera Maya'} property image`
+      }))
+    : galleryUrls.map((url, idx) => ({
+        url,
+        alt: `${property.title} - Image ${idx + 1}`
+      }));
+  
+  const heroImage = detail.heroImage || (photos[0]?.url) || property.image;
+  const heroGallery = photos.length > 0 
+    ? photos 
+    : (heroImage ? [{ url: heroImage, alt: property.title }] : []);
+  
   const scheduleLink = 'https://calendar.app.google/QoV7AeK9d3B62hqm7';
   const brochureLink = property.href || '#';
   
@@ -122,8 +223,40 @@ export default function ListingDetailPage() {
   
   const priceLabel = formatPrice(property.rawPrice || property.price || detail.priceLabel);
   const neighborhood = property.city || detail.location || property.location || '';
-  const propertyType = 'ACTIVE PROPERTIES';
-  const statusLabel = 'FOR SALE';
+  
+  // Property Type: active or development
+  const propertyType = property.property_type === 'development' ? 'NEW DEVELOPMENT' : 'ACTIVE PROPERTY';
+  
+  // Status label
+  const getStatusLabel = (status) => {
+    if (status === 'for_sale') return 'FOR SALE';
+    if (status === 'sold') return 'SOLD';
+    if (status === 'reserved') return 'RESERVED';
+    return 'FOR SALE';
+  };
+  const statusLabel = getStatusLabel(property.status);
+  
+  // Property Categories (multiple for developments)
+  const propertyCategories = property.property_type === 'development' && property.property_categories?.length
+    ? property.property_categories.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')
+    : property.property_category 
+      ? property.property_category.charAt(0).toUpperCase() + property.property_category.slice(1)
+      : null;
+  
+  // Bedrooms range for developments
+  const bedroomsLabel = property.property_type === 'development' && (property.bedrooms_min || property.bedrooms_max)
+    ? property.bedrooms_min && property.bedrooms_max && property.bedrooms_min !== property.bedrooms_max
+      ? `${property.bedrooms_min} to ${property.bedrooms_max}`
+      : property.bedrooms_min || property.bedrooms_max
+    : property.bedrooms || null;
+    
+  // Bathrooms range for developments  
+  const bathroomsLabel = property.property_type === 'development' && (property.bathrooms_min || property.bathrooms_max)
+    ? property.bathrooms_min && property.bathrooms_max && property.bathrooms_min !== property.bathrooms_max
+      ? `${property.bathrooms_min} to ${property.bathrooms_max}`
+      : property.bathrooms_min || property.bathrooms_max
+    : property.bathrooms || null;
+  
   const currentUrl = typeof window !== 'undefined' ? window.location.href : property.href || '';
   const amenities =
     detail.amenities && detail.amenities.length
@@ -166,10 +299,6 @@ export default function ListingDetailPage() {
     setLoadingImages(prev => ({ ...prev, [index]: false }));
   };
 
-  const handleImageLoadStart = (index) => {
-    setLoadingImages(prev => ({ ...prev, [index]: true }));
-  };
-
   const handleThumbnailClick = (index) => {
     if (mainSliderRef.current) {
       mainSliderRef.current.go(index);
@@ -184,6 +313,21 @@ export default function ListingDetailPage() {
 
   return (
     <>
+      {seoData && (
+        <SEO
+          title={seoData.title}
+          description={seoData.description}
+          keywords={seoData.keywords}
+          ogTitle={seoData.ogTitle}
+          ogDescription={seoData.ogDescription}
+          ogImage={seoData.ogImage}
+          ogImageAlt={seoData.ogImageAlt}
+          canonicalUrl={seoData.canonicalUrl}
+          ogType="product"
+          property={seoData.property}
+          breadcrumbs={seoData.breadcrumbs}
+        />
+      )}
       <section className="listing-hero-slider">
         <Splide
           ref={mainSliderRef}
@@ -198,10 +342,16 @@ export default function ListingDetailPage() {
           }}
           className="listing-hero-splide"
         >
-          {heroGallery.map((url, idx) => (
-            <SplideSlide key={`${url}-${idx}`}>
+          {heroGallery.map((photo, idx) => (
+            <SplideSlide key={`hero-${idx}`}>
               <div className="listing-hero-frame">
-                <img src={url} alt={`${detail.title} hero ${idx + 1}`} loading="lazy" />
+                <SafeImage
+                  src={photo.url} 
+                  alt={photo.alt || `${detail.title} - Image ${idx + 1}`} 
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  placeholder="gradient"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
                 <div className="listing-hero-overlay"></div>
               </div>
             </SplideSlide>
@@ -213,10 +363,12 @@ export default function ListingDetailPage() {
         <div className="listing-gallery-strip" data-aos="fade-up" data-aos-duration="900" data-aos-delay="50">
           <Splide
             options={{
+              type: 'loop',
               perPage: 6,
               gap: '6px',
               arrows: true,
               pagination: false,
+              rewind: true,
               breakpoints: {
                 1100: { perPage: 5 },
                 900: { perPage: 4 },
@@ -226,7 +378,7 @@ export default function ListingDetailPage() {
             }}
             className="listing-thumbs"
           >
-            {heroGallery.map((url, idx) => (
+            {heroGallery.map((photo, idx) => (
               <SplideSlide key={`thumb-${idx}`}>
                 <div 
                   className={`listing-gallery-thumb ${activeSlide === idx ? 'active' : ''}`}
@@ -238,12 +390,13 @@ export default function ListingDetailPage() {
                       <div className="thumb-spinner"></div>
                     </div>
                   )}
-                  <img 
-                    src={url} 
-                    alt={`${detail.title} image ${idx + 1}`} 
+                  <SafeImage
+                    src={photo.url} 
+                    alt={photo.alt || `${detail.title} - Thumbnail ${idx + 1}`} 
                     loading="lazy"
-                    onLoadStart={() => handleImageLoadStart(idx)}
+                    placeholder="gradient"
                     onLoad={() => handleImageLoad(idx)}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 </div>
               </SplideSlide>
@@ -255,11 +408,21 @@ export default function ListingDetailPage() {
       <section className="listing-main-wrap">
         <div className="listing-main-inner">
           <div className="listing-breadcrumb-line">
-            <a href="/">Home</a> <span>›</span> <a href="/properties">Properties</a> <span>›</span> <span>{detail.title}</span>
+            <a href="/">Home</a> <span>›</span> 
+            <a href={property.property_type === 'development' ? '/new-developments' : '/active-properties'}>
+              {property.property_type === 'development' ? 'New Developments' : 'Properties'}
+            </a> <span>›</span> 
+            {property.city && (<><a href={`/search?city=${encodeURIComponent(property.city)}`}>{property.city}</a> <span>›</span></>)}
+            <span>{detail.title}</span>
           </div>
           
           <div className="listing-title-fullwidth">
             <h1>{detail.title}</h1>
+            {property.subtitle && (
+              <p className="listing-subtitle" style={{ fontSize: '1.2rem', color: '#666', marginTop: '10px', fontStyle: 'italic' }}>
+                {property.subtitle}
+              </p>
+            )}
           </div>
           
           <div className="listing-main-grid">
@@ -339,10 +502,58 @@ export default function ListingDetailPage() {
                       <span>Property Type</span>
                       <strong>{propertyType}</strong>
                     </li>
+                    {propertyCategories && (
+                      <li>
+                        <span>Category</span>
+                        <strong>{propertyCategories}</strong>
+                      </li>
+                    )}
                     <li>
                       <span>Status</span>
                       <strong>{statusLabel}</strong>
                     </li>
+                    {bedroomsLabel && (
+                      <li>
+                        <span>Bedrooms</span>
+                        <strong>{bedroomsLabel}</strong>
+                      </li>
+                    )}
+                    {bathroomsLabel && (
+                      <li>
+                        <span>Bathrooms</span>
+                        <strong>{bathroomsLabel}</strong>
+                      </li>
+                    )}
+                    {property.sqm && (
+                      <li>
+                        <span>Area (m²)</span>
+                        <strong>{property.sqm} m²</strong>
+                      </li>
+                    )}
+                    {property.sqft && (
+                      <li>
+                        <span>Area (sqft)</span>
+                        <strong>{property.sqft} sqft</strong>
+                      </li>
+                    )}
+                    {property.lot_size_sqm && (
+                      <li>
+                        <span>Lot Size (m²)</span>
+                        <strong>{property.lot_size_sqm} m²</strong>
+                      </li>
+                    )}
+                    {property.year_built && (
+                      <li>
+                        <span>Year Built</span>
+                        <strong>{property.year_built}</strong>
+                      </li>
+                    )}
+                    {property.furnishing_status && (
+                      <li>
+                        <span>Furnishing</span>
+                        <strong>{property.furnishing_status.charAt(0).toUpperCase() + property.furnishing_status.slice(1)}</strong>
+                      </li>
+                    )}
                     {property.size ? (
                       <li>
                         <span>Appx. Living Area</span>
@@ -394,6 +605,16 @@ export default function ListingDetailPage() {
             <aside className="listing-side" data-aos="fade-up" data-aos-duration="900" data-aos-delay="100">
               <div className="listing-price-card">
                 <div className="listing-price-value">{priceLabel}</div>
+                {property.price_base_currency === 'MXN' && property.price && (
+                  <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '4px' }}>
+                    ≈ ${property.price?.toLocaleString('en-US')} USD
+                  </div>
+                )}
+                {property.price_base_currency === 'USD' && property.price_mxn && (
+                  <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '4px' }}>
+                    ≈ ${property.price_mxn?.toLocaleString('es-MX')} MXN
+                  </div>
+                )}
                 <ul className="listing-facts">
                   <li>
                     <span>Status</span>
@@ -409,18 +630,18 @@ export default function ListingDetailPage() {
                       <strong>{neighborhood}</strong>
                     </li>
                   ) : null}
-                  {property.beds && property.beds > 0 ? (
+                  {bedroomsLabel && (
                     <li>
                       <span>Bedrooms</span>
-                      <strong>{property.beds}</strong>
+                      <strong>{bedroomsLabel}</strong>
                     </li>
-                  ) : null}
-                  {property.baths && property.baths > 0 ? (
+                  )}
+                  {bathroomsLabel && (
                     <li>
                       <span>Bathrooms</span>
-                      <strong>{property.baths}</strong>
+                      <strong>{bathroomsLabel}</strong>
                     </li>
-                  ) : null}
+                  )}
               {property.size ? (
                 <li>
                   <span>Size</span>

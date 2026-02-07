@@ -3,6 +3,7 @@ import { Splide, SplideSlide } from '@splidejs/react-splide';
 import ButtonDali from './ButtonDali';
 import TitlePage from './TitlePage';
 import { api, endpoints } from '../config/api';
+import { getEmbedUrl } from '../utils/videoHelpers';
 
 export default function FeaturedVideos() {
   const sliderRef = useRef(null);
@@ -249,7 +250,7 @@ export default function FeaturedVideos() {
             </button>
             <div className="fv-modal-inner">
               <iframe
-                src={`${activeVideo.video_url}?autoplay=1`}
+                src={`${getEmbedUrl(activeVideo.video_url)}?autoplay=1`}
                 title={activeVideo.title || 'Featured video'}
                 frameBorder="0"
                 allow="autoplay; fullscreen; picture-in-picture"

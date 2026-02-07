@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Plus, Edit, Trash2, GripVertical, Calendar, Link2 } from 'lucide-react'
 import { format } from 'date-fns'
+import SafeImage from '@/components/SafeImage'
 
 type Blog = {
   id: number
@@ -217,17 +218,11 @@ export default function BlogsPage() {
                   <div className="text-xs text-muted-foreground text-center mt-1">#{idx + 1}</div>
                 </div>
 
-                {blog.featured_image ? (
-                  <img
-                    src={toAbsoluteUrl(blog.featured_image)}
-                    alt={blog.featured_image_alt || blog.title}
-                    className="w-48 h-48 object-cover my-4 ml-2 mr-4 rounded-lg"
-                  />
-                ) : (
-                  <div className="w-48 h-48 flex items-center justify-center flex-shrink-0 my-4 ml-2 mr-4 rounded-lg border border-dashed border-gray-300 bg-gradient-to-br from-amber-50 to-rose-50">
-                    <div className="placeholder-box w-full h-full rounded-md"></div>
-                  </div>
-                )}
+                <SafeImage
+                  src={toAbsoluteUrl(blog.featured_image)}
+                  alt={blog.featured_image_alt || blog.title}
+                  className="w-48 h-48 object-cover my-4 ml-2 mr-4 rounded-lg"
+                />
                 
                 <div className="flex-1 py-4 pr-4">
                   <CardHeader className="p-0 pb-4">

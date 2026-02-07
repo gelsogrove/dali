@@ -30,7 +30,8 @@ class RedirectController {
         try {
             $rule = $this->service->findByUrlOld($urlOld);
             if (!$rule || empty($rule['urlNew'])) {
-                return $this->errorResponse('Redirect not found', 404);
+                // Return success:false with 200 status - not finding a redirect is normal
+                return ['success' => false, 'message' => 'No redirect found'];
             }
             return $this->successResponse(['urlNew' => $rule['urlNew']]);
         } catch (Exception $e) {
@@ -41,7 +42,7 @@ class RedirectController {
 
     public function getById($id) {
         try {
-            $stmt = $this->conn->prepare("SELECT id, urlOld, urlNew, created_at, updated_at FROM redirect WHERE id = ? LIMIT 1");
+            $stmt = $this->conn->prepare("SELECT id, url_old as urlOld, url_new as urlNew, redirect_type, is_active, hit_count, created_at, updated_at FROM redirects WHERE id = ? LIMIT 1");
             $stmt->bind_param('i', $id);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -58,10 +59,11 @@ class RedirectController {
 
     public function create($data, $userId) {
         try {
-            $urlOld = $data['urlOld'] ?? '';
-            $urlNew = $data['urlNew'] ?? '';
+            $urlOld = $data['urlOld'] ?? $data['url_old'] ?? '';
+            $urlNew = $data['urlNew'] ?? $data['url_new'] ?? '';
+            $redirectType = (int)($data['redirect_type'] ?? 301);
 
-            $id = $this->service->create($urlOld, $urlNew);
+            $id = $this->service->create($urlOld, $urlNew, $redirectType);
             $this->logActivity($userId, 'create', 'redirect', $id, "Created redirect $urlOld -> $urlNew");
 
             return $this->successResponse([
@@ -76,10 +78,11 @@ class RedirectController {
 
     public function update($id, $data, $userId) {
         try {
-            $urlOld = $data['urlOld'] ?? '';
-            $urlNew = $data['urlNew'] ?? '';
+            $urlOld = $data['urlOld'] ?? $data['url_old'] ?? '';
+            $urlNew = $data['urlNew'] ?? $data['url_new'] ?? '';
+            $redirectType = (int)($data['redirect_type'] ?? 301);
 
-            $ok = $this->service->update((int)$id, $urlOld, $urlNew);
+            $ok = $this->service->update((int)$id, $urlOld, $urlNew, $redirectType);
             if (!$ok) {
                 return $this->errorResponse('Failed to update redirect');
             }

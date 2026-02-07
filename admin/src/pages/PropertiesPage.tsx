@@ -7,7 +7,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -100,54 +100,58 @@ function SortablePropertyCard({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    width: 'auto',
+    height: 'auto',
   }
 
   return (
     <Card
       ref={setNodeRef}
       style={style}
-      className="overflow-hidden border border-dashed"
+      className="overflow-hidden border border-dashed bg-white"
     >
-      <div className="flex gap-4 items-start">
+      <div className="flex gap-3 items-center p-4">
         <div
           {...attributes}
           {...listeners}
-          className="p-2 text-muted-foreground cursor-grab active:cursor-grabbing"
+          className="flex-shrink-0 text-muted-foreground cursor-grab active:cursor-grabbing"
         >
           <GripVertical className="h-5 w-5" />
-          <div className="text-xs text-muted-foreground text-center mt-1">#{index + 1}</div>
+          <div className="text-xs text-muted-foreground text-center">#{index + 1}</div>
         </div>
 
-        {property.cover_image_url ? (
-          <img
-            src={toAbsoluteUrl(property.cover_image_url)}
-            alt={property.title}
-            className="w-48 h-48 object-cover my-4 ml-2 mr-4 rounded-lg"
-          />
-        ) : (
-          <div className="w-48 h-48 flex items-center justify-center flex-shrink-0 my-4 ml-2 mr-4 rounded-lg border border-dashed border-gray-300 bg-gradient-to-br from-blue-50 to-purple-50">
-            <div className="placeholder-box w-full h-full rounded-md"></div>
-          </div>
-        )}
+        <img
+          src={toAbsoluteUrl(property.cover_image_url)}
+          alt={property.title}
+          className="w-32 h-24 object-cover rounded-lg flex-shrink-0"
+          onError={(e) => {
+            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="96"%3E%3Crect fill="%23ddd" width="128" height="96"/%3E%3C/svg%3E';
+          }}
+        />
         
-        <div className="flex-1 py-4 pr-4">
-          <CardHeader className="p-0 pb-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="outline">{typeLabels[property.property_type]}</Badge>
-                  <Badge className={statusColors[property.status]}>{statusLabels[property.status]}</Badge>
-                </div>
-                <CardTitle className="line-clamp-1">{property.title}</CardTitle>
-                {property.subtitle && (
-                  <p className="text-sm text-muted-foreground mt-1">{property.subtitle}</p>
-                )}
-                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <Link2 className="h-3 w-3" />
-                  <span className="break-all">/properties/{property.slug}</span>
-                </p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="outline" className="text-xs">{typeLabels[property.property_type]}</Badge>
+                <Badge className={`${statusColors[property.status]} text-xs`}>{statusLabels[property.status]}</Badge>
               </div>
-              <div className="flex flex-col gap-2 ml-2">
+              <h3 className="font-semibold text-base line-clamp-1">{property.title}</h3>
+              {property.subtitle && (
+                <p className="text-sm text-muted-foreground line-clamp-1">{property.subtitle}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <Link2 className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">/properties/{property.slug}</span>
+              </p>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
+                <span className="font-mono">{property.property_id_reference}</span>
+                <span>•</span>
+                <span className="truncate">{property.city}, {property.country}</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Published</span>
                   <Switch
@@ -169,49 +173,36 @@ function SortablePropertyCard({
                     aria-label="Toggle show in home"
                   />
                 </div>
-              </div>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span className="font-mono text-xs">{property.property_id_reference}</span>
-                <span>•</span>
-                <span>{property.city}, {property.country}</span>
-              </div>
               
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  title="View on site"
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                title="View on site"
+              >
+                <a
+                  href={`${SITE_URL}/new/properties/${property.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  <a
-                    href={`${SITE_URL}/new/properties/${property.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button variant="outline" size="sm" asChild>
-                  <Link to={`/properties/${property.id}`}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </Link>
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => onDelete(property.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/properties/${property.id}`}>
+                  <Edit className="mr-1 h-4 w-4" />
+                  Edit
+                </Link>
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => onDelete(property.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
-          </CardContent>
+          </div>
         </div>
       </div>
     </Card>

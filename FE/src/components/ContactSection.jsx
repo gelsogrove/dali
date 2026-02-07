@@ -22,6 +22,7 @@ export default function ContactSection() {
             <h3>Contact Us</h3>
             <h2>Get In Touch</h2>
           </div>
+          
           <div className="git-form-container">
             <form className="git-form" onSubmit={handleSubmit}>
               <div className="r">

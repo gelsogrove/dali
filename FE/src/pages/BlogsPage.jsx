@@ -5,6 +5,7 @@ import PageHero from '../components/PageHero';
 import TitleHeader from '../components/TitleHeader';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ButtonDali from '../components/ButtonDali';
+import SafeImage from '../components/SafeImage';
 import SEO from '../components/SEO';
 import { api, endpoints } from '../config/api';
 
@@ -12,7 +13,6 @@ export default function BlogsPage() {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [imageErrors, setImageErrors] = useState({});
   const apiBase = import.meta.env.VITE_API_URL || '/api';
   const assetBase = apiBase.replace(/\/api$/, '');
 
@@ -90,20 +90,13 @@ export default function BlogsPage() {
             <article className="blog-row" key={blog.id}>
               <div className="blog-row-media">
                 <Link to={`/blog/${blog.slug}`}>
-                  {blog.featured_image && !imageErrors[blog.id || blog.slug] ? (
-                    <img 
-                      src={toAbsoluteUrl(blog.featured_image)} 
-                      alt={blog.featured_image_alt || blog.title}
-                      loading="lazy"
-                      onError={() =>
-                        setImageErrors((prev) => ({ ...prev, [blog.id || blog.slug]: true }))
-                      }
-                    />
-                  ) : (
-                    <div className="blog-placeholder">
-                      <div className="placeholder-box" aria-hidden="true" />
-                    </div>
-                  )}
+                  <SafeImage
+                    src={toAbsoluteUrl(blog.featured_image)} 
+                    alt={blog.featured_image_alt || blog.title}
+                    loading="lazy"
+                    placeholder="gradient"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
                 </Link>
               </div>
               <div className="blog-row-body">

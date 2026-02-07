@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Upload, GripVertical, Trash2, Image as ImageIcon } from 'lucide-react'
 import api from '@/lib/api'
+import SafeImage from '@/components/SafeImage'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 const ASSET_BASE = API_BASE.replace(/\/api$/, '')
@@ -83,7 +84,7 @@ function SortablePhotoItem({ photo, index, onDelete, onUpdateAlt }: {
 
       {/* Image Thumbnail */}
       <div className="relative w-20 h-20 flex-shrink-0 rounded overflow-hidden bg-muted">
-        <img
+        <SafeImage
           src={toAbsoluteUrl(photo.url)}
           alt={photo.alt_text || 'Property photo'}
           className="w-full h-full object-cover"

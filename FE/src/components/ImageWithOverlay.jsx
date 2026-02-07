@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import SafeImage from './SafeImage';
 
 export default function ImageWithOverlay({ src, alt, children, className = '', beds, baths, size, status = 'FOR SALE', location }) {
   const [loaded, setLoaded] = useState(false);
@@ -11,11 +12,12 @@ export default function ImageWithOverlay({ src, alt, children, className = '', b
 
   return (
     <div className={`image-overlay-container ${className}`}>
-      <img 
+      <SafeImage
         src={src} 
         alt={alt} 
         className={`image-overlay-img ${loaded ? 'loaded' : ''}`}
         onLoad={() => setLoaded(true)}
+        placeholder="gradient"
       />
       {status && <div className="image-overlay-status">{status}</div>}
       {location && (

@@ -181,10 +181,10 @@ class PropertyController {
             $orderBy = "ORDER BY featured DESC, `order` ASC, `$sortField` $sortDir";
             
             $query = "SELECT id, property_id_reference, slug, title, subtitle, property_type, status, 
-                     property_category, description, price_usd, price_mxn, price_on_demand, 
+                     property_category, description, price_usd, price_mxn, price_eur, price_on_demand, 
                      price_base_currency, exchange_rate, price_from_usd, price_to_usd, 
-                     price_from_mxn, price_to_mxn, bedrooms, bedrooms_min, bedrooms_max,
-                     bathrooms, bathrooms_min, bathrooms_max, sqm, sqft, furnishing_status, 
+                     price_from_mxn, price_to_mxn, price_from_eur, price_to_eur, bedrooms, bedrooms_min, bedrooms_max,
+                     bathrooms, bathrooms_min, bathrooms_max, sqm, sqft, sqm_min, sqm_max, sqft_min, sqft_max, furnishing_status, 
                      neighborhood, city, country, latitude, longitude, tags, is_active, featured, show_in_home, `order`, views_count,
                      created_at, updated_at
                      FROM properties 
@@ -211,9 +211,11 @@ class PropertyController {
             while ($row = $result->fetch_assoc()) {
                 $property = $this->formatProperty($row);
                 
-                // Load property_categories if development
-                if ($property['property_type'] === 'development') {
-                    $property['property_categories'] = $this->loadPropertyCategories($property['id']);
+                // Always load property_categories from table
+                $property['property_categories'] = $this->loadPropertyCategories($property['id']);
+                // Fallback: if table is empty but column has value (legacy), synthesize array
+                if (empty($property['property_categories']) && !empty($property['property_category'])) {
+                    $property['property_categories'] = [$property['property_category']];
                 }
                 
                 $properties[] = $property;
@@ -269,9 +271,11 @@ class PropertyController {
 
             $property = $result->fetch_assoc();
 
-            // Load property_categories if development
-            if ($property['property_type'] === 'development') {
-                $property['property_categories'] = $this->loadPropertyCategories($property['id']);
+            // Always load property_categories from table
+            $property['property_categories'] = $this->loadPropertyCategories($property['id']);
+            // Fallback: if table is empty but column has value (legacy), synthesize array
+            if (empty($property['property_categories']) && !empty($property['property_category'])) {
+                $property['property_categories'] = [$property['property_category']];
             }
 
             // Get photos
@@ -355,15 +359,39 @@ class PropertyController {
             }
 
             // Price fields
+            if (isset($data['price_base_currency']) && $data['price_base_currency'] !== '') {
+                $fields[] = 'price_base_currency';
+                $params[] = $data['price_base_currency'];
+                $types .= 's';
+            }
+
             if (isset($data['price_on_demand'])) {
                 $fields[] = 'price_on_demand';
                 $params[] = $data['price_on_demand'] ? 1 : 0;
                 $types .= 'i';
             }
 
+            if (isset($data['price_negotiable'])) {
+                $fields[] = 'price_negotiable';
+                $params[] = $data['price_negotiable'] ? 1 : 0;
+                $types .= 'i';
+            }
+
             if (isset($data['price_usd']) && $data['price_usd'] !== null && $data['price_usd'] !== '') {
                 $fields[] = 'price_usd';
                 $params[] = (float)$data['price_usd'];
+                $types .= 'd';
+            }
+
+            if (isset($data['price_mxn']) && $data['price_mxn'] !== null && $data['price_mxn'] !== '') {
+                $fields[] = 'price_mxn';
+                $params[] = (float)$data['price_mxn'];
+                $types .= 'd';
+            }
+
+            if (isset($data['price_eur']) && $data['price_eur'] !== null && $data['price_eur'] !== '') {
+                $fields[] = 'price_eur';
+                $params[] = (float)$data['price_eur'];
                 $types .= 'd';
             }
 
@@ -385,10 +413,46 @@ class PropertyController {
                 $types .= 'd';
             }
 
+            if (isset($data['price_from_mxn']) && $data['price_from_mxn'] !== null) {
+                $fields[] = 'price_from_mxn';
+                $params[] = (float)$data['price_from_mxn'];
+                $types .= 'd';
+            }
+
+            if (isset($data['price_to_mxn']) && $data['price_to_mxn'] !== null) {
+                $fields[] = 'price_to_mxn';
+                $params[] = (float)$data['price_to_mxn'];
+                $types .= 'd';
+            }
+
+            if (isset($data['price_from_eur']) && $data['price_from_eur'] !== null) {
+                $fields[] = 'price_from_eur';
+                $params[] = (float)$data['price_from_eur'];
+                $types .= 'd';
+            }
+
+            if (isset($data['price_to_eur']) && $data['price_to_eur'] !== null) {
+                $fields[] = 'price_to_eur';
+                $params[] = (float)$data['price_to_eur'];
+                $types .= 'd';
+            }
+
             // Property details
             if (isset($data['bedrooms']) && $data['bedrooms'] !== '') {
                 $fields[] = 'bedrooms';
                 $params[] = $data['bedrooms'];
+                $types .= 's';
+            }
+
+            if (isset($data['bedrooms_min']) && $data['bedrooms_min'] !== '') {
+                $fields[] = 'bedrooms_min';
+                $params[] = $data['bedrooms_min'];
+                $types .= 's';
+            }
+
+            if (isset($data['bedrooms_max']) && $data['bedrooms_max'] !== '') {
+                $fields[] = 'bedrooms_max';
+                $params[] = $data['bedrooms_max'];
                 $types .= 's';
             }
 
@@ -398,9 +462,51 @@ class PropertyController {
                 $types .= 's';
             }
 
+            if (isset($data['bathrooms_min']) && $data['bathrooms_min'] !== '') {
+                $fields[] = 'bathrooms_min';
+                $params[] = $data['bathrooms_min'];
+                $types .= 's';
+            }
+
+            if (isset($data['bathrooms_max']) && $data['bathrooms_max'] !== '') {
+                $fields[] = 'bathrooms_max';
+                $params[] = $data['bathrooms_max'];
+                $types .= 's';
+            }
+
             if (isset($data['sqm']) && $data['sqm'] !== null) {
                 $fields[] = 'sqm';
                 $params[] = (float)$data['sqm'];
+                $types .= 'd';
+            }
+
+            if (isset($data['sqft']) && $data['sqft'] !== null) {
+                $fields[] = 'sqft';
+                $params[] = (float)$data['sqft'];
+                $types .= 'd';
+            }
+
+            if (isset($data['sqm_min']) && $data['sqm_min'] !== null) {
+                $fields[] = 'sqm_min';
+                $params[] = (float)$data['sqm_min'];
+                $types .= 'd';
+            }
+
+            if (isset($data['sqm_max']) && $data['sqm_max'] !== null) {
+                $fields[] = 'sqm_max';
+                $params[] = (float)$data['sqm_max'];
+                $types .= 'd';
+            }
+
+            if (isset($data['sqft_min']) && $data['sqft_min'] !== null) {
+                $fields[] = 'sqft_min';
+                $params[] = (float)$data['sqft_min'];
+                $types .= 'd';
+            }
+
+            if (isset($data['sqft_max']) && $data['sqft_max'] !== null) {
+                $fields[] = 'sqft_max';
+                $params[] = (float)$data['sqft_max'];
                 $types .= 'd';
             }
 
@@ -508,9 +614,19 @@ class PropertyController {
             $params[] = isset($data['featured']) && $data['featured'] ? 1 : 0;
             $types .= 'i';
 
+            $fields[] = 'show_in_home';
+            $params[] = isset($data['show_in_home']) && $data['show_in_home'] ? 1 : 0;
+            $types .= 'i';
+
             $fields[] = '`order`';
             $params[] = isset($data['order']) ? (int)$data['order'] : 0;
             $types .= 'i';
+
+            if (isset($data['internal_notes']) && $data['internal_notes'] !== '') {
+                $fields[] = 'internal_notes';
+                $params[] = $data['internal_notes'];
+                $types .= 's';
+            }
 
             // Build query
             $placeholders = array_fill(0, count($fields), '?');
@@ -525,9 +641,13 @@ class PropertyController {
 
             $propertyId = $this->db->getLastInsertId();
 
-            // Save property_categories if development with multiple categories
-            if ($data['property_type'] === 'development' && isset($data['property_categories']) && is_array($data['property_categories'])) {
+            // Save property_categories for ALL types (unified: always an array)
+            if (isset($data['property_categories']) && is_array($data['property_categories']) && !empty($data['property_categories'])) {
                 $this->savePropertyCategories($propertyId, $data['property_categories']);
+                // Sync property_category column = first element (backward compat)
+                $firstCat = $data['property_categories'][0];
+                $syncQuery = "UPDATE properties SET property_category = ? WHERE id = ?";
+                $this->db->executePrepared($syncQuery, [$firstCat, $propertyId], 'si');
             }
 
             // Get the generated property_id_reference
@@ -604,12 +724,12 @@ class PropertyController {
 
             $allowedFields = [
                 'title', 'subtitle', 'property_type', 'status', 'property_category',
-                'description', 'content', 'price_usd', 'price_mxn', 'exchange_rate', 
+                'description', 'content', 'price_usd', 'price_mxn', 'price_eur', 'exchange_rate', 
                 'price_base_currency', 'price_on_demand', 'price_negotiable', 
-                'price_from_usd', 'price_to_usd', 'price_from_mxn', 'price_to_mxn',
+                'price_from_usd', 'price_to_usd', 'price_from_mxn', 'price_to_mxn', 'price_from_eur', 'price_to_eur',
                 'bedrooms', 'bedrooms_min', 'bedrooms_max', 
                 'bathrooms', 'bathrooms_min', 'bathrooms_max',
-                'sqm', 'lot_size_sqm', 'year_built', 
+                'sqm', 'sqft', 'sqm_min', 'sqm_max', 'sqft_min', 'sqft_max', 'lot_size_sqm', 'year_built', 
                 'furnishing_status', 'neighborhood', 'city', 'state', 'country',
                 'address', 'latitude', 'longitude', 'google_maps_url',
                 'seo_title', 'seo_description', 'og_title', 'og_description',
@@ -619,8 +739,9 @@ class PropertyController {
             // Fields that should be NULL if empty/zero
             $nullableFields = [
                 'bedrooms', 'bathrooms', 'furnishing_status', 'year_built',
-                'sqm', 'lot_size_sqm', 'price_usd', 'price_mxn', 'price_from_usd', 'price_to_usd',
-                'price_from_mxn', 'price_to_mxn', 'latitude', 'longitude', 'exchange_rate'
+                'sqm', 'sqft', 'sqm_min', 'sqm_max', 'sqft_min', 'sqft_max', 'lot_size_sqm', 
+                'price_usd', 'price_mxn', 'price_eur', 'price_from_usd', 'price_to_usd',
+                'price_from_mxn', 'price_to_mxn', 'price_from_eur', 'price_to_eur', 'latitude', 'longitude', 'exchange_rate'
             ];
 
             foreach ($allowedFields as $field) {
@@ -666,15 +787,17 @@ class PropertyController {
                 return $this->errorResponse('Failed to update property');
             }
 
-            // Update property_categories if provided and property_type is development
+            // Update property_categories for ALL types (unified: always an array)
             if (isset($data['property_categories']) && is_array($data['property_categories'])) {
-                // Get current property_type
-                $typeQuery = "SELECT property_type FROM properties WHERE id = ?";
-                $typeResult = $this->db->executePrepared($typeQuery, [$id], 'i');
-                $propertyType = $typeResult->fetch_assoc()['property_type'];
-                
-                if ($propertyType === 'development') {
-                    $this->savePropertyCategories($id, $data['property_categories']);
+                $this->savePropertyCategories($id, $data['property_categories']);
+                // Sync property_category column = first element (backward compat)
+                if (!empty($data['property_categories'])) {
+                    $firstCat = $data['property_categories'][0];
+                    $syncQuery = "UPDATE properties SET property_category = ? WHERE id = ?";
+                    $this->db->executePrepared($syncQuery, [$firstCat, $id], 'si');
+                } else {
+                    $syncQuery = "UPDATE properties SET property_category = NULL WHERE id = ?";
+                    $this->db->executePrepared($syncQuery, [$id], 'i');
                 }
             }
 
@@ -781,6 +904,8 @@ class PropertyController {
      */
     public function importFromJson($jsonData, $userId, $validateOnly = false) {
         try {
+            $jsonData = $this->normalizePropertyData($jsonData);
+
             // Validate JSON structure
             $validation = $this->validatePropertyData($jsonData, false);
             if ($validation !== true) {
@@ -901,6 +1026,202 @@ class PropertyController {
      * @param bool $isUpdate Is this an update operation
      * @return mixed True if valid, error message string if invalid
      */
+    private function normalizePropertyData($data) {
+        if (!is_array($data)) {
+            return $data;
+        }
+
+        $categoryMap = [
+            'apartment' => 'apartment',
+            'apartments' => 'apartment',
+            'apt' => 'apartment',
+            'flat' => 'apartment',
+            'house' => 'house',
+            'home' => 'house',
+            'villa' => 'villa',
+            'condo' => 'condo',
+            'condominium' => 'condo',
+            'condominiums' => 'condo',
+            'penthouse' => 'penthouse',
+            'penthouses' => 'penthouse',
+            'land' => 'land',
+            'plot' => 'land',
+            'lot' => 'land',
+            'commercial' => 'commercial',
+        ];
+
+        $furnishingMap = [
+            'furnished' => 'furnished',
+            'semi furnished' => 'semi-furnished',
+            'semifurnished' => 'semi-furnished',
+            'semi-furnished' => 'semi-furnished',
+            'unfurnished' => 'unfurnished',
+            'un-furnished' => 'unfurnished',
+        ];
+
+        $standardTags = [
+            'Central Air Conditioning', 'Elevator', 'Laundry Area', 'Fireplace', 'Storage', 'Basement', 'Lobby',
+            'Terrace', 'Balcony', 'Rooftop', 'Solarium', 'Garden', 'Zen Area', 'Hammock Area', 'Jungle Bar',
+            'Parking', 'Garage', 'Underground Parking', 'Bike Parking', 'Motor Lobby', 'Electric Bicycles', 'Free Beach Shuttle',
+            '24/7 Security', 'Controlled Access', 'CCTV', 'Perimeter Fence', 'Concierge 24/7',
+            'Pool', 'Rooftop Pool', 'Beach-like Pool', 'Private Beach Club', 'Waterfront Access', 'Beach Access',
+            'Spa', 'Sauna', 'Steam Room', 'Lockers', 'Temazcal', 'Yoga Studio', 'Meditation Room',
+            'Gym', 'Jogging Track', 'Paddle Court', 'Pickleball Court', 'Tennis Court', 'Mini-golf', 'Pet Park',
+            'Club House', 'Lounge', 'Cinema', 'Bar', 'Pub', 'Kids Playroom', 'Playground', 'Restaurant', 'Coffee Shop', 'Organic Market', 'Food Pavilion',
+            'Co-working Space', 'Business Lounge',
+            'Solar Panels', 'Rainwater Collection', 'Water Treatment', 'Eco-Friendly',
+            'Golf View', 'Ocean View', 'City View', 'Mountain View', 'Lake View', 'Jungle View',
+            'Pet Friendly', 'Furnished', 'Smart Home', 'Newly Renovated', 'Investment Opportunity', 'Beachfront', 'Gated Community', 'Walk to Beach',
+        ];
+
+        $tagMap = [];
+        foreach ($standardTags as $tag) {
+            $tagMap[strtolower($tag)] = $tag;
+        }
+
+        $normalizeCategory = function($value) use ($categoryMap) {
+            if (!is_string($value)) return $value;
+            $key = strtolower(trim($value));
+            return $categoryMap[$key] ?? $key;
+        };
+
+        $normalizeStatus = function($value) {
+            if (!is_string($value)) return $value;
+            $v = strtolower(trim($value));
+            $v = str_replace([' ', '-'], '_', $v);
+            if ($v === 'forsale') $v = 'for_sale';
+            return $v;
+        };
+
+        $normalizePropertyType = function($value) {
+            if (!is_string($value)) return $value;
+            $v = strtolower(trim($value));
+            $v = str_replace([' ', '-'], '_', $v);
+            if (in_array($v, ['active_property', 'active_properties', 'activeproperty'])) return 'active';
+            if (in_array($v, ['new_development', 'new_developments', 'development'])) return 'development';
+            return $v;
+        };
+
+        $normalizeBedrooms = function($value) use (&$normalizeBedrooms) {
+            if ($value === null) return $value;
+            if (is_string($value)) {
+                $raw = strtolower(trim($value));
+                if ($raw === 'studio' || $raw === '0') return 'studio';
+                if (substr($raw, -1) === '+') return '5+';
+                if (is_numeric($raw)) return $normalizeBedrooms((float)$raw);
+                return $value;
+            }
+            if (is_numeric($value)) {
+                $num = (float)$value;
+                if ($num <= 0) return 'studio';
+                if ($num >= 5) return '5+';
+                $int = (int)$num;
+                if ($int == $num && in_array($int, [1, 2, 3, 4], true)) return (string)$int;
+            }
+            return $value;
+        };
+
+        $normalizeBathrooms = function($value) use (&$normalizeBathrooms) {
+            if ($value === null) return $value;
+            if (is_string($value)) {
+                $raw = trim($value);
+                if (substr($raw, -1) === '+') return '5+';
+                if (is_numeric($raw)) return $normalizeBathrooms((float)$raw);
+                return $value;
+            }
+            if (is_numeric($value)) {
+                $num = (float)$value;
+                if ($num >= 5) return '5+';
+                $allowed = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+                if (in_array($num, $allowed)) return (string)$num;
+            }
+            return $value;
+        };
+
+        // Normalize property_type/status
+        if (isset($data['property_type'])) {
+            $data['property_type'] = $normalizePropertyType($data['property_type']);
+        }
+        if (isset($data['status'])) {
+            $data['status'] = $normalizeStatus($data['status']);
+        }
+
+        // Normalize price_base_currency
+        if (isset($data['price_base_currency']) && is_string($data['price_base_currency'])) {
+            $v = strtoupper(trim($data['price_base_currency']));
+            $data['price_base_currency'] = $v === 'US$' ? 'USD' : ($v === 'MX$' ? 'MXN' : $v);
+        }
+
+        // Normalize categories
+        if (isset($data['property_category'])) {
+            $data['property_category'] = $normalizeCategory($data['property_category']);
+            // Auto-convert legacy single property_category to property_categories array
+            if (!isset($data['property_categories']) || empty($data['property_categories'])) {
+                $data['property_categories'] = [$data['property_category']];
+            }
+        }
+        if (isset($data['property_categories'])) {
+            if (is_string($data['property_categories'])) {
+                $parts = preg_split('/[,;]+/', $data['property_categories']);
+                $data['property_categories'] = array_values(array_filter(array_map('trim', $parts)));
+            }
+            if (is_array($data['property_categories'])) {
+                $data['property_categories'] = array_values(array_filter(array_map($normalizeCategory, $data['property_categories'])));
+            }
+        }
+
+        // Normalize furnishing status
+        if (isset($data['furnishing_status']) && is_string($data['furnishing_status'])) {
+            $key = strtolower(trim($data['furnishing_status']));
+            $data['furnishing_status'] = $furnishingMap[$key] ?? $key;
+        }
+
+        // Normalize state
+        if (isset($data['state']) && is_string($data['state'])) {
+            $data['state'] = strtolower(trim($data['state']));
+        }
+
+        // Normalize tags (case-insensitive match to standard list)
+        if (isset($data['tags']) && is_array($data['tags'])) {
+            $normalizedTags = [];
+            foreach ($data['tags'] as $tag) {
+                if (!is_string($tag)) {
+                    $normalizedTags[] = $tag;
+                    continue;
+                }
+                $key = strtolower(trim($tag));
+                $normalizedTags[] = $tagMap[$key] ?? trim($tag);
+            }
+            $data['tags'] = $normalizedTags;
+        }
+
+        // Normalize booleans
+        $boolFields = ['price_on_demand', 'price_negotiable', 'is_active', 'featured', 'show_in_home'];
+        foreach ($boolFields as $field) {
+            if (!isset($data[$field])) continue;
+            $value = $data[$field];
+            if (is_bool($value)) {
+                $data[$field] = $value;
+            } else if (is_numeric($value)) {
+                $data[$field] = ((int)$value) !== 0;
+            } else if (is_string($value)) {
+                $v = strtolower(trim($value));
+                if (in_array($v, ['true', '1', 'yes'], true)) $data[$field] = true;
+                if (in_array($v, ['false', '0', 'no'], true)) $data[$field] = false;
+            }
+        }
+
+        // Normalize bedrooms/bathrooms
+        if (isset($data['bedrooms'])) $data['bedrooms'] = $normalizeBedrooms($data['bedrooms']);
+        if (isset($data['bedrooms_min'])) $data['bedrooms_min'] = $normalizeBedrooms($data['bedrooms_min']);
+        if (isset($data['bedrooms_max'])) $data['bedrooms_max'] = $normalizeBedrooms($data['bedrooms_max']);
+        if (isset($data['bathrooms'])) $data['bathrooms'] = $normalizeBathrooms($data['bathrooms']);
+        if (isset($data['bathrooms_min'])) $data['bathrooms_min'] = $normalizeBathrooms($data['bathrooms_min']);
+        if (isset($data['bathrooms_max'])) $data['bathrooms_max'] = $normalizeBathrooms($data['bathrooms_max']);
+
+        return $data;
+    }
+
     private function validatePropertyData($data, $isUpdate = false, $isPartialUpdate = false) {
         // Required fields for INSERT (minimal)
         if (!$isUpdate) {
@@ -925,13 +1246,14 @@ class PropertyController {
                 }
             }
             
-            // Validazione category condizionale in base a property_type
+            // Validazione category: property_categories è sempre un array
             if (isset($data['property_type'])) {
-                if ($data['property_type'] === 'active' && isset($data['property_category']) && empty($data['property_category'])) {
-                    return "property_category is required for active properties";
+                if (isset($data['property_categories']) && empty($data['property_categories'])) {
+                    return "property_categories is required (at least one category)";
                 }
-                if ($data['property_type'] === 'development' && isset($data['property_categories']) && empty($data['property_categories'])) {
-                    return "property_categories array is required for developments (at least one category)";
+                // Legacy support: accept property_category for active
+                if ($data['property_type'] === 'active' && !isset($data['property_categories']) && isset($data['property_category']) && empty($data['property_category'])) {
+                    return "property_category is required for active properties";
                 }
             }
 
@@ -1035,6 +1357,41 @@ class PropertyController {
             if ($data['price_from_mxn'] > $data['price_to_mxn']) {
                 return "price_from_mxn cannot be greater than price_to_mxn";
             }
+        }
+
+        // Range validation - sqm_min should be <= sqm_max
+        if (isset($data['sqm_min']) && isset($data['sqm_max'])) {
+            if ($data['sqm_min'] > $data['sqm_max']) {
+                return "sqm_min cannot be greater than sqm_max";
+            }
+            // Validate that both are positive
+            if ($data['sqm_min'] < 0 || $data['sqm_max'] < 0) {
+                return "sqm values must be positive numbers";
+            }
+        }
+
+        // Range validation - sqft_min should be <= sqft_max
+        if (isset($data['sqft_min']) && isset($data['sqft_max'])) {
+            if ($data['sqft_min'] > $data['sqft_max']) {
+                return "sqft_min cannot be greater than sqft_max";
+            }
+            // Validate that both are positive
+            if ($data['sqft_min'] < 0 || $data['sqft_max'] < 0) {
+                return "sqft values must be positive numbers";
+            }
+        }
+
+        // Validate single sqm/sqft values are positive
+        if (isset($data['sqm']) && $data['sqm'] !== null && $data['sqm'] < 0) {
+            return "sqm must be a positive number";
+        }
+
+        if (isset($data['sqft']) && $data['sqft'] !== null && $data['sqft'] < 0) {
+            return "sqft must be a positive number";
+        }
+
+        if (isset($data['lot_size_sqm']) && $data['lot_size_sqm'] !== null && $data['lot_size_sqm'] < 0) {
+            return "lot_size_sqm must be a positive number";
         }
 
         // Coordinate validation
@@ -1168,12 +1525,15 @@ class PropertyController {
         // Type casting
         $property['price_usd'] = isset($property['price_usd']) ? (float)$property['price_usd'] : null;
         $property['price_mxn'] = isset($property['price_mxn']) ? (float)$property['price_mxn'] : null;
+        $property['price_eur'] = isset($property['price_eur']) ? (float)$property['price_eur'] : null;
         $property['exchange_rate'] = isset($property['exchange_rate']) ? (float)$property['exchange_rate'] : null;
         $property['price_base_currency'] = $property['price_base_currency'] ?? 'USD';
         $property['price_from_usd'] = isset($property['price_from_usd']) ? (float)$property['price_from_usd'] : null;
         $property['price_to_usd'] = isset($property['price_to_usd']) ? (float)$property['price_to_usd'] : null;
         $property['price_from_mxn'] = isset($property['price_from_mxn']) ? (float)$property['price_from_mxn'] : null;
         $property['price_to_mxn'] = isset($property['price_to_mxn']) ? (float)$property['price_to_mxn'] : null;
+        $property['price_from_eur'] = isset($property['price_from_eur']) ? (float)$property['price_from_eur'] : null;
+        $property['price_to_eur'] = isset($property['price_to_eur']) ? (float)$property['price_to_eur'] : null;
         $property['sqm'] = isset($property['sqm']) ? (float)$property['sqm'] : null;
         $property['sqft'] = isset($property['sqft']) ? (float)$property['sqft'] : null;
         $property['lot_size_sqm'] = isset($property['lot_size_sqm']) ? (float)$property['lot_size_sqm'] : null;
@@ -1361,8 +1721,8 @@ class PropertyController {
      */
     private function getParamType($field) {
         $intFields = ['year_built', 'display_order', 'views_count'];
-        $doubleFields = ['price_usd', 'price_mxn', 'exchange_rate', 'price_from_usd', 'price_to_usd', 
-                         'price_from_mxn', 'price_to_mxn', 'sqm', 'sqft', 'lot_size_sqm', 'latitude', 'longitude'];
+        $doubleFields = ['price_usd', 'price_mxn', 'price_eur', 'exchange_rate', 'price_from_usd', 'price_to_usd', 
+                         'price_from_mxn', 'price_to_mxn', 'price_from_eur', 'price_to_eur', 'sqm', 'sqft', 'lot_size_sqm', 'latitude', 'longitude'];
         if (in_array($field, $intFields)) return 'i';
         if (in_array($field, $doubleFields)) return 'd';
         return 's';

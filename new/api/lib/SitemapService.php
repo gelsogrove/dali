@@ -29,10 +29,13 @@ class SitemapService {
             $urls[] = $this->createUrl('/', '1.0', 'weekly', date('c'));
             $urls[] = $this->createUrl('/about', '0.9', 'monthly', date('c'));
             $urls[] = $this->createUrl('/contact', '0.9', 'monthly', date('c'));
+            $urls[] = $this->createUrl('/active-properties', '0.9', 'weekly', date('c'));
+            $urls[] = $this->createUrl('/new-developments', '0.9', 'weekly', date('c'));
             $urls[] = $this->createUrl('/properties', '0.9', 'weekly', date('c'));
             $urls[] = $this->createUrl('/blog', '0.8', 'weekly', date('c'));
             $urls[] = $this->createUrl('/videos', '0.8', 'weekly', date('c'));
             $urls[] = $this->createUrl('/communities', '0.8', 'weekly', date('c'));
+            $urls[] = $this->createUrl('/search', '0.7', 'monthly', date('c'));
             $urls[] = $this->createUrl('/privacy-policy', '0.7', 'yearly', date('c'));
 
             // Add all published blogs
@@ -104,12 +107,16 @@ class SitemapService {
     private function getPropertyUrls() {
         $urls = [];
         try {
-            $query = "SELECT slug, updated_at FROM properties WHERE status = 'active' ORDER BY updated_at DESC";
+            // Include all visible properties (for_sale, reserved, sold)
+            $query = "SELECT slug, updated_at, property_type FROM properties 
+                     WHERE deleted_at IS NULL 
+                     AND status IN ('for_sale', 'reserved', 'sold') 
+                     ORDER BY updated_at DESC";
             $result = $this->conn->query($query);
 
             while ($row = $result->fetch_assoc()) {
                 $urls[] = $this->createUrl(
-                    '/property/' . $row['slug'],
+                    '/listings/' . $row['slug'],
                     '0.8',
                     'weekly',
                     $row['updated_at']

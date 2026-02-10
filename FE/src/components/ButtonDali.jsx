@@ -1,6 +1,17 @@
 import { Link } from 'react-router-dom';
 
-export default function ButtonDali({ children, href, to, onClick, className = '', target, rel, type = 'button' }) {
+export default function ButtonDali({
+  children,
+  href,
+  to,
+  onClick,
+  className = '',
+  target,
+  rel,
+  type = 'button',
+  disabled = false,
+  ariaBusy,
+}) {
   const baseClass = 'button-dali';
   const combinedClass = `${baseClass} ${className}`.trim();
 
@@ -9,7 +20,9 @@ export default function ButtonDali({ children, href, to, onClick, className = ''
       <Link 
         to={to} 
         className={combinedClass}
-        onClick={onClick}
+        onClick={disabled ? undefined : onClick}
+        aria-disabled={disabled || undefined}
+        tabIndex={disabled ? -1 : undefined}
       >
         {children}
       </Link>
@@ -23,7 +36,9 @@ export default function ButtonDali({ children, href, to, onClick, className = ''
         className={combinedClass}
         target={target}
         rel={rel}
-        onClick={onClick}
+        onClick={disabled ? (event) => event.preventDefault() : onClick}
+        aria-disabled={disabled || undefined}
+        tabIndex={disabled ? -1 : undefined}
       >
         {children}
       </a>
@@ -35,6 +50,8 @@ export default function ButtonDali({ children, href, to, onClick, className = ''
       type={type}
       onClick={onClick} 
       className={combinedClass}
+      disabled={disabled}
+      aria-busy={ariaBusy}
     >
       {children}
     </button>

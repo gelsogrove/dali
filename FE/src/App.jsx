@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import AOS from 'aos';
 import PasswordGate from './components/PasswordGate';
@@ -34,15 +34,11 @@ function PropertyRedirect() {
   return <Navigate to={`/listings/${slug}`} replace />;
 }
 
-export default function App() {
+function AppLayout() {
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    AOS.init({ once: false, duration: 1000, delay: 200, offset: 120 });
-    const onLoad = () => AOS.refresh();
-    window.addEventListener('load', onLoad);
-    return () => window.removeEventListener('load', onLoad);
-  }, []);
+  const forceFixedHeader = location.pathname === '/active-properties' || location.pathname === '/new-developments';
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
@@ -52,42 +48,55 @@ export default function App() {
   }, [menuOpen]);
 
   return (
+    <RedirectChecker>
+      <div id="main-wrapper">
+        <Header onToggleMenu={() => setMenuOpen(true)} forceFixed={forceFixedHeader} />
+        <MobileHeader onToggleMenu={() => setMenuOpen(true)} />
+        <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+        <main>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact-us" element={<ContactPage />} />
+            <Route path="/testimonials" element={<TestimonialsPage />} />
+            <Route path="/properties" element={<PropertiesPage />} />
+            <Route path="/active-properties" element={<ActivePropertiesPage />} />
+            <Route path="/new-developments" element={<NewDevelopmentsPage />} />
+            <Route path="/communities" element={<CommunitiesPage />} />
+            <Route path="/list-with-dali" element={<ListWithDaliPage />} />
+            <Route path="/videos" element={<VideosPage />} />
+            <Route path="/community/:citySlug/:areaSlug" element={<AreaPage />} />
+            <Route path="/community/:citySlug" element={<CityPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/category/blog" element={<BlogsPage />} />
+            <Route path="/blogs" element={<BlogsPage />} />
+            <Route path="/blog/:slug" element={<BlogDetailPage />} />
+            <Route path="/listings/*" element={<ListingDetailPage />} />
+            {/* Redirect old /properties/:slug to /listings/:slug */}
+            <Route path="/properties/:slug" element={<PropertyRedirect />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </RedirectChecker>
+  );
+}
+
+export default function App() {
+  useEffect(() => {
+    AOS.init({ once: false, duration: 1000, delay: 200, offset: 120 });
+    const onLoad = () => AOS.refresh();
+    window.addEventListener('load', onLoad);
+    return () => window.removeEventListener('load', onLoad);
+  }, []);
+
+  return (
     <HelmetProvider>
       <PasswordGate>
         <Router>
-          <RedirectChecker>
-            <div id="main-wrapper">
-              <Header onToggleMenu={() => setMenuOpen(true)} />
-              <MobileHeader onToggleMenu={() => setMenuOpen(true)} />
-              <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-              <main>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/contact-us" element={<ContactPage />} />
-                  <Route path="/testimonials" element={<TestimonialsPage />} />
-                  <Route path="/properties" element={<PropertiesPage />} />
-                  <Route path="/active-properties" element={<ActivePropertiesPage />} />
-                  <Route path="/new-developments" element={<NewDevelopmentsPage />} />
-                  <Route path="/communities" element={<CommunitiesPage />} />
-                  <Route path="/list-with-dali" element={<ListWithDaliPage />} />
-                  <Route path="/videos" element={<VideosPage />} />
-                  <Route path="/community/:citySlug/:areaSlug" element={<AreaPage />} />
-                  <Route path="/community/:citySlug" element={<CityPage />} />
-                  <Route path="/search" element={<SearchPage />} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-                  <Route path="/category/blog" element={<BlogsPage />} />
-                  <Route path="/blogs" element={<BlogsPage />} />
-                  <Route path="/blog/:slug" element={<BlogDetailPage />} />
-                  <Route path="/listings/*" element={<ListingDetailPage />} />
-                  {/* Redirect old /properties/:slug to /listings/:slug */}
-                  <Route path="/properties/:slug" element={<PropertyRedirect />} />
-                  <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-              </main>
-              <Footer />
-            </div>
-          </RedirectChecker>
+          <AppLayout />
         </Router>
       </PasswordGate>
     </HelmetProvider>

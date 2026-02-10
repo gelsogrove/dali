@@ -4,6 +4,7 @@ import TitleHeader from './TitleHeader';
 import ButtonDali from './ButtonDali';
 import LoadingSpinner from './LoadingSpinner';
 import { api, endpoints } from '../config/api';
+import { formatBedrooms, formatBathrooms, getShortSize } from '../utils/propertyFormatters';
 
 /**
  * FeaturedProperties - Mostra griglia di proprietà da API
@@ -90,27 +91,6 @@ export default function FeaturedProperties({
     return 'Price on Request';
   };
 
-  // Formattare bedrooms/bathrooms
-  const formatBeds = (property) => {
-    if (property.property_type === 'development') {
-      if (property.bedrooms_min && property.bedrooms_max && property.bedrooms_min !== property.bedrooms_max) {
-        return `${property.bedrooms_min}-${property.bedrooms_max}`;
-      }
-      return property.bedrooms_min || property.bedrooms_max || property.bedrooms || null;
-    }
-    return property.bedrooms || null;
-  };
-
-  const formatBaths = (property) => {
-    if (property.property_type === 'development') {
-      if (property.bathrooms_min && property.bathrooms_max && property.bathrooms_min !== property.bathrooms_max) {
-        return `${property.bathrooms_min}-${property.bathrooms_max}`;
-      }
-      return property.bathrooms_min || property.bathrooms_max || property.bathrooms || null;
-    }
-    return property.bathrooms || null;
-  };
-
   // Status label
   const getStatusLabel = (property) => {
     if (property.status === 'sold') return 'SOLD';
@@ -185,9 +165,9 @@ export default function FeaturedProperties({
                     src={coverImage} 
                     alt={property.title}
                     className="fp-list-item-image"
-                    beds={formatBeds(property)}
-                    baths={formatBaths(property)}
-                    size={property.sqm}
+                    beds={formatBedrooms(property)}
+                    baths={formatBathrooms(property)}
+                    size={getShortSize(property)}
                     status={getStatusLabel(property)}
                     location={location}
                   >

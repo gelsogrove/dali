@@ -41,6 +41,8 @@ require_once __DIR__ . '/controllers/VideoController.php';
 require_once __DIR__ . '/controllers/TestimonialController.php';
 require_once __DIR__ . '/controllers/CityController.php';
 require_once __DIR__ . '/controllers/AreaController.php';
+require_once __DIR__ . '/controllers/ExchangeRateController.php';
+require_once __DIR__ . '/controllers/ContactController.php';
 // Normalize base dir to avoid trailing spaces/newlines in production paths
 $__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
 require_once $__baseDir . '/config/database.php';
@@ -109,6 +111,14 @@ try {
 
         case 'areas':
             handleAreaRoutes($segments, $method);
+            break;
+
+        case 'exchange-rate':
+            handleExchangeRateRoutes($segments, $method);
+            break;
+
+        case 'contact':
+            handleContactRoutes($segments, $method);
             break;
 
         case 'redirects':
@@ -970,4 +980,70 @@ function handlePropertyPhotoRoutes($segments, $method) {
             http_response_code(405);
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
     }
+}
+
+/**
+ * Handle exchange rate routes
+ */
+function handleExchangeRateRoutes($segments, $method) {
+    $controller = new ExchangeRateController();
+    $auth = new AuthMiddleware();
+    
+    switch ($method) {
+        case 'GET':
+            // GET /api/exchange-rate/current - Get current active rate (public)
+            if (isset($segments[1]) && $segments[1] === 'current') {
+                $result = $controller->getCurrent();
+                echo json_encode($result);
+                break;
+            }
+            
+            // GET /api/exchange-rate/history - Get rate history (admin only)
+            if (isset($segments[1]) && $segments[1] === 'history') {
+                $user = $auth->authenticate();
+                if (!$user || !$auth->checkRole($user, ['admin'])) {
+                    break;
+                }
+                $result = $controller->getHistory();
+                echo json_encode($result);
+                break;
+            }
+            
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid request']);
+            break;
+        
+        case 'POST':
+            // POST /api/exchange-rate - Update/create rate (admin only)
+            $user = $auth->authenticate();
+            if (!$user || !$auth->checkRole($user, ['admin'])) {
+                break;
+            }
+            
+            $data = json_decode(file_get_contents('php://input'), true);
+            $result = $controller->update($data);
+            echo json_encode($result);
+            break;
+        
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+}
+
+/**
+ * Handle contact routes
+ */
+function handleContactRoutes($segments, $method) {
+    $controller = new ContactController();
+
+    if ($method === 'POST') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $result = $controller->send($data);
+        echo json_encode($result);
+        return;
+    }
+
+    http_response_code(405);
+    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
 }

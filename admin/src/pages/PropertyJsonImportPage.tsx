@@ -19,7 +19,7 @@ export default function PropertyJsonImportPage() {
     subtitle: 'Modern 3BR villa with private pool',
     property_type: 'active',
     status: 'for_sale',
-    property_category: 'villa',
+    property_categories: ['villa'],
     description: 'Stunning beachfront villa...',
     content: '<h2>Welcome</h2><p>Description...</p>',
     price_usd: 850000,
@@ -203,7 +203,7 @@ export default function PropertyJsonImportPage() {
               <ul className="list-disc list-inside space-y-1">
                 <li>title (string)</li>
                 <li>property_type (active/development)</li>
-                <li>property_category</li>
+                <li>property_categories (array)</li>
                 <li>city (string)</li>
                 <li>latitude (number)</li>
                 <li>longitude (number)</li>

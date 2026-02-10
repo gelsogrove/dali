@@ -28,6 +28,7 @@ import {
   Search,
   RotateCcw,
 } from 'lucide-react'
+import PropertyJsonInsertDialog from '@/components/PropertyJsonInsertDialog'
 
 type Property = {
   id: number
@@ -447,12 +448,15 @@ export default function PropertiesPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Properties</h1>
-          <Button asChild>
-            <Link to="/properties/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Property
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <PropertyJsonInsertDialog onImported={() => refetch()} />
+            <Button asChild>
+              <Link to="/properties/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Property
+              </Link>
+            </Button>
+          </div>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
@@ -501,12 +505,15 @@ export default function PropertiesPage() {
             </p>
           )}
         </div>
-        <Button asChild>
-          <Link to="/properties/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Property
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <PropertyJsonInsertDialog onImported={() => refetch()} />
+          <Button asChild>
+            <Link to="/properties/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Property
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Search & Filters */}

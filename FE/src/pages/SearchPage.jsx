@@ -258,6 +258,17 @@ export default function SearchPage() {
                     const beds = formatBeds();
                     const baths = formatBaths();
                     const propertyLink = `/listings/${property.slug}/`;
+                    
+                    // Format size
+                    const formatSize = () => {
+                      if (property.sqm) {
+                        return `${property.sqm} m²`;
+                      } else if (property.sqft) {
+                        return `${property.sqft} sq ft`;
+                      }
+                      return null;
+                    };
+                    const size = formatSize();
 
                     return (
                       <article key={property.id} className="property-row">
@@ -304,6 +315,11 @@ export default function SearchPage() {
                               {baths && (
                                 <span className="feature-item">
                                   🚿 {baths} {baths === 1 ? 'Bath' : 'Baths'}
+                                </span>
+                              )}
+                              {size && (
+                                <span className="feature-item">
+                                  📏 {size}
                                 </span>
                               )}
                             </div>

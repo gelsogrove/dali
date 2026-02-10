@@ -31,7 +31,14 @@ export default function SEO({
   const siteName = "Buy With Dali";
   const siteUrl = "https://buywithdali.com";
   const defaultImage = `${siteUrl}/images/og-default.jpg`;
-  const fullTitle = title ? `${title} | ${siteName}` : siteName;
+  const titleIncludesSiteName = (value) => {
+    if (!value) return false;
+    return value.toLowerCase().includes(siteName.toLowerCase());
+  };
+
+  const fullTitle = title
+    ? (titleIncludesSiteName(title) ? title : `${title} | ${siteName}`)
+    : siteName;
   const defaultDescription = "Luxury real estate in Riviera Maya with Dalila Gelsomino. Expert guidance for buying properties in Tulum, Playa del Carmen, and beyond.";
   const metaDescription = description || defaultDescription;
   const socialTitle = ogTitle || fullTitle;
@@ -118,8 +125,11 @@ export default function SEO({
       };
     }
     
-    // Add property type
-    if (prop.property_category) {
+    // Add property type (unified: use property_categories array, fallback to property_category)
+    const categories = prop.property_categories?.length
+      ? prop.property_categories
+      : prop.property_category ? [prop.property_category] : [];
+    if (categories.length > 0) {
       const typeMap = {
         'apartment': 'Apartment',
         'house': 'House',
@@ -129,7 +139,7 @@ export default function SEO({
         'land': 'LandForm',
         'commercial': 'Store'
       };
-      schema.additionalType = typeMap[prop.property_category] || 'RealEstateListing';
+      schema.additionalType = typeMap[categories[0]] || 'RealEstateListing';
     }
     
     // Add amenities/features
@@ -211,7 +221,7 @@ export default function SEO({
       <meta property="og:description" content={socialDescription} />
       <meta property="og:image" content={imageUrl} />
       {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
-      {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+      <meta property="og:url" content={canonicalUrl || (typeof window !== 'undefined' ? window.location.href : 'https://buywithdali.com')} />
       <meta property="og:locale" content="en_US" />
       
       {/* Twitter */}

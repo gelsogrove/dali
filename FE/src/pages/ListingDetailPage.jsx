@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
-import CanvasImage from '../components/CanvasImage';
+import { Link } from 'react-router-dom';
 import ContactSection from '../components/ContactSection';
 import SEO from '../components/SEO';
 import SafeImage from '../components/SafeImage';
+import TitleHeader from '../components/TitleHeader';
 import { api } from '../config/api';
 import { listingDetails } from '../data/listingDetails';
 import { listingContent } from '../data/listingContent';
+import { formatSize, formatBedrooms, formatBathrooms } from '../utils/propertyFormatters';
+import './ListingDetailPage.css';
 
 export default function ListingDetailPage() {
   const mainSliderRef = useRef(null);
@@ -14,12 +17,24 @@ export default function ListingDetailPage() {
   const [loadingImages, setLoadingImages] = useState({});
   const [showRequestInfo, setShowRequestInfo] = useState(false);
   const [showScheduleShowing, setShowScheduleShowing] = useState(false);
-  const [expandedAmenities, setExpandedAmenities] = useState(false);
-  const [expandedAdditional, setExpandedAdditional] = useState(false);
-  const [expandedSection, setExpandedSection] = useState(null);
+
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [contactStatus, setContactStatus] = useState({ type: '', message: '' });
+  const [isContactSubmitting, setIsContactSubmitting] = useState(false);
+  const [contactStartedAt, setContactStartedAt] = useState(() => Date.now());
+  const [requestStatus, setRequestStatus] = useState({ type: '', message: '' });
+  const [isRequestSubmitting, setIsRequestSubmitting] = useState(false);
+  const [requestStartedAt, setRequestStartedAt] = useState(() => Date.now());
+  const [scheduleStatus, setScheduleStatus] = useState({ type: '', message: '' });
+  const [isScheduleSubmitting, setIsScheduleSubmitting] = useState(false);
+  const [scheduleStartedAt, setScheduleStartedAt] = useState(() => Date.now());
+  
+  // Currency toggle: 'USD', 'MXN', 'EUR'
+  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  // Size unit toggle: 'sqm' or 'sqft'
+  const [selectedUnit, setSelectedUnit] = useState('sqm');
 
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
   const slug = useMemo(() => {
@@ -37,13 +52,15 @@ export default function ListingDetailPage() {
         const response = await api.get(`/properties/${slug}`);
         if (response.success && response.data) {
           setProperty(response.data);
+          // Set default currency based on property
+          if (response.data.price_base_currency) {
+            setSelectedCurrency(response.data.price_base_currency);
+          }
         } else {
-          // Property not found - show 404 (redirect check is global in App.jsx)
           setNotFound(true);
         }
       } catch (err) {
         console.error('Error fetching property:', err);
-        // Property not found - show 404 (redirect check is global in App.jsx)
         setNotFound(true);
       } finally {
         setLoading(false);
@@ -53,6 +70,20 @@ export default function ListingDetailPage() {
     fetchProperty();
   }, [slug]);
 
+  useEffect(() => {
+    if (showRequestInfo) {
+      setRequestStartedAt(Date.now());
+      setRequestStatus({ type: '', message: '' });
+    }
+  }, [showRequestInfo]);
+
+  useEffect(() => {
+    if (showScheduleShowing) {
+      setScheduleStartedAt(Date.now());
+      setScheduleStatus({ type: '', message: '' });
+    }
+  }, [showScheduleShowing]);
+
   const detail = property
     ? {
         title: property.title,
@@ -60,13 +91,145 @@ export default function ListingDetailPage() {
         priceLabel: property.price ? `$${Number(property.price).toLocaleString()}` : 'Contact for pricing',
         heroImage: property.featured_image,
         highlights: [],
-        content: property.description || listingContent[slug] || '<p>Contact us to learn more about this property.</p>',
+        content: property.content || property.description || listingContent[slug] || '<p>Contact us to learn more about this property.</p>',
       }
     : listingDetails[slug];
 
   // Base URL for canonical and OG URLs
   const siteUrl = "https://buywithdali.com";
   const propertyUrl = `${siteUrl}/listings/${slug}/`;
+
+  const handlePropertyContact = async (event) => {
+    event.preventDefault();
+    if (isContactSubmitting) return;
+
+    const form = event.currentTarget;
+    if (!form.reportValidity()) {
+      return;
+    }
+    const formData = new FormData(form);
+    const payload = {
+      firstName: String(formData.get('first-name') || '').trim(),
+      lastName: String(formData.get('last-name') || '').trim(),
+      email: String(formData.get('email') || '').trim(),
+      phone: String(formData.get('phone') || '').trim(),
+      message: String(formData.get('message') || '').trim(),
+      company: String(formData.get('company') || '').trim(),
+      page: window.location.href,
+      ts: contactStartedAt,
+      source: 'listing-detail',
+      propertyTitle: detail?.title || property?.title || '',
+      propertySlug: slug,
+      propertyId: property?.id ? String(property.id) : '',
+      propertyPrice: detail?.priceLabel || '',
+      propertyUrl,
+    };
+
+    setIsContactSubmitting(true);
+    setContactStatus({ type: 'sending', message: 'Sending...' });
+
+    try {
+      await api.post('/contact', payload);
+      form.reset();
+      setContactStartedAt(Date.now());
+      setContactStatus({ type: 'success', message: "Message sent. We'll get back to you soon." });
+    } catch (error) {
+      console.error('Listing contact error', error);
+      setContactStatus({ type: 'error', message: 'Error sending message. Please try again later.' });
+    } finally {
+      setIsContactSubmitting(false);
+    }
+  };
+
+  const handleRequestInfoSubmit = async (event) => {
+    event.preventDefault();
+    if (isRequestSubmitting) return;
+
+    const form = event.currentTarget;
+    if (!form.reportValidity()) {
+      return;
+    }
+    const formData = new FormData(form);
+    const payload = {
+      firstName: String(formData.get('first-name') || '').trim(),
+      lastName: String(formData.get('last-name') || '').trim(),
+      email: String(formData.get('email') || '').trim(),
+      phone: String(formData.get('phone') || '').trim(),
+      message: String(formData.get('message') || '').trim(),
+      company: String(formData.get('company') || '').trim(),
+      page: window.location.href,
+      ts: requestStartedAt,
+      source: 'request-info',
+      propertyTitle: detail?.title || property?.title || '',
+      propertySlug: slug,
+      propertyId: property?.id ? String(property.id) : '',
+      propertyPrice: detail?.priceLabel || '',
+      propertyUrl,
+      purpose: String(formData.get('purpose') || '').trim(),
+      preferredContact: String(formData.get('preferred-contact') || '').trim(),
+      knowsRiviera: String(formData.get('knows-riviera') || '').trim(),
+      budgetRange: String(formData.get('budget-range') || '').trim(),
+    };
+
+    setIsRequestSubmitting(true);
+    setRequestStatus({ type: 'sending', message: 'Sending...' });
+
+    try {
+      await api.post('/contact', payload);
+      form.reset();
+      setRequestStartedAt(Date.now());
+      setRequestStatus({ type: 'success', message: "Message sent. We'll get back to you soon." });
+    } catch (error) {
+      console.error('Request info error', error);
+      setRequestStatus({ type: 'error', message: 'Error sending message. Please try again later.' });
+    } finally {
+      setIsRequestSubmitting(false);
+    }
+  };
+
+  const handleScheduleShowingSubmit = async (event) => {
+    event.preventDefault();
+    if (isScheduleSubmitting) return;
+
+    const form = event.currentTarget;
+    if (!form.reportValidity()) {
+      return;
+    }
+    const formData = new FormData(form);
+    const payload = {
+      firstName: String(formData.get('first-name') || '').trim(),
+      lastName: String(formData.get('last-name') || '').trim(),
+      email: String(formData.get('email') || '').trim(),
+      phone: String(formData.get('phone') || '').trim(),
+      message: String(formData.get('message') || '').trim(),
+      company: String(formData.get('company') || '').trim(),
+      page: window.location.href,
+      ts: scheduleStartedAt,
+      source: 'schedule-showing',
+      propertyTitle: detail?.title || property?.title || '',
+      propertySlug: slug,
+      propertyId: property?.id ? String(property.id) : '',
+      propertyPrice: detail?.priceLabel || '',
+      propertyUrl,
+      availability1: String(formData.get('availability-1') || '').trim(),
+      availability2: String(formData.get('availability-2') || '').trim(),
+    };
+
+    setIsScheduleSubmitting(true);
+    setScheduleStatus({ type: 'sending', message: 'Sending...' });
+
+    try {
+      await api.post('/contact', payload);
+      form.reset();
+      setScheduleStartedAt(Date.now());
+      setScheduleStatus({ type: 'success', message: "Message sent. We'll get back to you soon." });
+    } catch (error) {
+      console.error('Schedule showing error', error);
+      setScheduleStatus({ type: 'error', message: 'Error sending message. Please try again later.' });
+    } finally {
+      setIsScheduleSubmitting(false);
+    }
+  };
   
   // Build absolute image URL
   const getAbsoluteImageUrl = (url) => {
@@ -77,10 +240,7 @@ export default function ListingDetailPage() {
 
   // SEO fields from database - COMPLETE
   const seoData = property ? {
-    // Title: use seo_title or fallback to property title with location
     title: property.seo_title || `${property.title}${property.city ? ` in ${property.city}` : ''}`,
-    
-    // Description: use seo_description or build from property data
     description: property.seo_description || (() => {
       const parts = [];
       if (property.property_type === 'development') {
@@ -97,33 +257,23 @@ export default function ListingDetailPage() {
       }
       return parts.join(' • ') + '. Contact Buy With Dali for more information.';
     })(),
-    
-    // Keywords: use seo_keywords or build from tags and property data
     keywords: property.seo_keywords || [
       property.title,
       property.city,
       property.neighborhood,
       property.country,
-      property.property_category,
+      ...(property.property_categories || (property.property_category ? [property.property_category] : [])),
       'real estate',
       'property for sale',
       'Riviera Maya',
       ...(property.tags || [])
     ].filter(Boolean).join(', '),
-    
-    // Open Graph
     ogTitle: property.og_title || property.title,
     ogDescription: property.og_description || property.seo_description || property.description?.replace(/<[^>]+>/g, '').slice(0, 200),
     ogImage: getAbsoluteImageUrl(property.og_image || property.cover_image_url || property.featured_image),
     ogImageAlt: property.cover_image_alt || `${property.title} - ${property.city || 'Riviera Maya'} property`,
-    
-    // Canonical URL - use the slug-based URL
     canonicalUrl: propertyUrl,
-    
-    // Full property data for Schema.org
     property: property,
-    
-    // Breadcrumbs for structured data
     breadcrumbs: [
       { name: 'Home', url: siteUrl },
       { name: property.property_type === 'development' ? 'New Developments' : 'Properties', 
@@ -199,63 +349,73 @@ export default function ListingDetailPage() {
     : (heroImage ? [{ url: heroImage, alt: property.title }] : []);
   
   const scheduleLink = 'https://calendar.app.google/QoV7AeK9d3B62hqm7';
-  const brochureLink = property.href || '#';
   
-  // Format price - remove prefixes like "STARTING AT", "FROM"
-  const formatPrice = (price) => {
-    if (!price) return 'Contact for pricing';
-    const priceStr = String(price);
-    // Remove common prefixes
-    const cleaned = priceStr
-      .replace(/^(STARTING AT|FROM|PRICE:?)\s*/i, '')
-      .replace(/^\$/, '')
-      .trim();
-    // If it's a number, format it
-    if (/^\d+$/.test(cleaned)) {
-      return `$${Number(cleaned).toLocaleString('en-US')}`;
+  // Format price with currency
+  const getPriceForCurrency = () => {
+    if (property.price_on_demand) return 'Price on Request';
+    
+    let price = null;
+    let symbol = '$';
+    
+    if (selectedCurrency === 'USD' && property.price_usd) {
+      price = property.price_usd;
+      symbol = '$';
+    } else if (selectedCurrency === 'MXN' && property.price_mxn) {
+      price = property.price_mxn;
+      symbol = '$';
+    } else if (selectedCurrency === 'EUR' && property.price_eur) {
+      price = property.price_eur;
+      symbol = '€';
     }
-    // If it already has USD or $, return as is
-    if (cleaned.includes('USD') || cleaned.includes('$')) {
-      return cleaned;
-    }
-    return `$${cleaned}`;
+    
+    if (!price) return 'Contact for Pricing';
+    
+    return `${symbol}${Number(price).toLocaleString('en-US')} ${selectedCurrency}`;
   };
   
-  const priceLabel = formatPrice(property.rawPrice || property.price || detail.priceLabel);
+  const priceLabel = getPriceForCurrency();
   const neighborhood = property.city || detail.location || property.location || '';
   
   // Property Type: active or development
-  const propertyType = property.property_type === 'development' ? 'NEW DEVELOPMENT' : 'ACTIVE PROPERTY';
+  const propertyType = property.property_type === 'development' ? 'New Development' : 'Active Property';
   
   // Status label
   const getStatusLabel = (status) => {
-    if (status === 'for_sale') return 'FOR SALE';
-    if (status === 'sold') return 'SOLD';
-    if (status === 'reserved') return 'RESERVED';
-    return 'FOR SALE';
+    if (status === 'for_sale') return 'For Sale';
+    if (status === 'sold') return 'Sold';
+    if (status === 'reserved') return 'Reserved';
+    return 'For Sale';
   };
   const statusLabel = getStatusLabel(property.status);
   
-  // Property Categories (multiple for developments)
-  const propertyCategories = property.property_type === 'development' && property.property_categories?.length
-    ? property.property_categories.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')
-    : property.property_category 
-      ? property.property_category.charAt(0).toUpperCase() + property.property_category.slice(1)
-      : null;
+  // Property Categories (unified: always an array)
+  const categoriesArr = property.property_categories?.length
+    ? property.property_categories
+    : property.property_category
+      ? [property.property_category]
+      : [];
+  const propertyCategories = categoriesArr.length
+    ? categoriesArr.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')
+    : null;
   
-  // Bedrooms range for developments
-  const bedroomsLabel = property.property_type === 'development' && (property.bedrooms_min || property.bedrooms_max)
-    ? property.bedrooms_min && property.bedrooms_max && property.bedrooms_min !== property.bedrooms_max
-      ? `${property.bedrooms_min} to ${property.bedrooms_max}`
-      : property.bedrooms_min || property.bedrooms_max
-    : property.bedrooms || null;
-    
-  // Bathrooms range for developments  
-  const bathroomsLabel = property.property_type === 'development' && (property.bathrooms_min || property.bathrooms_max)
-    ? property.bathrooms_min && property.bathrooms_max && property.bathrooms_min !== property.bathrooms_max
-      ? `${property.bathrooms_min} to ${property.bathrooms_max}`
-      : property.bathrooms_min || property.bathrooms_max
-    : property.bathrooms || null;
+  // Use formatters from utils with unit toggle
+  const bedroomsLabel = formatBedrooms(property);
+  const bathroomsLabel = formatBathrooms(property);
+  
+  // Size with toggle
+  const getSizeLabel = () => {
+    if (selectedUnit === 'sqm' && property.sqm) {
+      return `${property.sqm} m²`;
+    } else if (selectedUnit === 'sqft' && property.sqft) {
+      return `${property.sqft} sq ft`;
+    } else if (property.sqm) {
+      return `${property.sqm} m²`;
+    } else if (property.sqft) {
+      return `${property.sqft} sq ft`;
+    }
+    return null;
+  };
+  const sizeLabel = getSizeLabel();
   
   const currentUrl = typeof window !== 'undefined' ? window.location.href : property.href || '';
   const amenities =
@@ -328,6 +488,7 @@ export default function ListingDetailPage() {
           breadcrumbs={seoData.breadcrumbs}
         />
       )}
+      
       <section className="listing-hero-slider">
         <Splide
           ref={mainSliderRef}
@@ -359,277 +520,266 @@ export default function ListingDetailPage() {
         </Splide>
       </section>
 
-      {heroGallery.length ? (
-        <div className="listing-gallery-strip" data-aos="fade-up" data-aos-duration="900" data-aos-delay="50">
-          <Splide
-            options={{
-              type: 'loop',
-              perPage: 6,
-              gap: '6px',
-              arrows: true,
-              pagination: false,
-              rewind: true,
-              breakpoints: {
-                1100: { perPage: 5 },
-                900: { perPage: 4 },
-                700: { perPage: 3 },
-                500: { perPage: 2 },
-              },
-            }}
-            className="listing-thumbs"
-          >
-            {heroGallery.map((photo, idx) => (
-              <SplideSlide key={`thumb-${idx}`}>
-                <div 
-                  className={`listing-gallery-thumb ${activeSlide === idx ? 'active' : ''}`}
-                  onClick={() => handleThumbnailClick(idx)} 
-                  style={{ cursor: 'pointer' }}
-                >
-                  {loadingImages[idx] !== false && (
-                    <div className="thumb-loading">
-                      <div className="thumb-spinner"></div>
+      {heroGallery.length > 1 && (
+        <div className="listing-gallery-thumbnails" data-aos="fade-up" data-aos-duration="900" data-aos-delay="50">
+          <div className="listing-gallery-container">
+            <Splide
+              options={{
+                type: 'loop',
+                perPage: 6,
+                gap: '12px',
+                arrows: true,
+                pagination: false,
+                rewind: true,
+                breakpoints: {
+                  1100: { perPage: 5 },
+                  900: { perPage: 4 },
+                  700: { perPage: 3 },
+                  500: { perPage: 2 },
+                },
+              }}
+              className="listing-thumbs"
+            >
+              {heroGallery.map((photo, idx) => (
+                <SplideSlide key={`thumb-${idx}`}>
+                  <div 
+                    className={`listing-gallery-thumb ${activeSlide === idx ? 'active' : ''}`}
+                    onClick={() => handleThumbnailClick(idx)} 
+                  >
+                    {loadingImages[idx] !== false && (
+                      <div className="thumb-loading">
+                        <div className="thumb-spinner"></div>
+                      </div>
+                    )}
+                    <SafeImage
+                      src={photo.url} 
+                      alt={photo.alt || `${detail.title} - Thumbnail ${idx + 1}`} 
+                      loading="lazy"
+                      placeholder="gradient"
+                      onLoad={() => handleImageLoad(idx)}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                </SplideSlide>
+              ))}
+            </Splide>
+          </div>
+        </div>
+      )}
+
+      {/* Breadcrumb Navigation */}
+      <div className="page-breadcrumbs-wrap">
+        <div className="page-breadcrumbs">
+          <span className="breadcrumbs-content">
+            <Link to="/">Home</Link>
+            {' » '}
+            <Link to={property?.property_type === 'development' ? '/new-developments' : '/active-properties'}>
+              {property?.property_type === 'development' ? 'New Developments' : 'Active Properties'}
+            </Link>
+            {' » '}
+            {property?.title}
+          </span>
+        </div>
+      </div>
+      
+      <section className="listing-detail-section">
+        <div className="listing-detail-container">
+          
+          {/* Title and Subtitle */}
+          <TitleHeader 
+            kicker={propertyType}
+            title={detail.title}
+            subtitle={property.subtitle || ''}
+          />
+          
+          <div className="listing-content-grid">
+            
+            {/* Main Content */}
+            <div className="listing-main-content" data-aos="fade-up" data-aos-duration="900" data-aos-delay="100">
+              
+              {/* Action Buttons */}
+              <div className="listing-actions">
+                <button onClick={() => setShowRequestInfo(true)} className="default-button active">
+                  Request Info
+                </button>
+                <button onClick={() => setShowScheduleShowing(true)} className="default-button active">
+                  Schedule a Showing
+                </button>
+              </div>
+
+              {/* Property Description */}
+              <div className="listing-about">
+                <div className="listing-description" dangerouslySetInnerHTML={{ __html: detail.content }}></div>
+              </div>
+
+              {/* Property Details */}
+              <div className="listing-details-card">
+                <h3>Property Details</h3>
+                
+                {/* Core Info — always visible */}
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Property Type</span>
+                    <strong className="info-value">{propertyType}</strong>
+                  </div>
+
+                  {propertyCategories && (
+                    <div className="info-item">
+                      <span className="info-label">Category</span>
+                      <strong className="info-value">{propertyCategories}</strong>
                     </div>
                   )}
-                  <SafeImage
-                    src={photo.url} 
-                    alt={photo.alt || `${detail.title} - Thumbnail ${idx + 1}`} 
-                    loading="lazy"
-                    placeholder="gradient"
-                    onLoad={() => handleImageLoad(idx)}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </div>
-              </SplideSlide>
-            ))}
-          </Splide>
-        </div>
-      ) : null}
 
-      <section className="listing-main-wrap">
-        <div className="listing-main-inner">
-          <div className="listing-breadcrumb-line">
-            <a href="/">Home</a> <span>›</span> 
-            <a href={property.property_type === 'development' ? '/new-developments' : '/active-properties'}>
-              {property.property_type === 'development' ? 'New Developments' : 'Properties'}
-            </a> <span>›</span> 
-            {property.city && (<><a href={`/search?city=${encodeURIComponent(property.city)}`}>{property.city}</a> <span>›</span></>)}
-            <span>{detail.title}</span>
-          </div>
-          
-          <div className="listing-title-fullwidth">
-            <h1>{detail.title}</h1>
-            {property.subtitle && (
-              <p className="listing-subtitle" style={{ fontSize: '1.2rem', color: '#666', marginTop: '10px', fontStyle: 'italic' }}>
-                {property.subtitle}
-              </p>
-            )}
-          </div>
-          
-          <div className="listing-main-grid">
-            <div className="listing-copy" data-aos="fade-up" data-aos-duration="900">
-              <div className="listing-title-block">
-                <div className="listing-stats-row">
-                  {property.beds && property.beds > 0 ? (
-                    <div className="listing-stat">
-                      <span>Beds</span>
-                      <strong>{property.beds}</strong>
-                    </div>
-                  ) : null}
-                  {property.baths && property.baths > 0 ? (
-                    <div className="listing-stat">
-                      <span>Baths</span>
-                      <strong>{property.baths}</strong>
-                    </div>
-                  ) : null}
-                  {property.size ? (
-                    <div className="listing-stat">
-                      <span>Appx. Living Area</span>
-                      <strong>{property.size}</strong>
-                    </div>
-                  ) : null}
-                </div>
-                <div className="listing-action-row">
-                  <button onClick={() => setShowRequestInfo(true)} className="default-button active">
-                    Request Info
-                  </button>
-                  <button onClick={() => setShowScheduleShowing(true)} className="default-button active">
-                    Schedule a Showing
-                  </button>
-                  <a href={brochureLink} target="_blank" rel="noopener noreferrer" className="default-button ghost">
-                    Printable Flyer
-                  </a>
-                </div>
-              </div>
+                  <div className="info-item">
+                    <span className="info-label">Status</span>
+                    <strong className="info-value">{statusLabel}</strong>
+                  </div>
 
-              <div className="listing-about-block" data-aos="fade-up" data-aos-duration="900" data-aos-delay="100">
-                <h3>About this Property</h3>
-                <div className="listing-content" dangerouslySetInnerHTML={{ __html: detail.content }}></div>
-              </div>
+                  {bedroomsLabel && (
+                    <div className="info-item">
+                      <span className="info-label">Bedrooms</span>
+                      <strong className="info-value">{bedroomsLabel}</strong>
+                    </div>
+                  )}
 
-              <div className="listing-details-panel" data-aos="fade-up" data-aos-duration="900" data-aos-delay="200">
-                <h3>Property Details</h3>
-                <div className="listing-section">
-                  <button 
-                    className={`listing-section-head accordion-trigger ${expandedAmenities ? 'active' : ''}`}
-                    onClick={() => setExpandedAmenities(!expandedAmenities)}
-                  >
-                    <span>Amenities and Features</span>
-                    <span className="accordion-icon">{expandedAmenities ? '↑' : '↓'}</span>
-                  </button>
-                  <div className={`accordion-body ${expandedAmenities ? 'active' : ''}`}>
-                  {amenities.length ? (
-                    <ul className="listing-amenities table">
-                      {amenities.map((item) => (
-                        <li key={item}>{item}</li>
+                  {bathroomsLabel && (
+                    <div className="info-item">
+                      <span className="info-label">Bathrooms</span>
+                      <strong className="info-value">{bathroomsLabel}</strong>
+                    </div>
+                  )}
+
+                  {sizeLabel && (
+                    <div className="info-item">
+                      <span className="info-label">Living Area</span>
+                      <strong className="info-value">{sizeLabel}</strong>
+                    </div>
+                  )}
+
+                  {property.lot_size_sqm && (
+                    <div className="info-item">
+                      <span className="info-label">Lot Size</span>
+                      <strong className="info-value">{property.lot_size_sqm} m²</strong>
+                    </div>
+                  )}
+
+                  {property.year_built && (
+                    <div className="info-item">
+                      <span className="info-label">Year Built</span>
+                      <strong className="info-value">{property.year_built}</strong>
+                    </div>
+                  )}
+
+                  {property.furnishing_status && (
+                    <div className="info-item">
+                      <span className="info-label">Furnishing</span>
+                      <strong className="info-value">{property.furnishing_status.charAt(0).toUpperCase() + property.furnishing_status.slice(1)}</strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* Amenities */}
+                {amenities.length > 0 && (
+                  <div className="listing-amenities-section">
+                    <h4>Amenities &amp; Features</h4>
+                    <ul className="amenities-list">
+                      {amenities.map((item, idx) => (
+                        <li key={`amenity-${idx}`}>
+                          <svg className="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M13.3334 4L6.00002 11.3333L2.66669 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          <span>{item}</span>
+                        </li>
                       ))}
                     </ul>
-                  ) : (
-                    <p className="listing-muted">Contact us for full amenities list.</p>
-                  )}
                   </div>
-                </div>
-                <div className="listing-section">
-                  <button 
-                    className={`listing-section-head accordion-trigger ${expandedAdditional ? 'active' : ''}`}
-                    onClick={() => setExpandedAdditional(!expandedAdditional)}
-                  >
-                    <span>Additional Information</span>
-                    <span className="accordion-icon">{expandedAdditional ? '↑' : '↓'}</span>
-                  </button>
-                  <div className={`accordion-body ${expandedAdditional ? 'active' : ''}`}>
-                  <ul className="listing-additional">
-                    <li>
-                      <span>Property Type</span>
-                      <strong>{propertyType}</strong>
-                    </li>
-                    {propertyCategories && (
-                      <li>
-                        <span>Category</span>
-                        <strong>{propertyCategories}</strong>
-                      </li>
-                    )}
-                    <li>
-                      <span>Status</span>
-                      <strong>{statusLabel}</strong>
-                    </li>
-                    {bedroomsLabel && (
-                      <li>
-                        <span>Bedrooms</span>
-                        <strong>{bedroomsLabel}</strong>
-                      </li>
-                    )}
-                    {bathroomsLabel && (
-                      <li>
-                        <span>Bathrooms</span>
-                        <strong>{bathroomsLabel}</strong>
-                      </li>
-                    )}
-                    {property.sqm && (
-                      <li>
-                        <span>Area (m²)</span>
-                        <strong>{property.sqm} m²</strong>
-                      </li>
-                    )}
-                    {property.sqft && (
-                      <li>
-                        <span>Area (sqft)</span>
-                        <strong>{property.sqft} sqft</strong>
-                      </li>
-                    )}
-                    {property.lot_size_sqm && (
-                      <li>
-                        <span>Lot Size (m²)</span>
-                        <strong>{property.lot_size_sqm} m²</strong>
-                      </li>
-                    )}
-                    {property.year_built && (
-                      <li>
-                        <span>Year Built</span>
-                        <strong>{property.year_built}</strong>
-                      </li>
-                    )}
-                    {property.furnishing_status && (
-                      <li>
-                        <span>Furnishing</span>
-                        <strong>{property.furnishing_status.charAt(0).toUpperCase() + property.furnishing_status.slice(1)}</strong>
-                      </li>
-                    )}
-                    {property.size ? (
-                      <li>
-                        <span>Appx. Living Area</span>
-                        <strong>{property.size}</strong>
-                      </li>
-                    ) : null}
-                    {additionalInfo.map((item) => (
-                      <li key={item.label}>
-                        <span>{item.label}</span>
-                        <strong>{item.value}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                  </div>
-                </div>
+                )}
               </div>
 
-              <div className="listing-map-form">
-                <div className="listing-map-card">
-                  <iframe
-                    title="Property map"
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14937.581829612898!2d-87.08963175000001!3d20.612731699999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f4e436c6ba8d5ff%3A0x20b898efa93c75bd!2sPlayacar%2C%20Playa%20del%20Carmen!5e0!3m2!1sen!2sph!4v1701826627668!5m2!1sen!2sph"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen=""
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  ></iframe>
-                </div>
-                <div className="listing-form-card">
-                  <div className="listing-form-title">
-                    <span>Interested in</span>
-                    <strong>{detail.title}</strong>
-                  </div>
-                  <form className="listing-form-grid">
-                    <input type="text" placeholder="First Name" required />
-                    <input type="text" placeholder="Last Name" required />
-                    <input type="tel" placeholder="Phone" />
-                    <input type="email" placeholder="Email" required />
-                    <textarea placeholder="Message"></textarea>
-                    <button type="submit" className="default-button active">
-                      Send Message
-                    </button>
-                  </form>
-                </div>
+              {/* Map */}
+              <div className="listing-map">
+                <iframe
+                  title="Property map"
+                  src={property.google_maps_url 
+                    ? property.google_maps_url.replace('/maps/place/', '/maps/embed/v1/place?key=&q=').includes('embed') 
+                      ? property.google_maps_url 
+                      : `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3000!2d${property.longitude || '-87.0896'}!3d${property.latitude || '20.6127'}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s!2s${encodeURIComponent(property.city || 'Playa del Carmen')}!5e0!3m2!1sen!2smx`
+                    : (property.latitude && property.longitude)
+                      ? `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3000!2d${property.longitude}!3d${property.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s!2s${encodeURIComponent(property.city || 'Property Location')}!5e0!3m2!1sen!2smx`
+                      : `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14937.581829612898!2d-87.08963175000001!3d20.612731699999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f4e436c6ba8d5ff%3A0x20b898efa93c75bd!2sPlayacar%2C%20Playa%20del%20Carmen!5e0!3m2!1sen!2sph!4v1701826627668!5m2!1sen!2sph`
+                  }
+                  width="100%"
+                  height="450"
+                  style={{ border: 0, borderRadius: '4px' }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                ></iframe>
               </div>
             </div>
-            <aside className="listing-side" data-aos="fade-up" data-aos-duration="900" data-aos-delay="100">
-              <div className="listing-price-card">
-                <div className="listing-price-value">{priceLabel}</div>
-                {property.price_base_currency === 'MXN' && property.price && (
-                  <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '4px' }}>
-                    ≈ ${property.price?.toLocaleString('en-US')} USD
+            
+            {/* Sidebar */}
+            <aside className="listing-sidebar" data-aos="fade-up" data-aos-duration="900" data-aos-delay="200">
+              
+              {/* Price Card */}
+              <div className="price-card">
+                <div className="price-display">
+                  <div className="price-value">{priceLabel}</div>
+                  
+                  {/* Currency and Unit Toggles Together */}
+                  <div className="price-controls">
+                    {/* Currency Toggle */}
+                    {!property.price_on_demand && (
+                      <div className="currency-toggle">
+                        {['USD', 'MXN', 'EUR'].map(curr => {
+                          const hasPrice = curr === 'USD' ? property.price_usd : curr === 'MXN' ? property.price_mxn : property.price_eur;
+                          if (!hasPrice) return null;
+                          return (
+                            <button
+                              key={curr}
+                              className={`currency-btn ${selectedCurrency === curr ? 'active' : ''}`}
+                              onClick={() => setSelectedCurrency(curr)}
+                            >
+                              {curr}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Unit Toggle */}
+                    {(property.sqm || property.sqft) && (
+                      <div className="unit-toggle">
+                        <button
+                          className={`unit-btn ${selectedUnit === 'sqm' ? 'active' : ''}`}
+                          onClick={() => setSelectedUnit('sqm')}
+                        >
+                          m²
+                        </button>
+                        <button
+                          className={`unit-btn ${selectedUnit === 'sqft' ? 'active' : ''}`}
+                          onClick={() => setSelectedUnit('sqft')}
+                        >
+                          sq ft
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
-                {property.price_base_currency === 'USD' && property.price_mxn && (
-                  <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '4px' }}>
-                    ≈ ${property.price_mxn?.toLocaleString('es-MX')} MXN
-                  </div>
-                )}
-                <ul className="listing-facts">
-                  <li>
-                    <span>Status</span>
-                    <strong>{statusLabel}</strong>
-                  </li>
-                  <li>
-                    <span>Property Type</span>
-                    <strong>{propertyType}</strong>
-                  </li>
-                  {neighborhood ? (
+                </div>
+                
+                <ul className="property-facts">
+                  {neighborhood && (
                     <li>
                       <span>Neighborhood</span>
                       <strong>{neighborhood}</strong>
                     </li>
-                  ) : null}
+                  )}
+                  {sizeLabel && (
+                    <li>
+                      <span>Size</span>
+                      <strong>{sizeLabel}</strong>
+                    </li>
+                  )}
                   {bedroomsLabel && (
                     <li>
                       <span>Bedrooms</span>
@@ -642,70 +792,80 @@ export default function ListingDetailPage() {
                       <strong>{bathroomsLabel}</strong>
                     </li>
                   )}
-              {property.size ? (
-                <li>
-                  <span>Size</span>
-                  <strong>{property.size}</strong>
-                </li>
-              ) : null}
-            </ul>
-                <a href="/contact-us" className="listing-mortgage-btn">
-                  Mortgage Calculator
-                </a>
-                <div className="listing-share">
-                  <h3>SHARE:</h3>
-                  <div className="listing-share-list">
-                    <a
-                      className="listing-share-link"
-                      href={shareLinks[0].href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Share on Facebook"
-                    >
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 0 1 1-1h3v-4h-3a5 5 0 0 0-5 5v2.01h-2l-.396 3.98h2.396v8.01Z"/>
-                      </svg>
-                    </a>
-                    <a
-                      className="listing-share-link"
-                      href={shareLinks[1].href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Share on LinkedIn"
-                    >
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M6.94 5a2 2 0 1 1-4-.002 2 2 0 0 1 4 .002ZM7 8.48H3V21h4V8.48Zm6.32 0H9.34V21h3.94v-6.57c0-3.66 4.77-4 4.77 0V21H22v-7.93c0-6.17-7.06-5.94-8.72-2.91l.04-1.68Z"/>
-                      </svg>
-                    </a>
-                    <a
-                      className="listing-share-link"
-                      href={shareLinks[2].href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Share on X"
-                    >
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                      </svg>
-                    </a>
-                    <a
-                      className="listing-share-link"
-                      href={shareLinks[3].href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Share via Email"
-                    >
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                      </svg>
-                    </a>
+                </ul>
+              </div>
+              
+              {/* Contact Form */}
+              <div className="contact-form-card">
+                <div className="form-header">
+                  <h4>Interested in</h4>
+                  <p>{detail.title}</p>
+                </div>
+                <form className="property-form" onSubmit={handlePropertyContact}>
+                  <div className="form-honeypot" aria-hidden="true">
+                    <label htmlFor="listing-company">Company</label>
+                    <input id="listing-company" name="company" type="text" tabIndex="-1" autoComplete="off" />
                   </div>
+                  <input id="listing-first-name" name="first-name" type="text" placeholder="First Name" autoComplete="given-name" minLength={2} maxLength={100} required />
+                  <input id="listing-last-name" name="last-name" type="text" placeholder="Last Name" autoComplete="family-name" minLength={2} maxLength={100} required />
+                  <input id="listing-phone" name="phone" type="tel" placeholder="Phone" autoComplete="tel" inputMode="tel" pattern="[0-9+()\\-\\s]*" maxLength={40} />
+                  <input id="listing-email" name="email" type="email" placeholder="Email" autoComplete="email" maxLength={254} required />
+                  <textarea id="listing-message" name="message" placeholder="Message" rows="4" autoComplete="off" maxLength={2000}></textarea>
+                  <button type="submit" className="default-button active" disabled={isContactSubmitting} aria-busy={isContactSubmitting}>
+                    {isContactSubmitting ? 'Sending...' : 'Send Message'}
+                  </button>
+                  {contactStatus.message && (
+                    <div className={`property-form-status property-form-status--${contactStatus.type}`} role="status" aria-live="polite">
+                      {contactStatus.message}
+                    </div>
+                  )}
+                </form>
+              </div>
+
+              {/* Share Section - at bottom */}
+              <div className="share-card">
+                <h4>Share Property</h4>
+                <div className="share-buttons">
+                  {shareLinks.map((link, idx) => (
+                    <a
+                      key={idx}
+                      className="share-btn"
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Share on ${link.label}`}
+                      title={link.label}
+                    >
+                      {link.label === 'Facebook' && (
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                          <path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 0 1 1-1h3v-4h-3a5 5 0 0 0-5 5v2.01h-2l-.396 3.98h2.396v8.01Z"/>
+                        </svg>
+                      )}
+                      {link.label === 'LinkedIn' && (
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                          <path d="M6.94 5a2 2 0 1 1-4-.002 2 2 0 0 1 4 .002ZM7 8.48H3V21h4V8.48Zm6.32 0H9.34V21h3.94v-6.57c0-3.66 4.77-4 4.77 0V21H22v-7.93c0-6.17-7.06-5.94-8.72-2.91l.04-1.68Z"/>
+                        </svg>
+                      )}
+                      {link.label === 'X' && (
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                      )}
+                      {link.label === 'Email' && (
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        </svg>
+                      )}
+                    </a>
+                  ))}
                 </div>
               </div>
             </aside>
           </div>
         </div>
       </section>
+
+      <ContactSection />
 
       {/* Request Info Popup */}
       {showRequestInfo && (
@@ -714,35 +874,39 @@ export default function ListingDetailPage() {
             <button className="listing-popup-close" onClick={() => setShowRequestInfo(false)}>×</button>
             <h2>REQUEST INFO</h2>
             <p className="listing-popup-subtitle">Tell us how to reach you and we'll get back in touch.</p>
-            <form className="listing-popup-form">
+            <form className="listing-popup-form" onSubmit={handleRequestInfoSubmit}>
+              <div className="form-honeypot" aria-hidden="true">
+                <label htmlFor="req-company">Company</label>
+                <input id="req-company" name="company" type="text" tabIndex="-1" autoComplete="off" />
+              </div>
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="req-first-name">First Name*</label>
-                  <input id="req-first-name" type="text" required />
+                  <input id="req-first-name" name="first-name" type="text" autoComplete="given-name" minLength={2} maxLength={100} required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="req-last-name">Last Name*</label>
-                  <input id="req-last-name" type="text" required />
+                  <input id="req-last-name" name="last-name" type="text" autoComplete="family-name" minLength={2} maxLength={100} required />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="req-email">Email Address*</label>
-                  <input id="req-email" type="email" required />
+                  <input id="req-email" name="email" type="email" autoComplete="email" maxLength={254} required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="req-phone">Phone Number</label>
-                  <input id="req-phone" type="tel" />
+                  <input id="req-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" pattern="[0-9+()\\-\\s]*" maxLength={40} />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="req-purpose">What's the purpose of your investment?</label>
-                  <input id="req-purpose" type="text" required />
+                  <input id="req-purpose" name="purpose" type="text" maxLength={200} required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="req-contact">Best way to reach you?</label>
-                  <select id="req-contact">
+                  <select id="req-contact" name="preferred-contact">
                     <option>Email and Phone</option>
                     <option>Email</option>
                     <option>Phone</option>
@@ -752,20 +916,27 @@ export default function ListingDetailPage() {
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="req-know">Do you already know Riviera Maya?</label>
-                  <input id="req-know" type="text" />
+                  <input id="req-know" name="knows-riviera" type="text" maxLength={80} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="req-budget">What budget range do you want to be in?</label>
-                  <input id="req-budget" type="text" />
+                  <input id="req-budget" name="budget-range" type="text" maxLength={120} />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group full-width">
                   <label htmlFor="req-message">Your Message</label>
-                  <textarea id="req-message" rows="4"></textarea>
+                  <textarea id="req-message" name="message" rows="4" maxLength={2000}></textarea>
                 </div>
               </div>
-              <button type="submit" className="popup-submit-btn">SEND</button>
+              <button type="submit" className="popup-submit-btn" disabled={isRequestSubmitting} aria-busy={isRequestSubmitting}>
+                {isRequestSubmitting ? 'Sending...' : 'Send'}
+              </button>
+              {requestStatus.message && (
+                <div className={`popup-form-status popup-form-status--${requestStatus.type}`} role="status" aria-live="polite">
+                  {requestStatus.message}
+                </div>
+              )}
             </form>
           </div>
         </div>
@@ -778,44 +949,55 @@ export default function ListingDetailPage() {
             <button className="listing-popup-close" onClick={() => setShowScheduleShowing(false)}>×</button>
             <h2>SCHEDULE A SHOWING</h2>
             <p className="listing-popup-subtitle">Tell us how to reach you and we'll get back in touch.</p>
-            <form className="listing-popup-form">
+            <form className="listing-popup-form" onSubmit={handleScheduleShowingSubmit}>
+              <div className="form-honeypot" aria-hidden="true">
+                <label htmlFor="sch-company">Company</label>
+                <input id="sch-company" name="company" type="text" tabIndex="-1" autoComplete="off" />
+              </div>
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="sch-first-name">First Name*</label>
-                  <input id="sch-first-name" type="text" required />
+                  <input id="sch-first-name" name="first-name" type="text" autoComplete="given-name" minLength={2} maxLength={100} required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="sch-last-name">Last Name*</label>
-                  <input id="sch-last-name" type="text" required />
+                  <input id="sch-last-name" name="last-name" type="text" autoComplete="family-name" minLength={2} maxLength={100} required />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="sch-email">Email Address*</label>
-                  <input id="sch-email" type="email" required />
+                  <input id="sch-email" name="email" type="email" autoComplete="email" maxLength={254} required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="sch-phone">Phone Number</label>
-                  <input id="sch-phone" type="tel" />
+                  <input id="sch-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" pattern="[0-9+()\\-\\s]*" maxLength={40} />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="sch-date1">When are you available?</label>
-                  <input id="sch-date1" type="date" />
+                  <input id="sch-date1" name="availability-1" type="date" />
                 </div>
                 <div className="form-group">
                   <label htmlFor="sch-date2">Are you available at another time?</label>
-                  <input id="sch-date2" type="date" />
+                  <input id="sch-date2" name="availability-2" type="date" />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group full-width">
                   <label htmlFor="sch-message">Your Message</label>
-                  <textarea id="sch-message" rows="4"></textarea>
+                  <textarea id="sch-message" name="message" rows="4" maxLength={2000}></textarea>
                 </div>
               </div>
-              <button type="submit" className="popup-submit-btn">SEND</button>
+              <button type="submit" className="popup-submit-btn" disabled={isScheduleSubmitting} aria-busy={isScheduleSubmitting}>
+                {isScheduleSubmitting ? 'Sending...' : 'Send'}
+              </button>
+              {scheduleStatus.message && (
+                <div className={`popup-form-status popup-form-status--${scheduleStatus.type}`} role="status" aria-live="polite">
+                  {scheduleStatus.message}
+                </div>
+              )}
             </form>
           </div>
         </div>

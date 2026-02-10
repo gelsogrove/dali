@@ -1866,6 +1866,82 @@ header.header {
     background-color: var(--primary);
 }
 
+.git-form-container .form-status {
+    margin: 18px auto 0;
+    padding: 12px 20px;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+.git-form-container .form-status::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18);
+}
+
+.git-form-container .form-status--success {
+    background: rgba(20, 120, 86, 0.85);
+    border-color: rgba(110, 231, 183, 0.6);
+}
+
+.git-form-container .form-status--success::before {
+    background: #6ee7b7;
+    box-shadow: 0 0 0 4px rgba(110, 231, 183, 0.25);
+}
+
+.git-form-container .form-status--error {
+    background: rgba(130, 45, 45, 0.9);
+    border-color: rgba(248, 113, 113, 0.7);
+}
+
+.git-form-container .form-status--error::before {
+    background: #fecaca;
+    box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.25);
+}
+
+.git-form-container .form-status--sending::before {
+    animation: gitPulse 1.2s ease-in-out infinite;
+}
+
+.git-form .form-honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+@keyframes gitPulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+    50% {
+        transform: scale(1.6);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+}
+
 .git-form-container .wpcf7-response-output {
     width: 100%;
     left: 0;

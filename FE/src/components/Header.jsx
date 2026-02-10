@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { navLinks } from '../data/homeData';
 
-export default function Header({ onToggleMenu }) {
+export default function Header({ onToggleMenu, forceFixed = false }) {
   const [isFixed, setIsFixed] = useState(false);
 
   useEffect(() => {
@@ -13,9 +13,11 @@ export default function Header({ onToggleMenu }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const showFixed = forceFixed || isFixed;
+
   return (
     <header className="header">
-      <div className={`header-container ${isFixed ? 'fix' : ''}`}>
+      <div className={`header-container ${showFixed ? 'fix' : ''}`}>
         <div className="logo">
           <a href="/" className="header-logo">
             <img className="main-head" src="/images/main-logo.png" alt="Buy with Dali" />

@@ -21,7 +21,9 @@ export default function FeaturedProperties({
   paginate = false, 
   pageSize = 12,
   showTitle = true,
-  disableAnimations = false
+  disableAnimations = false,
+  titleKicker = 'Featured',
+  titleText = 'Properties'
 }) {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +104,7 @@ export default function FeaturedProperties({
     return (
       <section id="featured-properties">
         <div className="fp-container">
-          {showTitle && <TitleHeader kicker="Featured" title="Properties" className="fp-title" />}
+          {showTitle && <TitleHeader kicker={titleKicker} title={titleText} className="fp-title" />}
           <div className="fp-links" {...(!disableAnimations && showTitle && { 'data-aos': 'fade-up', 'data-aos-duration': '1000', 'data-aos-delay': '300' })}>
             <ButtonDali href="/active-properties" className={isActive('active') ? 'active' : ''}>
               Active Properties
@@ -123,7 +125,7 @@ export default function FeaturedProperties({
     return (
       <section id="featured-properties">
         <div className="fp-container">
-          {showTitle && <TitleHeader kicker="Featured" title="Properties" className="fp-title" />}
+          {showTitle && <TitleHeader kicker={titleKicker} title={titleText} className="fp-title" />}
           <div className="fp-links" {...(!disableAnimations && showTitle && { 'data-aos': 'fade-up', 'data-aos-duration': '1000', 'data-aos-delay': '300' })}>
             <ButtonDali href="/active-properties" className={isActive('active') ? 'active' : ''}>
               Active Properties
@@ -143,7 +145,7 @@ export default function FeaturedProperties({
   return (
     <section id="featured-properties">
       <div className="fp-container">
-        {showTitle && <TitleHeader kicker="Featured" title="Properties" className="fp-title" />}
+        {showTitle && <TitleHeader kicker={titleKicker} title={titleText} className="fp-title" />}
         <div className="fp-links" {...(!disableAnimations && showTitle && { 'data-aos': 'fade-up', 'data-aos-duration': '1000', 'data-aos-delay': '300' })}>
           <ButtonDali href="/active-properties" className={isActive('active') ? 'active' : ''}>
             Active Properties

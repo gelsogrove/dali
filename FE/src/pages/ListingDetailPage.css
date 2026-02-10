@@ -163,7 +163,7 @@
   flex-wrap: wrap;
 }
 
-/* About Property */\n.listing-about {\n  margin-bottom: 0;\n}
+/* Property Description */\n.listing-about {\n  margin-bottom: 0;\n}\n\n.listing-description h2 {\n  font-family: var(--font-family-title);\n  font-size: 32px;\n  color: var(--color-primary);\n  margin: 40px 0 20px;\n  font-weight: var(--font-weight-medium);\n  letter-spacing: var(--letter-spacing-normal);\n  line-height: var(--line-height-tight);\n}\n\n.listing-description h3 {\n  font-family: var(--font-family-title);\n  font-size: 26px;\n  color: var(--color-primary);\n  margin: 32px 0 16px;\n  font-weight: var(--font-weight-medium);\n  letter-spacing: var(--letter-spacing-tight);\n  line-height: var(--line-height-tight);\n}\n\n.listing-description h4 {\n  font-family: var(--font-family-title);\n  font-size: 22px;\n  color: var(--color-primary);\n  margin: 24px 0 12px;\n  font-weight: var(--font-weight-medium);\n}
 
 .listing-description {
   font-family: var(--font-family-default);

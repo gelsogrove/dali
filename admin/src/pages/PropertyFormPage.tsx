@@ -14,6 +14,7 @@ import { ArrowLeft, Save } from 'lucide-react'
 import TrixEditor from '@/components/TrixEditor'
 import PropertyGalleryUpload from '@/components/PropertyGalleryUpload'
 import PropertyLandingPages from '@/components/PropertyLandingPages'
+import PropertyAttachments from '@/components/PropertyAttachments'
 import TagPicker from '@/components/TagPicker'
 
 export default function PropertyFormPage() {
@@ -21,8 +22,17 @@ export default function PropertyFormPage() {
   const navigate = useNavigate()
   const isEdit = Boolean(id)
 
+  // Slugify function
+  const slugify = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+
   const [formData, setFormData] = useState({
     title: '',
+    slug: '',
     subtitle: '',
     property_type: 'active',
     status: 'for_sale',
@@ -66,6 +76,7 @@ export default function PropertyFormPage() {
     latitude: '',
     longitude: '',
     google_maps_url: '',
+    youtube_video_url: '',
     tags: [] as string[],
     seo_title: '',
     seo_description: '',
@@ -79,6 +90,19 @@ export default function PropertyFormPage() {
     internal_notes: '',
   })
 
+  const isDevelopment = formData.property_type === 'development'
+  const isActiveLike = !isDevelopment
+  const isLand = formData.property_type === 'land'
+  const [rateUsdToMxn, setRateUsdToMxn] = useState(17.5)
+  const [rateUsdToEur, setRateUsdToEur] = useState(0.92)
+
+  const usdToMxn = rateUsdToMxn || 0
+  const usdToEur = rateUsdToEur || 0
+  const mxnToUsd = usdToMxn ? 1 / usdToMxn : 0
+  const mxnToEur = usdToMxn ? usdToEur / usdToMxn : 0
+  const eurToUsd = usdToEur ? 1 / usdToEur : 0
+  const eurToMxn = usdToEur ? usdToMxn / usdToEur : 0
+
   useQuery({
     queryKey: ['property', id],
     queryFn: async () => {
@@ -86,6 +110,7 @@ export default function PropertyFormPage() {
       const property = response.data.data
       setFormData({
         title: property.title || '',
+        slug: property.slug || '',
         subtitle: property.subtitle || '',
         property_type: property.property_type || 'active',
         status: property.status || 'for_sale',
@@ -133,6 +158,7 @@ export default function PropertyFormPage() {
         latitude: property.latitude?.toString() || '',
         longitude: property.longitude?.toString() || '',
         google_maps_url: property.google_maps_url || '',
+        youtube_video_url: property.youtube_video_url || '',
         tags: property.tags || [],
         seo_title: property.seo_title || '',
         seo_description: property.seo_description || '',
@@ -189,6 +215,35 @@ export default function PropertyFormPage() {
         .catch(err => console.error('Failed to load global exchange rate:', err))
     }
   }, [isEdit, formData.exchange_rate])
+
+  useEffect(() => {
+    const loadRates = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_URL || '/api'
+        const [mxnRes, eurRes] = await Promise.all([
+          fetch(`${baseUrl}/exchange-rate/current?currency_from=USD&currency_to=MXN`),
+          fetch(`${baseUrl}/exchange-rate/current?currency_from=USD&currency_to=EUR`),
+        ])
+        const mxnData = await mxnRes.json()
+        const eurData = await eurRes.json()
+        if (mxnData?.success && mxnData?.data?.rate) {
+          setRateUsdToMxn(parseFloat(mxnData.data.rate))
+        }
+        if (eurData?.success && eurData?.data?.rate) {
+          setRateUsdToEur(parseFloat(eurData.data.rate))
+        }
+      } catch (err) {
+        console.error('Failed to load exchange rates:', err)
+      }
+    }
+    loadRates()
+  }, [])
+
+  useEffect(() => {
+    if (formData.property_type === 'land' && !formData.property_categories.includes('land')) {
+      setFormData(prev => ({ ...prev, property_categories: ['land'] }))
+    }
+  }, [formData.property_type, formData.property_categories])
 
   // Map fields to their tabs
   const fieldToTab: Record<string, string> = {
@@ -247,19 +302,24 @@ export default function PropertyFormPage() {
         setActiveTab('info')
         return
       }
-      if (formData.property_type === 'active' && formData.property_categories.length > 1) {
-        alert('Active properties can have only one category')
+      if (isActiveLike && formData.property_categories.length > 1) {
+        alert('Active-like properties can have only one category')
+        setActiveTab('info')
+        return
+      }
+      if (formData.property_type === 'land' && !formData.property_categories.includes('land')) {
+        alert('Land properties must include the "land" category')
         setActiveTab('info')
         return
       }
       // Price validation: per developments usare range, per active usare price_usd
       if (!formData.price_on_demand) {
-        if (formData.property_type === 'active') {
+        if (isActiveLike) {
           if (!formData.price_usd || parseFloat(formData.price_usd) <= 0) {
             focusField('price_usd')
             return
           }
-        } else if (formData.property_type === 'development') {
+        } else if (isDevelopment) {
           // Per developments: validare che ci sia almeno un range
           if ((!formData.price_from_usd || parseFloat(formData.price_from_usd) <= 0) &&
               (!formData.price_from_mxn || parseFloat(formData.price_from_mxn) <= 0)) {
@@ -291,6 +351,7 @@ export default function PropertyFormPage() {
     // Costruire payload pulito in base a property_type
     const payload: any = {
       title: formData.title,
+      slug: formData.slug,
       subtitle: formData.subtitle,
       property_type: formData.property_type,
       status: formData.status,
@@ -298,6 +359,10 @@ export default function PropertyFormPage() {
       content: formData.content,
       city: formData.city,
       neighborhood: formData.neighborhood,
+      state: formData.state,
+      address: formData.address,
+      google_maps_url: formData.google_maps_url,
+      youtube_video_url: formData.youtube_video_url,
       country: formData.country,
       latitude: formData.latitude ? parseFloat(formData.latitude) : null,
       longitude: formData.longitude ? parseFloat(formData.longitude) : null,
@@ -336,7 +401,7 @@ export default function PropertyFormPage() {
     // Backward compat: sync property_category = first element
     payload.property_category = formData.property_categories[0] || null;
 
-    if (formData.property_type === 'development') {
+    if (isDevelopment) {
       payload.bedrooms_min = formData.bedrooms_min || null;
       payload.bedrooms_max = formData.bedrooms_max || null;
       payload.bathrooms_min = formData.bathrooms_min || null;
@@ -360,6 +425,16 @@ export default function PropertyFormPage() {
   }
 
   const handleSelectChange = (name: string, value: string) => {
+    if (name === 'property_type') {
+      setFormData((prev) => {
+        const next = { ...prev, [name]: value }
+        if (value === 'land') {
+          next.property_categories = ['land']
+        }
+        return next
+      })
+      return
+    }
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
@@ -392,6 +467,9 @@ export default function PropertyFormPage() {
           <SelectContent>
             <SelectItem value="active">Active Property</SelectItem>
             <SelectItem value="development">New Development</SelectItem>
+            <SelectItem value="hot_deal">Hot Deals (Oportunidades)</SelectItem>
+            <SelectItem value="off_market">Off Market</SelectItem>
+            <SelectItem value="land">Land (Tierra)</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -401,11 +479,12 @@ export default function PropertyFormPage() {
   // EDIT: 7 tabs with all fields
   const editForm = (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-7">
+      <TabsList className="grid w-full grid-cols-8">
         <TabsTrigger value="info">Basic Info & SEO</TabsTrigger>
         <TabsTrigger value="price">Pricing</TabsTrigger>
         <TabsTrigger value="location">Location</TabsTrigger>
         <TabsTrigger value="gallery">Gallery</TabsTrigger>
+        <TabsTrigger value="attachments">Attachments</TabsTrigger>
         <TabsTrigger value="tags">Tags</TabsTrigger>
         <TabsTrigger value="landing">Landing</TabsTrigger>
         <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -416,7 +495,21 @@ export default function PropertyFormPage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-sm font-medium">Title <span className="text-red-500">*</span></Label>
-            <Input name="title" value={formData.title} onChange={handleChange} required className={!formData.title.trim() ? 'border-red-300' : ''} />
+            <Input 
+              name="title" 
+              value={formData.title} 
+              onChange={(e) => {
+                const title = e.target.value;
+                setFormData(prev => ({
+                  ...prev,
+                  title,
+                  // Auto-generate slug from title only for new properties
+                  slug: isEdit ? prev.slug : slugify(title)
+                }));
+              }}
+              required 
+              className={!formData.title.trim() ? 'border-red-300' : ''} 
+            />
             <p className="text-xs text-muted-foreground mt-1">
               📌 <strong>Main heading</strong> displayed at the top of the property page and in listings
             </p>
@@ -428,10 +521,29 @@ export default function PropertyFormPage() {
               <SelectContent>
                 <SelectItem value="active">Active Property</SelectItem>
                 <SelectItem value="development">New Development</SelectItem>
+                <SelectItem value="hot_deal">Hot Deals (Oportunidades)</SelectItem>
+                <SelectItem value="off_market">Off Market</SelectItem>
+                <SelectItem value="land">Land (Tierra)</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
+
+        {/* Slug field - only visible in edit mode */}
+        {isEdit && (
+          <div>
+            <Label className="text-sm font-medium">URL Slug <span className="text-red-500">*</span></Label>
+            <Input 
+              name="slug" 
+              value={formData.slug} 
+              onChange={(e) => setFormData(prev => ({ ...prev, slug: slugify(e.target.value) }))}
+              required 
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              🔗 URL-friendly version: <strong>/properties/{formData.slug || 'property-url'}</strong>
+            </p>
+          </div>
+        )}
 
         <div>
           <Label>Subtitle</Label>
@@ -456,10 +568,10 @@ export default function PropertyFormPage() {
           <div>
             <Label className="text-sm font-medium">
               Property Category <span className="text-red-500">*</span>
-              {formData.property_type === 'active' && (
+              {isActiveLike && (
                 <span className="text-xs text-muted-foreground font-normal ml-2">(select one)</span>
               )}
-              {formData.property_type === 'development' && (
+              {isDevelopment && (
                 <span className="text-xs text-muted-foreground font-normal ml-2">(select one or more)</span>
               )}
             </Label>
@@ -469,10 +581,14 @@ export default function PropertyFormPage() {
                   <input
                     type="checkbox"
                     id={`cat-${cat}`}
-                    checked={formData.property_categories.includes(cat)}
+                    checked={isLand ? cat === 'land' : formData.property_categories.includes(cat)}
+                    disabled={isLand && cat !== 'land'}
                     onChange={(e) => {
-                      if (formData.property_type === 'active') {
-                        // Radio-like: only one allowed for active
+                      if (isLand) {
+                        return
+                      }
+                      if (isActiveLike) {
+                        // Radio-like: only one allowed for active-like types
                         setFormData(prev => ({
                           ...prev,
                           property_categories: e.target.checked ? [cat] : []
@@ -750,8 +866,8 @@ export default function PropertyFormPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label className="text-sm font-medium">
-                    Price USD {formData.property_type === 'active' && <span className="text-red-500">*</span>}
-                    {formData.property_type === 'development' && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
+                    Price USD {isActiveLike && <span className="text-red-500">*</span>}
+                    {isDevelopment && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
                   </Label>
                   <Input 
                     type="number" 
@@ -759,8 +875,6 @@ export default function PropertyFormPage() {
                     value={formData.price_usd} 
                     onChange={(e) => {
                       const usdValue = e.target.value;
-                      const usdToMxn = 17.50; // TODO: Load from exchange_rates
-                      const usdToEur = 0.92;
                       const mxnValue = usdValue ? (parseFloat(usdValue) * usdToMxn).toFixed(2) : '';
                       const eurValue = usdValue ? (parseFloat(usdValue) * usdToEur).toFixed(2) : '';
                       setFormData(prev => ({ ...prev, price_usd: usdValue, price_mxn: mxnValue, price_eur: eurValue }));
@@ -792,8 +906,8 @@ export default function PropertyFormPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label className="text-sm font-medium">
-                    Price MXN {formData.property_type === 'active' && <span className="text-red-500">*</span>}
-                    {formData.property_type === 'development' && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
+                    Price MXN {isActiveLike && <span className="text-red-500">*</span>}
+                    {isDevelopment && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
                   </Label>
                   <Input 
                     type="number" 
@@ -801,8 +915,6 @@ export default function PropertyFormPage() {
                     value={formData.price_mxn} 
                     onChange={(e) => {
                       const mxnValue = e.target.value;
-                      const mxnToUsd = 1 / 17.50;
-                      const mxnToEur = 1 / 19.10;
                       const usdValue = mxnValue ? (parseFloat(mxnValue) * mxnToUsd).toFixed(2) : '';
                       const eurValue = mxnValue ? (parseFloat(mxnValue) * mxnToEur).toFixed(2) : '';
                       setFormData(prev => ({ ...prev, price_mxn: mxnValue, price_usd: usdValue, price_eur: eurValue }));
@@ -834,8 +946,8 @@ export default function PropertyFormPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label className="text-sm font-medium">
-                    Price EUR {formData.property_type === 'active' && <span className="text-red-500">*</span>}
-                    {formData.property_type === 'development' && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
+                    Price EUR {isActiveLike && <span className="text-red-500">*</span>}
+                    {isDevelopment && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
                   </Label>
                   <Input 
                     type="number" 
@@ -843,8 +955,6 @@ export default function PropertyFormPage() {
                     value={formData.price_eur} 
                     onChange={(e) => {
                       const eurValue = e.target.value;
-                      const eurToUsd = 1 / 0.92;
-                      const eurToMxn = 19.10;
                       const usdValue = eurValue ? (parseFloat(eurValue) * eurToUsd).toFixed(2) : '';
                       const mxnValue = eurValue ? (parseFloat(eurValue) * eurToMxn).toFixed(2) : '';
                       setFormData(prev => ({ ...prev, price_eur: eurValue, price_usd: usdValue, price_mxn: mxnValue }));
@@ -877,7 +987,7 @@ export default function PropertyFormPage() {
         )}
 
         {/* PRICE RANGE FOR DEVELOPMENTS */}
-        {formData.property_type === 'development' && !formData.price_on_demand && (
+        {isDevelopment && !formData.price_on_demand && (
           <div>
             <Label className="text-sm font-medium mb-2">Price Range (for developments)</Label>
             {formData.price_base_currency === 'USD' ? (
@@ -891,8 +1001,8 @@ export default function PropertyFormPage() {
                       value={formData.price_from_usd} 
                       onChange={(e) => {
                         const val = e.target.value;
-                        const mxn = val ? (parseFloat(val) * 17.50).toFixed(2) : '';
-                        const eur = val ? (parseFloat(val) * 0.92).toFixed(2) : '';
+                        const mxn = val ? (parseFloat(val) * usdToMxn).toFixed(2) : '';
+                        const eur = val ? (parseFloat(val) * usdToEur).toFixed(2) : '';
                         setFormData(prev => ({ ...prev, price_from_usd: val, price_from_mxn: mxn, price_from_eur: eur }));
                       }}
                       step="0.01" 
@@ -906,8 +1016,8 @@ export default function PropertyFormPage() {
                       value={formData.price_to_usd} 
                       onChange={(e) => {
                         const val = e.target.value;
-                        const mxn = val ? (parseFloat(val) * 17.50).toFixed(2) : '';
-                        const eur = val ? (parseFloat(val) * 0.92).toFixed(2) : '';
+                        const mxn = val ? (parseFloat(val) * usdToMxn).toFixed(2) : '';
+                        const eur = val ? (parseFloat(val) * usdToEur).toFixed(2) : '';
                         setFormData(prev => ({ ...prev, price_to_usd: val, price_to_mxn: mxn, price_to_eur: eur }));
                       }}
                       step="0.01" 
@@ -934,8 +1044,8 @@ export default function PropertyFormPage() {
                       value={formData.price_from_mxn} 
                       onChange={(e) => {
                         const val = e.target.value;
-                        const usd = val ? (parseFloat(val) / 17.50).toFixed(2) : '';
-                        const eur = val ? (parseFloat(val) / 19.10).toFixed(2) : '';
+                        const usd = val ? (parseFloat(val) * mxnToUsd).toFixed(2) : '';
+                        const eur = val ? (parseFloat(val) * mxnToEur).toFixed(2) : '';
                         setFormData(prev => ({ ...prev, price_from_mxn: val, price_from_usd: usd, price_from_eur: eur }));
                       }}
                       step="0.01" 
@@ -949,8 +1059,8 @@ export default function PropertyFormPage() {
                       value={formData.price_to_mxn} 
                       onChange={(e) => {
                         const val = e.target.value;
-                        const usd = val ? (parseFloat(val) / 17.50).toFixed(2) : '';
-                        const eur = val ? (parseFloat(val) / 19.10).toFixed(2) : '';
+                        const usd = val ? (parseFloat(val) * mxnToUsd).toFixed(2) : '';
+                        const eur = val ? (parseFloat(val) * mxnToEur).toFixed(2) : '';
                         setFormData(prev => ({ ...prev, price_to_mxn: val, price_to_usd: usd, price_to_eur: eur }));
                       }}
                       step="0.01" 
@@ -977,8 +1087,8 @@ export default function PropertyFormPage() {
                       value={formData.price_from_eur} 
                       onChange={(e) => {
                         const val = e.target.value;
-                        const usd = val ? (parseFloat(val) / 0.92).toFixed(2) : '';
-                        const mxn = val ? (parseFloat(val) * 19.10).toFixed(2) : '';
+                        const usd = val ? (parseFloat(val) * eurToUsd).toFixed(2) : '';
+                        const mxn = val ? (parseFloat(val) * eurToMxn).toFixed(2) : '';
                         setFormData(prev => ({ ...prev, price_from_eur: val, price_from_usd: usd, price_from_mxn: mxn }));
                       }}
                       step="0.01" 
@@ -992,8 +1102,8 @@ export default function PropertyFormPage() {
                       value={formData.price_to_eur} 
                       onChange={(e) => {
                         const val = e.target.value;
-                        const usd = val ? (parseFloat(val) / 0.92).toFixed(2) : '';
-                        const mxn = val ? (parseFloat(val) * 19.10).toFixed(2) : '';
+                        const usd = val ? (parseFloat(val) * eurToUsd).toFixed(2) : '';
+                        const mxn = val ? (parseFloat(val) * eurToMxn).toFixed(2) : '';
                         setFormData(prev => ({ ...prev, price_to_eur: val, price_to_usd: usd, price_to_mxn: mxn }));
                       }}
                       step="0.01" 
@@ -1013,7 +1123,7 @@ export default function PropertyFormPage() {
           </div>
         )}
 
-        {formData.price_negotiable && formData.property_type !== 'development' && !formData.price_on_demand && (
+        {formData.price_negotiable && !isDevelopment && !formData.price_on_demand && (
           <div>
             <Label className="text-sm font-medium mb-2">Negotiable Range</Label>
             {formData.price_base_currency === 'USD' ? (
@@ -1026,8 +1136,8 @@ export default function PropertyFormPage() {
                     value={formData.price_from_usd} 
                     onChange={(e) => {
                       const val = e.target.value;
-                      const mxn = val ? (parseFloat(val) * 17.50).toFixed(2) : '';
-                      const eur = val ? (parseFloat(val) * 0.92).toFixed(2) : '';
+                      const mxn = val ? (parseFloat(val) * usdToMxn).toFixed(2) : '';
+                      const eur = val ? (parseFloat(val) * usdToEur).toFixed(2) : '';
                       setFormData(prev => ({ ...prev, price_from_usd: val, price_from_mxn: mxn, price_from_eur: eur }));
                     }}
                     step="0.01" 
@@ -1041,8 +1151,8 @@ export default function PropertyFormPage() {
                     value={formData.price_to_usd} 
                     onChange={(e) => {
                       const val = e.target.value;
-                      const mxn = val ? (parseFloat(val) * 17.50).toFixed(2) : '';
-                      const eur = val ? (parseFloat(val) * 0.92).toFixed(2) : '';
+                      const mxn = val ? (parseFloat(val) * usdToMxn).toFixed(2) : '';
+                      const eur = val ? (parseFloat(val) * usdToEur).toFixed(2) : '';
                       setFormData(prev => ({ ...prev, price_to_usd: val, price_to_mxn: mxn, price_to_eur: eur }));
                     }}
                     step="0.01" 
@@ -1059,8 +1169,8 @@ export default function PropertyFormPage() {
                     value={formData.price_from_mxn} 
                     onChange={(e) => {
                       const val = e.target.value;
-                      const usd = val ? (parseFloat(val) / 17.50).toFixed(2) : '';
-                      const eur = val ? (parseFloat(val) / 19.10).toFixed(2) : '';
+                      const usd = val ? (parseFloat(val) * mxnToUsd).toFixed(2) : '';
+                      const eur = val ? (parseFloat(val) * mxnToEur).toFixed(2) : '';
                       setFormData(prev => ({ ...prev, price_from_mxn: val, price_from_usd: usd, price_from_eur: eur }));
                     }}
                     step="0.01" 
@@ -1074,8 +1184,8 @@ export default function PropertyFormPage() {
                     value={formData.price_to_mxn} 
                     onChange={(e) => {
                       const val = e.target.value;
-                      const usd = val ? (parseFloat(val) / 17.50).toFixed(2) : '';
-                      const eur = val ? (parseFloat(val) / 19.10).toFixed(2) : '';
+                      const usd = val ? (parseFloat(val) * mxnToUsd).toFixed(2) : '';
+                      const eur = val ? (parseFloat(val) * mxnToEur).toFixed(2) : '';
                       setFormData(prev => ({ ...prev, price_to_mxn: val, price_to_usd: usd, price_to_eur: eur }));
                     }}
                     step="0.01" 
@@ -1092,8 +1202,8 @@ export default function PropertyFormPage() {
                     value={formData.price_from_eur} 
                     onChange={(e) => {
                       const val = e.target.value;
-                      const usd = val ? (parseFloat(val) / 0.92).toFixed(2) : '';
-                      const mxn = val ? (parseFloat(val) * 19.10).toFixed(2) : '';
+                      const usd = val ? (parseFloat(val) * eurToUsd).toFixed(2) : '';
+                      const mxn = val ? (parseFloat(val) * eurToMxn).toFixed(2) : '';
                       setFormData(prev => ({ ...prev, price_from_eur: val, price_from_usd: usd, price_from_mxn: mxn }));
                     }}
                     step="0.01" 
@@ -1107,8 +1217,8 @@ export default function PropertyFormPage() {
                     value={formData.price_to_eur} 
                     onChange={(e) => {
                       const val = e.target.value;
-                      const usd = val ? (parseFloat(val) / 0.92).toFixed(2) : '';
-                      const mxn = val ? (parseFloat(val) * 19.10).toFixed(2) : '';
+                      const usd = val ? (parseFloat(val) * eurToUsd).toFixed(2) : '';
+                      const mxn = val ? (parseFloat(val) * eurToMxn).toFixed(2) : '';
                       setFormData(prev => ({ ...prev, price_to_eur: val, price_to_usd: usd, price_to_mxn: mxn }));
                     }}
                     step="0.01" 
@@ -1126,8 +1236,8 @@ export default function PropertyFormPage() {
 
         {/* BEDROOMS AND BATHROOMS - CONDITIONAL BASED ON PROPERTY TYPE */}
         <div className="grid grid-cols-2 gap-4">
-          {formData.property_type === 'active' ? (
-            // ACTIVE PROPERTY: Single select for bedrooms
+          {isActiveLike ? (
+            // ACTIVE-LIKE: Single select for bedrooms
             <div>
               <Label>Bedrooms</Label>
               <Select value={formData.bedrooms} onValueChange={(v) => handleSelectChange('bedrooms', v)}>
@@ -1179,8 +1289,8 @@ export default function PropertyFormPage() {
             </div>
           )}
           
-          {formData.property_type === 'active' ? (
-            // ACTIVE PROPERTY: Single select for bathrooms
+          {isActiveLike ? (
+            // ACTIVE-LIKE: Single select for bathrooms
             <div>
               <Label>Bathrooms</Label>
               <Select value={formData.bathrooms} onValueChange={(v) => handleSelectChange('bathrooms', v)}>
@@ -1254,8 +1364,8 @@ export default function PropertyFormPage() {
             </button>
           </div>
 
-          {formData.property_type === 'active' ? (
-            // ACTIVE PROPERTY: Single value
+          {isActiveLike ? (
+            // ACTIVE-LIKE: Single value
             <div className="grid grid-cols-2 gap-4">
               {formData.size_unit === 'sqm' ? (
                 <>
@@ -1492,6 +1602,22 @@ export default function PropertyFormPage() {
 
       {/* TAB 4: Gallery */}
       <TabsContent value="gallery" className="space-y-4">
+        {/* YouTube Video URL */}
+        <div>
+          <Label>YouTube Video URL (optional)</Label>
+          <Textarea 
+            name="youtube_video_url" 
+            value={formData.youtube_video_url} 
+            onChange={handleChange} 
+            rows={3}
+            placeholder="Paste YouTube embed URL here (e.g., https://www.youtube.com/embed/VIDEO_ID or https://youtu.be/VIDEO_ID)"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            🎥 Add a YouTube video to showcase this property. The video will be displayed on the property detail page.
+          </p>
+        </div>
+
+        {/* Photo Gallery */}
         {id ? (
           <PropertyGalleryUpload propertyId={parseInt(id)} />
         ) : (
@@ -1502,7 +1628,19 @@ export default function PropertyFormPage() {
         )}
       </TabsContent>
 
-      {/* TAB 5: Tags */}
+      {/* TAB 5: Attachments */}
+      <TabsContent value="attachments" className="space-y-4">
+        {id ? (
+          <PropertyAttachments propertyId={Number(id)} />
+        ) : (
+          <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
+            <p className="text-muted-foreground mb-2">Attachments</p>
+            <p className="text-sm">Save the property first to upload attachments</p>
+          </div>
+        )}
+      </TabsContent>
+
+      {/* TAB 6: Tags */}
       <TabsContent value="tags" className="space-y-4">
         <TagPicker
           selectedTags={formData.tags}
@@ -1510,7 +1648,7 @@ export default function PropertyFormPage() {
         />
       </TabsContent>
 
-      {/* TAB 6: Landing Pages */}
+      {/* TAB 7: Landing Pages */}
       <TabsContent value="landing" className="space-y-4">
         {id ? (
           <PropertyLandingPages propertyId={Number(id)} />

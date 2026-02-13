@@ -11,7 +11,8 @@ export default function DashboardPage() {
       </div>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <GlobalExchangeRate />
+        <GlobalExchangeRate currencyTo="MXN" title="USD to MXN" />
+        <GlobalExchangeRate currencyTo="EUR" title="USD to EUR" />
         
         {/* Add more widgets here */}
       </div>

@@ -20,12 +20,12 @@
 
 /* ===== SIMPLE SEARCH BAR ===== */
 .search-form-simple {
-  background: #ffffff;
-  border: 1px solid #e8ddd5;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border-light);
   border-radius: 8px;
   padding: 30px;
   margin-bottom: 40px;
-  box-shadow: 0 2px 12px rgba(193, 146, 128, 0.08);
+  box-shadow: var(--shadow-medium);
 }
 
 .search-bar-row {
@@ -37,33 +37,33 @@
 
 .search-input {
   padding: 14px 20px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-light);
   border-radius: 6px;
   font-size: 15px;
   font-family: var(--font-family-default);
-  color: #2f343b;
-  background: #fff;
+  color: var(--color-text-primary);
+  background: var(--color-bg-white);
   transition: all 0.2s ease;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #c19280;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(193, 146, 128, 0.1);
 }
 
 .search-input::placeholder {
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .search-select {
   padding: 14px 16px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-light);
   border-radius: 6px;
   font-size: 14px;
   font-family: var(--font-family-default);
-  color: #2f343b;
-  background: #fff;
+  color: var(--color-text-primary);
+  background: var(--color-bg-white);
   cursor: pointer;
   transition: all 0.2s ease;
   appearance: none;
@@ -75,17 +75,17 @@
 
 .search-select:focus {
   outline: none;
-  border-color: #c19280;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(193, 146, 128, 0.1);
 }
 
 .search-select:hover {
-  border-color: #c19280;
+  border-color: var(--color-primary);
 }
 
 .btn-search-icon {
   padding: 14px 18px;
-  background: #c19280;
+  background: var(--color-primary);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -103,7 +103,7 @@
 }
 
 .btn-search-icon:hover {
-  background: #a67968;
+  background: var(--color-primary-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(193, 146, 128, 0.3);
 }
@@ -111,7 +111,7 @@
 .btn-reset-icon {
   padding: 14px 18px;
   background: transparent;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-light);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -128,21 +128,21 @@
 }
 
 .btn-reset-icon:hover {
-  background: #f5f5f5;
-  border-color: #c19280;
+  background: var(--color-bg-lighter);
+  border-color: var(--color-primary);
   transform: translateY(-1px);
 }
 
 .btn-reset-icon:hover svg {
-  color: #c19280;
+  color: var(--color-primary);
 }
 
 .btn-clear-filters {
   margin-top: 16px;
   padding: 10px 20px;
   background: transparent;
-  border: 1px solid #c19280;
-  color: #c19280;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
   border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
@@ -154,8 +154,8 @@
 }
 
 .btn-clear-filters:hover {
-  background: #c19280;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-bg-white);
 }
 
 /* Responsive for Search Bar */
@@ -242,8 +242,8 @@
 
 .btn-back {
   background: none;
-  border: 1px solid #c19280;
-  color: #c19280;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
   padding: 10px 24px;
   border-radius: 2px;
   font-size: 14px;
@@ -256,8 +256,8 @@
 }
 
 .btn-back:hover {
-  background: #c19280;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-bg-white);
 }
 
 .results-count {
@@ -328,7 +328,7 @@
 .placeholder-box {
   width: 60px;
   height: 60px;
-  border: 2px solid #c19280;
+  border: 2px solid var(--color-primary);
   opacity: 0.3;
 }
 
@@ -383,20 +383,20 @@
 .property-row-body h2 {
   font-family: var(--font-family-title) !important;
   font-size: 32px !important;
-  color: #c19280 !important;
+  color: var(--color-primary) !important;
   margin: 0;
-  font-weight: 600 !important;
+  font-weight: var(--font-weight-medium) !important;
   line-height: 1.2 !important;
-  letter-spacing: 0 !important;
+  letter-spacing: 0.5px !important;
 }
 
 .property-row-body h2 a {
   font-family: var(--font-family-title) !important;
   font-size: 32px !important;
-  color: #c19280 !important;
-  font-weight: 600 !important;
+  color: var(--color-primary) !important;
+  font-weight: var(--font-weight-medium) !important;
   line-height: 1.2 !important;
-  letter-spacing: 0 !important;
+  letter-spacing: 0.5px !important;
   text-decoration: none;
   transition: none;
 }
@@ -412,7 +412,7 @@
 }
 
 .property-location {
-  color: #c19280;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -434,8 +434,8 @@
 
 .property-price {
   font-size: 24px;
-  font-weight: 700;
-  color: #c19280;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
   font-family: var(--font-family-title);
 }
 

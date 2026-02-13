@@ -14,12 +14,12 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { CheckCircle, Copy, FileJson, Upload, XCircle, AlertTriangle } from 'lucide-react'
+import { CheckCircle, Copy, FileJson, Upload, XCircle, AlertTriangle, ArrowLeft } from 'lucide-react'
 
 // ─── SQL SCHEMA EXACT VALUES ──────────────────────────────
 // These MUST match the DB ENUM definitions exactly
 
-const ENUM_PROPERTY_TYPE = ['active', 'development'] as const
+const ENUM_PROPERTY_TYPE = ['active', 'development', 'hot_deal', 'off_market', 'land'] as const
 const ENUM_STATUS = ['for_sale', 'sold', 'reserved'] as const
 const ENUM_PRICE_CURRENCY = ['USD', 'MXN', 'EUR'] as const
 const ENUM_CATEGORIES = ['apartment', 'house', 'villa', 'condo', 'penthouse', 'land', 'commercial'] as const
@@ -177,6 +177,9 @@ function normalizePropertyType(v: unknown) {
   const s = v.trim().toLowerCase().replace(/[\s-]+/g, '_')
   if (['active_property', 'active_properties', 'activeproperty'].includes(s)) return 'active'
   if (['new_development', 'new_developments'].includes(s)) return 'development'
+  if (['hot_deal', 'hot_deals', 'hotdeal', 'hotdeals', 'opportunity', 'opportunities', 'oportunidad', 'oportunidades'].includes(s)) return 'hot_deal'
+  if (['off_market', 'offmarket'].includes(s)) return 'off_market'
+  if (['land', 'lands', 'tierra'].includes(s)) return 'land'
   return s
 }
 
@@ -362,6 +365,9 @@ function validateJsonData(data: any): ValidationError[] {
     }
   })
 
+  const isDevelopment = data.property_type === 'development'
+  const isActiveLike = !!data.property_type && data.property_type !== 'development'
+
   // 4. property_categories (ENUM per row in DB table)
   if (!Array.isArray(data.property_categories)) {
     errors.push({ field: 'property_categories', message: 'property_categories must be an array', severity: 'error' })
@@ -369,12 +375,21 @@ function validateJsonData(data: any): ValidationError[] {
     if (data.property_categories.length === 0) {
       errors.push({ field: 'property_categories', message: 'property_categories must have at least one value', severity: 'error' })
     }
-    if (data.property_type === 'active' && data.property_categories.length > 1) {
+    if (isActiveLike && data.property_categories.length > 1) {
       errors.push({
         field: 'property_categories',
-        message: `Active properties must have exactly 1 category, got ${data.property_categories.length}`,
+        message: `Active-like properties must have exactly 1 category, got ${data.property_categories.length}`,
         severity: 'error',
         expected: '["apartment"]',
+        received: JSON.stringify(data.property_categories),
+      })
+    }
+    if (data.property_type === 'land' && !data.property_categories.includes('land')) {
+      errors.push({
+        field: 'property_categories',
+        message: 'Land properties must include category "land"',
+        severity: 'error',
+        expected: '["land"]',
         received: JSON.stringify(data.property_categories),
       })
     }
@@ -421,15 +436,15 @@ function validateJsonData(data: any): ValidationError[] {
   })
 
   // 6. Active vs Development field rules
-  if (data.property_type === 'active') {
+  if (isActiveLike) {
     const mustBeNull = ['bedrooms_min', 'bedrooms_max', 'bathrooms_min', 'bathrooms_max', 'sqm_min', 'sqm_max', 'sqft_min', 'sqft_max', 'price_from_usd', 'price_to_usd', 'price_from_mxn', 'price_to_mxn']
     mustBeNull.forEach((f) => {
       if (data[f] !== null && data[f] !== undefined) {
-        errors.push({ field: f, message: `"${f}" must be null for active properties`, severity: 'error' })
+        errors.push({ field: f, message: `"${f}" must be null for active-like properties`, severity: 'error' })
       }
     })
   }
-  if (data.property_type === 'development') {
+  if (isDevelopment) {
     const mustBeNull = ['bedrooms', 'bathrooms', 'sqm', 'sqft', 'price_usd', 'price_mxn']
     mustBeNull.forEach((f) => {
       if (data[f] !== null && data[f] !== undefined) {
@@ -551,6 +566,8 @@ export default function PropertyJsonInsertDialog({
 }) {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const [step, setStep] = useState<1 | 2>(1) // Step 1: select category, Step 2: paste JSON
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [jsonText, setJsonText] = useState('')
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [serverValid, setServerValid] = useState<any>(null)
@@ -609,27 +626,36 @@ export default function PropertyJsonInsertDialog({
     // 2. Normalize
     const normalized = normalizeJsonData(parsed)
 
-    // 3. Client-side validation
+    // 3. OVERRIDE property_type with selected category (user selection wins)
+    if (selectedCategory) {
+      normalized.property_type = selectedCategory
+    }
+
+    // 4. Client-side validation
     const clientErrors = validateJsonData(normalized)
     setValidationErrors(clientErrors)
 
-    // 4. If no hard errors → server validation
+    // 5. If no hard errors → server validation
     const hardErrors = clientErrors.filter((e) => e.severity === 'error')
     if (hardErrors.length === 0) {
       validateMutation.mutate(normalized)
     }
-  }, [jsonText, validateMutation])
+  }, [jsonText, selectedCategory, validateMutation])
 
   const handleImport = useCallback(() => {
     if (!serverValid?.valid) return
     try {
       const parsed = JSON.parse(jsonText)
       const normalized = normalizeJsonData(parsed)
+      // OVERRIDE: User's selected category wins
+      if (selectedCategory) {
+        normalized.property_type = selectedCategory
+      }
       importMutation.mutate(normalized)
     } catch (error: any) {
       setValidationErrors([{ field: 'JSON', message: error.message, severity: 'error' }])
     }
-  }, [jsonText, serverValid, importMutation])
+  }, [jsonText, selectedCategory, serverValid, importMutation])
 
   const handleCopyErrors = useCallback(() => {
     const text = formatErrorsForCopy(validationErrors)
@@ -645,8 +671,50 @@ export default function PropertyJsonInsertDialog({
     setServerValid(null)
   }
 
+  const handleSelectCategory = (category: string) => {
+    setSelectedCategory(category)
+    setStep(2)
+  }
+
+  const handleBack = () => {
+    setStep(1)
+    setSelectedCategory(null)
+    setJsonText('')
+    setValidationErrors([])
+    setServerValid(null)
+  }
+
+  const handleDialogClose = (isOpen: boolean) => {
+    setOpen(isOpen)
+    if (!isOpen) {
+      // Reset all state when closing
+      setStep(1)
+      setSelectedCategory(null)
+      setJsonText('')
+      setValidationErrors([])
+      setServerValid(null)
+      setCopied(false)
+    }
+  }
+
+  const categoryIcons: Record<string, string> = {
+    active: '🏠',
+    development: '🏗️',
+    hot_deal: '🔥',
+    off_market: '🔒',
+    land: '🌳',
+  }
+
+  const categoryLabels: Record<string, string> = {
+    active: 'Active Properties',
+    development: 'New Developments',
+    hot_deal: 'Hot Deals',
+    off_market: 'Off Market',
+    land: 'Land',
+  }
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setValidationErrors([]); setServerValid(null) } }}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <FileJson className="mr-2 h-4 w-4" />
@@ -655,38 +723,84 @@ export default function PropertyJsonInsertDialog({
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-lg">Import Property from JSON</DialogTitle>
+          <DialogTitle className="text-lg">
+            {step === 1 ? 'Select Property Category' : `Import Property — ${categoryLabels[selectedCategory!]}`}
+          </DialogTitle>
           <DialogDescription>
-            Paste the JSON generated by ChatGPT. Fields are validated against the exact SQL schema before import.
+            {step === 1 
+              ? 'First, select the property category. This will override any property_type in the JSON.' 
+              : 'Paste the JSON generated by ChatGPT. The property will be created as the selected category.'}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Textarea */}
-          <Textarea
-            value={jsonText}
-            onChange={(e) => { setJsonText(e.target.value); setValidationErrors([]); setServerValid(null) }}
-            placeholder={'Paste your JSON here...\n\nTip: Use the ChatGPT prompt from _docs/PROPERTIES_POSTMAN_TEMPLATE.md'}
-            rows={16}
-            className="font-mono text-xs leading-relaxed"
-            spellCheck={false}
-          />
-
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button onClick={handleValidate} disabled={!jsonText.trim() || validateMutation.isPending} variant="outline" size="sm">
-              {validateMutation.isPending ? 'Validating...' : '✓ Validate'}
-            </Button>
-            <Button onClick={handleImport} disabled={!serverValid?.valid || importMutation.isPending} size="sm">
-              <Upload className="mr-2 h-3 w-3" />
-              {importMutation.isPending ? 'Importing...' : 'Import'}
-            </Button>
-            <div className="flex-1" />
-            <Button variant="ghost" size="sm" onClick={handleUseTemplate} className="text-xs">
-              📋 Use Template
-            </Button>
+        {step === 1 ? (
+          /* ─── STEP 1: CATEGORY SELECTION ────────────────────── */
+          <div className="space-y-6 py-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {ENUM_PROPERTY_TYPE.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => handleSelectCategory(category)}
+                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all hover:scale-105 active:scale-95"
+                  type="button"
+                >
+                  <span className="text-4xl">{categoryIcons[category]}</span>
+                  <span className="font-medium text-sm text-center">
+                    {categoryLabels[category]}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="font-medium text-amber-900 mb-1">⚠️ Important:</p>
+              <p className="text-amber-800">
+                If your JSON contains a <code className="bg-amber-100 px-1 rounded">property_type</code> field, 
+                <strong> your selection here will override it</strong>. The property will be created with the category you choose.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* ─── STEP 2: JSON PASTE ───────────────────────────── */
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1">
+                <ArrowLeft className="h-3 w-3" />
+                Change Category
+              </Button>
+              <span className="text-sm flex items-center gap-2 text-muted-foreground">
+                Selected: 
+                <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium text-xs">
+                  {categoryIcons[selectedCategory!]} {categoryLabels[selectedCategory!]}
+                </span>
+              </span>
+            </div>
+
+            {/* Textarea */}
+            <Textarea
+              value={jsonText}
+              onChange={(e) => { setJsonText(e.target.value); setValidationErrors([]); setServerValid(null) }}
+              placeholder={'Paste your JSON here...\n\nTip: Use the ChatGPT prompt from _docs/PROPERTIES_POSTMAN_TEMPLATE.md'}
+              rows={16}
+              className="font-mono text-xs leading-relaxed"
+              spellCheck={false}
+            />
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button onClick={handleValidate} disabled={!jsonText.trim() || validateMutation.isPending} variant="outline" size="sm">
+                {validateMutation.isPending ? 'Validating...' : '✓ Validate'}
+              </Button>
+              <Button onClick={handleImport} disabled={!serverValid?.valid || importMutation.isPending} size="sm">
+                <Upload className="mr-2 h-3 w-3" />
+                {importMutation.isPending ? 'Importing...' : 'Import'}
+              </Button>
+              <div className="flex-1" />
+              <Button variant="ghost" size="sm" onClick={handleUseTemplate} className="text-xs">
+                📋 Use Template
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* ── SERVER VALID ── */}
         {serverValid?.valid && (

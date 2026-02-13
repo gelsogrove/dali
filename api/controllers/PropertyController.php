@@ -40,6 +40,13 @@ class PropertyController {
                 $where[] = "is_active = 1";
             }
 
+            // Exclude off_market from public queries unless explicitly requested by admin
+            if (empty($filters['is_active']) || $filters['is_active'] !== 'all') {
+                if (empty($filters['property_type']) || $filters['property_type'] !== 'off_market') {
+                    $where[] = "property_type != 'off_market'";
+                }
+            }
+
             // Property Type filter
             if (!empty($filters['property_type'])) {
                 $where[] = "property_type = ?";
@@ -252,7 +259,7 @@ class PropertyController {
      * @param mixed $identifier Property ID or slug
      * @return array
      */
-    public function getById($identifier) {
+    public function getById($identifier, $offMarketToken = null) {
         try {
             // Determine if identifier is ID or slug
             $isId = is_numeric($identifier);
@@ -270,6 +277,32 @@ class PropertyController {
             }
 
             $property = $result->fetch_assoc();
+
+            // Block off_market properties for public access unless valid token provided
+            if (!$isId && $property['property_type'] === 'off_market') {
+                if (empty($offMarketToken)) {
+                    return $this->errorResponse('Property not found', 404);
+                }
+                // Verify token is valid for this property
+                $db = new Database();
+                $conn = $db->getConnection();
+                $tokenStmt = $conn->prepare(
+                    "SELECT id, expires_at FROM off_market_invites 
+                     WHERE token = ? AND property_id = ? LIMIT 1"
+                );
+                $tokenStmt->bind_param('si', $offMarketToken, $property['id']);
+                $tokenStmt->execute();
+                $tokenResult = $tokenStmt->get_result();
+                if ($tokenResult->num_rows === 0) {
+                    $tokenStmt->close();
+                    return $this->errorResponse('Property not found', 404);
+                }
+                $invite = $tokenResult->fetch_assoc();
+                $tokenStmt->close();
+                if (strtotime($invite['expires_at']) < time()) {
+                    return $this->errorResponse('Property not found', 404);
+                }
+            }
 
             // Always load property_categories from table
             $property['property_categories'] = $this->loadPropertyCategories($property['id']);
@@ -291,6 +324,20 @@ class PropertyController {
             }
 
             $property['photos'] = $photos;
+
+            // Get attachments
+            $attachmentsQuery = "SELECT id, property_id, title, filename, url, mime_type, size_bytes, display_order, created_at
+                                 FROM property_attachments
+                                 WHERE property_id = ?
+                                 ORDER BY display_order ASC, id ASC";
+            $attachmentsResult = $this->db->executePrepared($attachmentsQuery, [$property['id']], 'i');
+            $attachments = [];
+            if ($attachmentsResult) {
+                while ($row = $attachmentsResult->fetch_assoc()) {
+                    $attachments[] = $this->formatAttachment($row);
+                }
+            }
+            $property['attachments'] = $attachments;
 
             // Increment views counter
             if (!$isId) { // Only increment for public slug access
@@ -1099,6 +1146,9 @@ class PropertyController {
             $v = str_replace([' ', '-'], '_', $v);
             if (in_array($v, ['active_property', 'active_properties', 'activeproperty'])) return 'active';
             if (in_array($v, ['new_development', 'new_developments', 'development'])) return 'development';
+            if (in_array($v, ['hot_deal', 'hot_deals', 'hotdeal', 'hotdeals', 'opportunity', 'opportunities', 'oportunidad', 'oportunidades'])) return 'hot_deal';
+            if (in_array($v, ['off_market', 'offmarket'])) return 'off_market';
+            if (in_array($v, ['land', 'lands', 'tierra'])) return 'land';
             return $v;
         };
 
@@ -1248,12 +1298,19 @@ class PropertyController {
             
             // Validazione category: property_categories è sempre un array
             if (isset($data['property_type'])) {
+                $activeLikeTypes = ['active', 'hot_deal', 'off_market', 'land'];
                 if (isset($data['property_categories']) && empty($data['property_categories'])) {
                     return "property_categories is required (at least one category)";
                 }
                 // Legacy support: accept property_category for active
-                if ($data['property_type'] === 'active' && !isset($data['property_categories']) && isset($data['property_category']) && empty($data['property_category'])) {
-                    return "property_category is required for active properties";
+                if (in_array($data['property_type'], $activeLikeTypes, true) && !isset($data['property_categories']) && isset($data['property_category']) && empty($data['property_category'])) {
+                    return "property_category is required for active-like properties";
+                }
+                if (in_array($data['property_type'], $activeLikeTypes, true) && isset($data['property_categories']) && is_array($data['property_categories']) && count($data['property_categories']) > 1) {
+                    return "active-like properties must have exactly one category";
+                }
+                if ($data['property_type'] === 'land' && isset($data['property_categories']) && is_array($data['property_categories']) && !in_array('land', $data['property_categories'], true)) {
+                    return "land properties must include category 'land'";
                 }
             }
 
@@ -1266,8 +1323,8 @@ class PropertyController {
         }
 
         // Validate ENUMs
-        if (isset($data['property_type']) && !in_array($data['property_type'], ['active', 'development'])) {
-            return "Invalid property_type. Must be: active, development";
+        if (isset($data['property_type']) && !in_array($data['property_type'], ['active', 'development', 'hot_deal', 'off_market', 'land'])) {
+            return "Invalid property_type. Must be: active, development, hot_deal, off_market, land";
         }
 
         if (isset($data['status']) && !in_array($data['status'], ['for_sale', 'sold', 'reserved'])) {
@@ -1571,6 +1628,19 @@ class PropertyController {
     }
 
     /**
+     * Format attachment data
+     * @param array $attachment
+     * @return array
+     */
+    private function formatAttachment($attachment) {
+        $attachment['id'] = (int)$attachment['id'];
+        $attachment['property_id'] = (int)$attachment['property_id'];
+        $attachment['display_order'] = isset($attachment['display_order']) ? (int)$attachment['display_order'] : 0;
+        $attachment['size_bytes'] = isset($attachment['size_bytes']) ? (int)$attachment['size_bytes'] : null;
+        return $attachment;
+    }
+
+    /**
      * Get landing pages associated with a property
      * @param int $propertyId Property ID
      * @return array
@@ -1662,6 +1732,209 @@ class PropertyController {
             return $this->errorResponse('An error occurred');
         }
     }
+
+    /**
+     * Get attachments for a property
+     */
+    public function getPropertyAttachments($propertyId) {
+        try {
+            $query = "SELECT id, property_id, title, filename, url, mime_type, size_bytes, display_order, created_at
+                      FROM property_attachments
+                      WHERE property_id = ?
+                      ORDER BY display_order ASC, id ASC";
+            $result = $this->db->executePrepared($query, [$propertyId], 'i');
+            if ($result === false) {
+                return $this->errorResponse('Failed to fetch attachments');
+            }
+            $items = [];
+            while ($row = $result->fetch_assoc()) {
+                $items[] = $this->formatAttachment($row);
+            }
+            return $this->successResponse($items);
+        } catch (Exception $e) {
+            error_log("Error fetching property attachments: " . $e->getMessage());
+            return $this->errorResponse('An error occurred');
+        }
+    }
+
+    /**
+     * Add attachment to property
+     */
+    public function addPropertyAttachment($propertyId, $data, $userId) {
+        try {
+            // Verify property exists
+            $check = $this->db->executePrepared("SELECT id FROM properties WHERE id = ? LIMIT 1", [$propertyId], 'i');
+            if (!$check || $check->num_rows === 0) {
+                return $this->errorResponse('Property not found', 404);
+            }
+
+            if (empty($data['title']) || empty($data['url']) || empty($data['filename'])) {
+                return $this->errorResponse('Title, filename and url are required', 400);
+            }
+
+            $fields = ['property_id','title','filename','url','mime_type','size_bytes','display_order'];
+            $placeholders = '?,?,?,?,?,?,?';
+            $params = [
+                $propertyId,
+                $data['title'],
+                $data['filename'],
+                $data['url'],
+                $data['mime_type'] ?? null,
+                isset($data['size_bytes']) ? (int)$data['size_bytes'] : null,
+                isset($data['display_order']) ? (int)$data['display_order'] : 0
+            ];
+            $types = 'issssis';
+
+            $insert = "INSERT INTO property_attachments (" . implode(',', $fields) . ") VALUES ($placeholders)";
+            $result = $this->db->executePrepared($insert, $params, $types);
+            if (!$result) {
+                return $this->errorResponse('Failed to add attachment');
+            }
+
+            $attachmentId = $this->db->getLastInsertId();
+            $this->logActivity($userId, 'create', 'property_attachment', $attachmentId, "Added attachment to property {$propertyId}: {$data['title']}");
+
+            return $this->successResponse(['id' => $attachmentId, 'message' => 'Attachment added'], 201);
+        } catch (Exception $e) {
+            error_log("Error adding attachment: " . $e->getMessage());
+            return $this->errorResponse('An error occurred');
+        }
+    }
+
+    /**
+     * Update attachment (title or display_order)
+     */
+    public function updatePropertyAttachment($propertyId, $attachmentId, $data, $userId) {
+        try {
+            $check = $this->db->executePrepared(
+                "SELECT id, url FROM property_attachments WHERE id = ? AND property_id = ? LIMIT 1",
+                [$attachmentId, $propertyId],
+                'ii'
+            );
+            if (!$check || $check->num_rows === 0) {
+                return $this->errorResponse('Attachment not found', 404);
+            }
+
+            $updates = [];
+            $params = [];
+            $types = '';
+
+            if (isset($data['title'])) {
+                $updates[] = "title = ?";
+                $params[] = $data['title'];
+                $types .= 's';
+            }
+            if (isset($data['display_order'])) {
+                $updates[] = "display_order = ?";
+                $params[] = (int)$data['display_order'];
+                $types .= 'i';
+            }
+
+            if (empty($updates)) {
+                return $this->successResponse(['message' => 'Nothing to update']);
+            }
+
+            $params[] = $attachmentId;
+            $params[] = $propertyId;
+            $types .= 'ii';
+
+            $query = "UPDATE property_attachments SET " . implode(',', $updates) . " WHERE id = ? AND property_id = ?";
+            $result = $this->db->executePrepared($query, $params, $types);
+            if (!$result) {
+                return $this->errorResponse('Failed to update attachment');
+            }
+
+            $this->logActivity($userId, 'update', 'property_attachment', $attachmentId, "Updated attachment {$attachmentId}");
+
+            return $this->successResponse(['message' => 'Attachment updated']);
+        } catch (Exception $e) {
+            error_log("Error updating attachment: " . $e->getMessage());
+            return $this->errorResponse('An error occurred');
+        }
+    }
+
+    /**
+     * Reorder attachments
+     */
+    public function reorderPropertyAttachments($propertyId, $orderData) {
+        try {
+            if (empty($orderData) || !is_array($orderData)) {
+                return $this->errorResponse('Invalid order data');
+            }
+
+            $this->conn->begin_transaction();
+            $stmt = $this->conn->prepare("UPDATE property_attachments SET display_order = ? WHERE id = ? AND property_id = ?");
+            if (!$stmt) {
+                $this->conn->rollback();
+                return $this->errorResponse('Failed to prepare statement');
+            }
+
+            foreach ($orderData as $item) {
+                if (!isset($item['id']) || !isset($item['display_order'])) {
+                    $stmt->close();
+                    $this->conn->rollback();
+                    return $this->errorResponse('Invalid order item');
+                }
+                $order = (int)$item['display_order'];
+                $id = (int)$item['id'];
+                $pid = (int)$propertyId;
+                $stmt->bind_param('iii', $order, $id, $pid);
+                if (!$stmt->execute()) {
+                    $stmt->close();
+                    $this->conn->rollback();
+                    return $this->errorResponse('Failed to update order');
+                }
+            }
+
+            $stmt->close();
+            $this->conn->commit();
+
+            return $this->successResponse(['message' => 'Attachments reordered']);
+        } catch (Exception $e) {
+            if ($this->conn->inTransaction()) {
+                $this->conn->rollback();
+            }
+            error_log("Error reordering attachments: " . $e->getMessage());
+            return $this->errorResponse('An error occurred');
+        }
+    }
+
+    /**
+     * Delete attachment (and file)
+     */
+    public function deletePropertyAttachment($propertyId, $attachmentId) {
+        try {
+            $query = "SELECT url FROM property_attachments WHERE id = ? AND property_id = ? LIMIT 1";
+            $result = $this->db->executePrepared($query, [$attachmentId, $propertyId], 'ii');
+            if (!$result || $result->num_rows === 0) {
+                return $this->errorResponse('Attachment not found', 404);
+            }
+            $attachment = $result->fetch_assoc();
+
+            $delete = $this->db->executePrepared(
+                "DELETE FROM property_attachments WHERE id = ? AND property_id = ?",
+                [$attachmentId, $propertyId],
+                'ii'
+            );
+            if (!$delete) {
+                return $this->errorResponse('Failed to delete attachment');
+            }
+
+            // Delete file from disk
+            if (!empty($attachment['url'])) {
+                $path = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/' . ltrim($attachment['url'], '/');
+                if (file_exists($path)) {
+                    @unlink($path);
+                }
+            }
+
+            return $this->successResponse(['message' => 'Attachment deleted']);
+        } catch (Exception $e) {
+            error_log("Error deleting attachment: " . $e->getMessage());
+            return $this->errorResponse('An error occurred');
+        }
+    }
+
 
     /**
      * Reorder properties

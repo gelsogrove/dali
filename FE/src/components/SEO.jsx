@@ -26,7 +26,8 @@ export default function SEO({
   canonicalUrl,
   ogType = 'website',
   property = null,
-  breadcrumbs = null
+  breadcrumbs = null,
+  robots = 'index, follow'
 }) {
   const siteName = "Buy With Dali";
   const siteUrl = "https://buywithdali.com";
@@ -211,7 +212,7 @@ export default function SEO({
       <meta name="description" content={metaDescription} />
       {keywords && <meta name="keywords" content={keywords} />}
       <meta name="author" content="Dalila Gelsomino" />
-      <meta name="robots" content="index, follow" />
+      <meta name="robots" content={robots} />
       <meta name="language" content="English" />
       
       {/* Open Graph / Facebook */}

@@ -80,10 +80,10 @@ JSON TEMPLATE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ENUM FIELDS — EXACT STRINGS ONLY!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-property_type:       "active" OR "development"
+property_type:       "active" OR "development" OR "hot_deal" OR "off_market" OR "land"
 status:              "for_sale" OR "sold" OR "reserved"
 property_categories: ["apartment","house","villa","condo","penthouse","land","commercial"]
-  → ACTIVE: exactly 1 value, e.g. ["apartment"]
+  → ACTIVE-LIKE: exactly 1 value, e.g. ["apartment"] (for "land" use ["land"])
   → DEVELOPMENT: 1+ values, e.g. ["apartment","penthouse"]
 furnishing_status:   "furnished" OR "semi-furnished" OR "unfurnished"
 bedrooms:            "studio" OR "1" OR "2" OR "3" OR "4" OR "5+"
@@ -102,14 +102,15 @@ NUMBER FORMATS
   Example: "price_usd": 350000 (not "$350,000" or "350.000" — just the number, use dot for decimals)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ACTIVE vs DEVELOPMENT
+ACTIVE-LIKE vs DEVELOPMENT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ACTIVE (single property):
+ACTIVE-LIKE (single property): "active", "hot_deal", "off_market", "land"
   • property_categories: exactly 1 item ["apartment"]
   • bedrooms, bathrooms, sqm, sqft: single values
   • price_usd OR price_mxn required (unless price_on_demand=true)
   • bedrooms_min/max, bathrooms_min/max, sqm_min/max, sqft_min/max: ALL null
   • price_from_*, price_to_*: ALL null
+  • if property_type = "land", property_categories MUST be ["land"]
 
 DEVELOPMENT (complex):
   • property_categories: 1+ items ["apartment","penthouse"]
@@ -192,7 +193,7 @@ FINAL CHECK BEFORE SUBMIT
 □ google_maps_url = real Google Maps link?
 □ state = lowercase?
 □ No invented data?
-□ active/development fields correctly null?
+□ active-like/development fields correctly null?
 ```
 
 ---

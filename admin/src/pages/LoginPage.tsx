@@ -27,6 +27,8 @@ export default function LoginPage() {
         const { token, user } = response.data.data
         const expiresIn = response.data.data.expires_in
         login(user, token, expiresIn)
+        // Refresh exchange rates on login (non-blocking)
+        api.post('/exchange-rate/refresh').catch(() => {})
         navigate('/')
       } else {
         setError(response.data.error || 'Login failed')

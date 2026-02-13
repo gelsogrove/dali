@@ -1,5 +1,6 @@
 import FeaturedProperties from '../components/FeaturedProperties';
 import ContactWithCta from '../components/ContactWithCta';
+import PageHero from '../components/PageHero';
 import SEO from '../components/SEO';
 
 export default function ActivePropertiesPage() {
@@ -17,7 +18,8 @@ export default function ActivePropertiesPage() {
           { name: 'Active Properties', url: 'https://buywithdali.com/active-properties' }
         ]}
       />
-      <FeaturedProperties activeTab="active" paginate pageSize={12} showTitle={true} disableAnimations={true} />
+      <PageHero breadcrumb="» Active Properties" />
+      <FeaturedProperties activeTab="active" paginate pageSize={12} showTitle={true} disableAnimations={true} titleKicker="Active" titleText="Properties" />
       <ContactWithCta />
     </>
   );

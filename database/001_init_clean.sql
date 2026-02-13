@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS `properties` (
   `og_image` VARCHAR(500) NULL,
   
   -- Property Classification
-  `property_type` ENUM('active', 'development') NOT NULL DEFAULT 'active' COMMENT 'Active Property or Development',
+  `property_type` ENUM('active', 'development', 'hot_deal', 'off_market', 'land') NOT NULL DEFAULT 'active' COMMENT 'Active Property, Development, Hot Deal, Off Market, Land',
   `status` ENUM('for_sale', 'sold', 'reserved') NOT NULL DEFAULT 'for_sale',
   `property_category` ENUM('apartment', 'house', 'villa', 'condo', 'penthouse', 'loft', 'studio', 'land', 'townhouse', 'commercial') NULL,
   
@@ -194,20 +194,37 @@ COMMENT='Property gallery images with multiple sizes';
 -- PROPERTY LANDING PAGES TABLE
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS `property_landing_pages` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `property_id` INT UNSIGNED NOT NULL,
-  `city_id` INT UNSIGNED NULL,
-  `area_id` INT UNSIGNED NULL,
+  `landing_page_slug` VARCHAR(255) NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
-  PRIMARY KEY (`id`),
-  INDEX `idx_property_id` (`property_id`),
-  INDEX `idx_city_id` (`city_id`),
-  INDEX `idx_area_id` (`area_id`),
-  
+
+  PRIMARY KEY (`property_id`, `landing_page_slug`),
+  INDEX `idx_landing_page_slug` (`landing_page_slug`),
+
   FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-COMMENT='Property associations with landing pages';
+COMMENT='Property associations with landing pages (city or area slug)';
+
+-- ============================================================================
+-- PROPERTY ATTACHMENTS TABLE
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS `property_attachments` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `property_id` INT UNSIGNED NOT NULL,
+  `title` VARCHAR(255) NOT NULL,
+  `filename` VARCHAR(255) NOT NULL,
+  `url` TEXT NOT NULL,
+  `mime_type` VARCHAR(120) NULL,
+  `size_bytes` INT UNSIGNED NULL,
+  `display_order` INT DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (`id`),
+  INDEX `idx_property_id` (`property_id`),
+  INDEX `idx_display_order` (`display_order`),
+  FOREIGN KEY (`property_id`) REFERENCES `properties` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Downloadable attachments (pdf, docx, xlsx, pptx, etc.) linked to properties';
 
 -- ============================================================================
 -- CITIES TABLE

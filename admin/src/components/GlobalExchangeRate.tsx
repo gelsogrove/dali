@@ -3,17 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2, TrendingUp, History, Save } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Loader2, TrendingUp, RefreshCw, Save } from 'lucide-react';
 
 interface ExchangeRate {
   id?: string;
@@ -25,71 +15,58 @@ interface ExchangeRate {
   created_at?: string;
 }
 
-interface ExchangeRateHistory {
-  history: ExchangeRate[];
-  total: number;
-}
+type GlobalExchangeRateProps = {
+  currencyTo?: 'MXN' | 'EUR';
+  title?: string;
+};
 
-export function GlobalExchangeRate() {
-  const [isEditing, setIsEditing] = useState(false);
-  const [newRate, setNewRate] = useState('');
+export function GlobalExchangeRate({ currencyTo = 'MXN', title }: GlobalExchangeRateProps) {
   const queryClient = useQueryClient();
+  const displayTitle = title || `USD to ${currencyTo}`;
 
-  // Get current exchange rate
+  // Get current exchange rate from DB
   const { data: currentRate, isLoading } = useQuery<{ success: boolean; data: ExchangeRate }>({
-    queryKey: ['exchange-rate-current'],
+    queryKey: ['exchange-rate-current', currencyTo],
     queryFn: async () => {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/exchange-rate/current`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/exchange-rate/current?currency_from=USD&currency_to=${currencyTo}`);
       if (!response.ok) throw new Error('Failed to fetch exchange rate');
       return response.json();
     },
     refetchInterval: 60000, // Refresh every minute
   });
 
-  // Get history
-  const { data: historyData } = useQuery<{ success: boolean; data: ExchangeRateHistory }>({
-    queryKey: ['exchange-rate-history'],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/exchange-rate/history`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error('Failed to fetch history');
-      return response.json();
-    },
-    enabled: false, // Only fetch when dialog is opened
-  });
-
-  // Update rate mutation
-  const updateRateMutation = useMutation({
-    mutationFn: async (rate: number) => {
-      const response = await api.post('/exchange-rate', {
-        rate,
+  // Auto-fetch rate from external API
+  const fetchExternalRateMutation = useMutation({
+    mutationFn: async () => {
+      // Use free exchangerate-api.com
+      const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      if (!response.ok) throw new Error('Failed to fetch external rates');
+      const data = await response.json();
+      const rate = data.rates[currencyTo];
+      if (!rate) throw new Error(`Rate not found for ${currencyTo}`);
+      
+      // Save to database
+      const saveResponse = await api.post('/exchange-rate', {
+        rate: rate.toString(),
         date: new Date().toISOString().split('T')[0],
+        currency_from: 'USD',
+        currency_to: currencyTo,
       });
-      return response.data;
+      return saveResponse.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['exchange-rate-current'] });
-      queryClient.invalidateQueries({ queryKey: ['exchange-rate-history'] });
-      alert('Exchange rate updated successfully!');
-      setIsEditing(false);
-      setNewRate('');
+      queryClient.invalidateQueries({ queryKey: ['exchange-rate-current', currencyTo] });
+      alert(`Exchange rate updated successfully from external API!`);
     },
     onError: (error: Error) => {
-      alert('Error: ' + error.message);
+      alert('Error fetching rate: ' + error.message);
     },
   });
 
-  const handleSave = () => {
-    const rate = parseFloat(newRate);
-    if (isNaN(rate) || rate <= 0) {
-      alert('Please enter a valid positive number.');
-      return;
+  const handleAutoUpdate = () => {
+    if (confirm(`Fetch the latest USD to ${currencyTo} exchange rate from external API?`)) {
+      fetchExternalRateMutation.mutate();
     }
-    updateRateMutation.mutate(rate);
   };
 
   if (isLoading) {
@@ -108,125 +85,45 @@ export function GlobalExchangeRate() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <CardTitle>Global Exchange Rate</CardTitle>
-          </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <History className="h-4 w-4 mr-2" />
-                History
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Exchange Rate History</DialogTitle>
-                <DialogDescription>
-                  Last 30 days of exchange rate changes
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-2">
-                {historyData?.data.history.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between border-b pb-2"
-                  >
-                    <div>
-                      <div className="font-medium">
-                        {item.rate} {item.currency_to}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(item.date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {item.is_active && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </DialogContent>
-          </Dialog>
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          <CardTitle>{displayTitle}</CardTitle>
         </div>
         <CardDescription>
-          USD to MXN conversion rate • Updated {new Date(rate?.date || '').toLocaleDateString()}
+          USD to {currencyTo} conversion rate • Updated {new Date(rate?.date || '').toLocaleDateString()}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!isEditing ? (
-          <div className="space-y-4">
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold">{rateValue.toFixed(2)}</span>
-              <span className="text-muted-foreground">MXN</span>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              1 USD = {rateValue.toFixed(4)} MXN
-            </div>
-            <Button 
-              onClick={() => {
-                setIsEditing(true);
-                setNewRate(rate?.rate || '');
-              }}
-              className="w-full"
-            >
-              Update Rate
-            </Button>
+        <div className="space-y-4">
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl font-bold">{rateValue.toFixed(2)}</span>
+            <span className="text-muted-foreground">{currencyTo}</span>
           </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="new-rate">New Rate (MXN per USD)</Label>
-              <Input
-                id="new-rate"
-                type="number"
-                step="0.0001"
-                value={newRate}
-                onChange={(e) => setNewRate(e.target.value)}
-                placeholder="17.5000"
-                className="mt-2"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSave}
-                disabled={updateRateMutation.isPending}
-                className="flex-1"
-              >
-                {updateRateMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsEditing(false);
-                  setNewRate('');
-                }}
-                disabled={updateRateMutation.isPending}
-              >
-                Cancel
-              </Button>
-            </div>
+          <div className="text-sm text-muted-foreground">
+            1 USD = {rateValue.toFixed(4)} {currencyTo}
           </div>
-        )}
+          <Button 
+            onClick={handleAutoUpdate}
+            disabled={fetchExternalRateMutation.isPending}
+            className="w-full"
+            variant="default"
+          >
+            {fetchExternalRateMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Fetching...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Update from DOF.gob.mx
+              </>
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground text-center">
+            Automatically fetches the latest rate from external API
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

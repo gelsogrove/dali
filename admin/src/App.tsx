@@ -26,6 +26,8 @@ import CityFormPage from './pages/CityFormPage'
 import AreasPage from './pages/AreasPage'
 import AreaFormPage from './pages/AreaFormPage'
 import BuyersGuideAdminPage from './pages/BuyersGuideAdminPage'
+import AccessRequestsPage from './pages/AccessRequestsPage'
+import OffMarketInvitesPage from './pages/OffMarketInvitesPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
@@ -141,6 +143,8 @@ function App() {
         <Route path="areas/:id/edit" element={<AreaFormPage />} />
         <Route path="buyers-guide" element={<BuyersGuideAdminPage />} />
         <Route path="link-generation" element={<LinkGenerationPage />} />
+        <Route path="access-requests" element={<AccessRequestsPage />} />
+        <Route path="off-market-invites" element={<OffMarketInvitesPage />} />
         <Route path="seo-rules" element={<SeoRulesPage />} />
       </Route>
     </Routes>

@@ -1,5 +1,6 @@
 import FeaturedProperties from '../components/FeaturedProperties';
 import ContactWithCta from '../components/ContactWithCta';
+import PageHero from '../components/PageHero';
 import SEO from '../components/SEO';
 
 export default function NewDevelopmentsPage() {
@@ -17,7 +18,8 @@ export default function NewDevelopmentsPage() {
           { name: 'New Developments', url: 'https://buywithdali.com/new-developments' }
         ]}
       />
-      <FeaturedProperties activeTab="new" paginate pageSize={12} showTitle={true} disableAnimations={true} />
+      <PageHero breadcrumb="» New Developments" />
+      <FeaturedProperties activeTab="new" paginate pageSize={12} showTitle={true} disableAnimations={true} titleKicker="New" titleText="Developments" />
       <ContactWithCta />
     </>
   );

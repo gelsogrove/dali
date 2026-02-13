@@ -793,6 +793,7 @@ header.header {
     justify-content: center;
     gap: 30px;
     margin-bottom: 80px;
+    flex-wrap: wrap;
 }
 
 .fp-links a {
@@ -859,7 +860,7 @@ header.header {
 
 .fp-item-price h3 {
     font-family: var(--font-family-default);
-    font-size: 36px;
+    font-size: 22px;
     text-transform: uppercase;
     color: #ffffff;
     font-weight: 400;
@@ -871,12 +872,13 @@ header.header {
 }
 
 .fp-item-address h4 {
-    font-family: var(--font-family-default);
-    font-size: 24px;
-    text-transform: uppercase;
+    font-family: var(--font-family-title);
+    font-size: 20px;
+    text-transform: none;
     color: #ffffff;
-    font-weight: 400;
+    font-weight: var(--font-weight-medium);
     margin: 0 0 6px 0;
+    letter-spacing: 0.5px;
 }
 
 .fp-item-address h5 {

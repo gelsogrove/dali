@@ -4,12 +4,33 @@ import { Link } from 'react-router-dom';
 import ContactSection from '../components/ContactSection';
 import SEO from '../components/SEO';
 import SafeImage from '../components/SafeImage';
+import PropertyAccessGate from '../components/PropertyAccessGate';
+import OffMarketGate from '../components/OffMarketGate';
 import TitleHeader from '../components/TitleHeader';
 import { api } from '../config/api';
 import { listingDetails } from '../data/listingDetails';
 import { listingContent } from '../data/listingContent';
 import { formatSize, formatBedrooms, formatBathrooms } from '../utils/propertyFormatters';
 import './ListingDetailPage.css';
+
+// Helper function to extract YouTube video ID from various URL formats
+const extractYouTubeId = (url) => {
+  if (!url) return null;
+  
+  // Handle youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/[?&]v=([^&]+)/);
+  if (watchMatch) return watchMatch[1];
+  
+  // Handle youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([^?]+)/);
+  if (shortMatch) return shortMatch[1];
+  
+  // Handle youtube.com/embed/VIDEO_ID
+  const embedMatch = url.match(/embed\/([^?]+)/);
+  if (embedMatch) return embedMatch[1];
+  
+  return null;
+};
 
 export default function ListingDetailPage() {
   const mainSliderRef = useRef(null);
@@ -42,6 +63,13 @@ export default function ListingDetailPage() {
     return parts[1] || '';
   }, [pathname]);
 
+  // Off Market: read token from URL query param
+  const offMarketToken = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token') || null;
+  }, []);
+
   useEffect(() => {
     const fetchProperty = async () => {
       if (!slug) return;
@@ -49,7 +77,8 @@ export default function ListingDetailPage() {
       try {
         setLoading(true);
         setNotFound(false);
-        const response = await api.get(`/properties/${slug}`);
+        const tokenParam = offMarketToken ? `?token=${encodeURIComponent(offMarketToken)}` : '';
+        const response = await api.get(`/properties/${slug}${tokenParam}`);
         if (response.success && response.data) {
           setProperty(response.data);
           // Set default currency based on property
@@ -98,6 +127,17 @@ export default function ListingDetailPage() {
   // Base URL for canonical and OG URLs
   const siteUrl = "https://buywithdali.com";
   const propertyUrl = `${siteUrl}/listings/${slug}/`;
+
+  const sectionMap = {
+    active: { label: 'Active Properties', link: '/active-properties', typeLabel: 'Active Property' },
+    development: { label: 'New Developments', link: '/new-developments', typeLabel: 'New Development' },
+    hot_deal: { label: 'Hot Deals', link: '/hot-deals', typeLabel: 'Hot Deal' },
+    off_market: { label: 'Off Market', link: '/off-market', typeLabel: 'Off Market' },
+    land: { label: 'Land', link: '/land', typeLabel: 'Land' },
+  };
+
+  const sectionInfo = property ? sectionMap[property.property_type] || sectionMap.active : sectionMap.active;
+  const sectionUrl = `${siteUrl}${sectionInfo.link}`;
 
   const handlePropertyContact = async (event) => {
     event.preventDefault();
@@ -243,11 +283,14 @@ export default function ListingDetailPage() {
     title: property.seo_title || `${property.title}${property.city ? ` in ${property.city}` : ''}`,
     description: property.seo_description || (() => {
       const parts = [];
-      if (property.property_type === 'development') {
-        parts.push('New development');
-      } else {
-        parts.push('Property for sale');
-      }
+      const typeBlurb = {
+        development: 'New development',
+        hot_deal: 'Hot deal',
+        off_market: 'Off market property',
+        land: 'Land for sale',
+        active: 'Property for sale',
+      };
+      parts.push(typeBlurb[property.property_type] || 'Property for sale');
       if (property.city) parts.push(`in ${property.city}`);
       if (property.bedrooms) parts.push(`${property.bedrooms} bedrooms`);
       if (property.bathrooms) parts.push(`${property.bathrooms} bathrooms`);
@@ -276,8 +319,7 @@ export default function ListingDetailPage() {
     property: property,
     breadcrumbs: [
       { name: 'Home', url: siteUrl },
-      { name: property.property_type === 'development' ? 'New Developments' : 'Properties', 
-        url: property.property_type === 'development' ? `${siteUrl}/new-developments` : `${siteUrl}/active-properties` },
+      { name: sectionInfo.label, url: sectionUrl },
       { name: property.city || 'Property', url: propertyUrl },
       { name: property.title, url: propertyUrl }
     ]
@@ -377,7 +419,7 @@ export default function ListingDetailPage() {
   const neighborhood = property.city || detail.location || property.location || '';
   
   // Property Type: active or development
-  const propertyType = property.property_type === 'development' ? 'New Development' : 'Active Property';
+  const propertyType = sectionInfo.typeLabel;
   
   // Status label
   const getStatusLabel = (status) => {
@@ -427,6 +469,23 @@ export default function ListingDetailPage() {
           return matches.slice(0, 12).map((m) => m[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean);
         })();
   const additionalInfo = detail.additionalInfo || [];
+  const attachments = property.attachments || [];
+
+  const attachmentIcon = (filename = '', mime = '') => {
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    if (mime.includes('pdf') || ext === 'pdf') return '📄';
+    if (['doc', 'docx'].includes(ext)) return '📝';
+    if (['xls', 'xlsx'].includes(ext)) return '📊';
+    if (['ppt', 'pptx'].includes(ext)) return '📑';
+    return '📁';
+  };
+
+  const formatBytes = (bytes) => {
+    if (!bytes) return '';
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    return `${(kb / 1024).toFixed(1)} MB`;
+  };
 
   const shareLinks = [
     {
@@ -471,7 +530,10 @@ export default function ListingDetailPage() {
     }
   };
 
-  return (
+  const isOffMarket = property?.property_type === 'off_market';
+
+  // Off Market: wrap entire page behind OffMarketGate (token + code verification)
+  const pageContent = (
     <>
       {seoData && (
         <SEO
@@ -486,6 +548,7 @@ export default function ListingDetailPage() {
           ogType="product"
           property={seoData.property}
           breadcrumbs={seoData.breadcrumbs}
+          robots={isOffMarket ? 'noindex, nofollow' : 'index, follow'}
         />
       )}
       
@@ -573,8 +636,8 @@ export default function ListingDetailPage() {
           <span className="breadcrumbs-content">
             <Link to="/">Home</Link>
             {' » '}
-            <Link to={property?.property_type === 'development' ? '/new-developments' : '/active-properties'}>
-              {property?.property_type === 'development' ? 'New Developments' : 'Active Properties'}
+            <Link to={sectionInfo.link}>
+              {sectionInfo.label}
             </Link>
             {' » '}
             {property?.title}
@@ -694,7 +757,54 @@ export default function ListingDetailPage() {
                     </ul>
                   </div>
                 )}
+
+                {/* Attachments */}
+                {attachments.length > 0 && (
+                  property.property_type === 'hot_deal' ? (
+                    <PropertyAccessGate
+                      property={property}
+                      attachments={attachments}
+                      attachmentIcon={attachmentIcon}
+                      formatBytes={formatBytes}
+                    />
+                  ) : (
+                  <div className="listing-attachments">
+                    <h4>Downloads</h4>
+                    <ul className="attachments-list">
+                      {attachments.map((file) => (
+                        <li key={file.id} className="attachment-item">
+                          <span className="attachment-icon" aria-hidden="true">{attachmentIcon(file.filename, file.mime_type)}</span>
+                          <div className="attachment-meta">
+                            <a href={file.url} target="_blank" rel="noopener noreferrer">
+                              {file.title || file.filename}
+                            </a>
+                            <span className="attachment-info">
+                              {file.filename} {file.size_bytes ? `· ${formatBytes(file.size_bytes)}` : ''}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  )
+                )}
               </div>
+
+              {/* YouTube Video */}
+              {property.youtube_video_url && extractYouTubeId(property.youtube_video_url) && (
+                <div className="listing-video" style={{ marginTop: '40px' }}>
+                  <h4>Property Video</h4>
+                  <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '4px' }}>
+                    <iframe
+                      title="Property video"
+                      src={`https://www.youtube.com/embed/${extractYouTubeId(property.youtube_video_url)}`}
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                </div>
+              )}
 
               {/* Map */}
               <div className="listing-map">
@@ -1004,4 +1114,19 @@ export default function ListingDetailPage() {
       )}
     </>
   );
+
+  // Off Market properties require token + code gate
+  if (isOffMarket) {
+    return (
+      <OffMarketGate
+        token={offMarketToken}
+        propertyId={property.id}
+        slug={slug}
+      >
+        {pageContent}
+      </OffMarketGate>
+    );
+  }
+
+  return pageContent;
 }

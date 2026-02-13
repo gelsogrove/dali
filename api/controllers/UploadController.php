@@ -6,15 +6,26 @@ class UploadController {
     // Configurazioni upload - definite direttamente nel codice
     private $allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
     private $allowedVideoTypes = ['video/mp4', 'video/mpeg', 'video/quicktime'];
+    private $allowedDocumentTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain'
+    ];
     private $maxImageSize = 5242880; // 5MB (5 * 1024 * 1024 bytes)
     private $maxVideoSize = 104857600; // 100MB (100 * 1024 * 1024 bytes)
+    private $maxDocumentSize = 10485760; // 10MB
 
     public function __construct() {
         // Prefer an uploads folder inside the webroot to avoid permission issues on /var/www
         $this->uploadDir = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/uploads';
         
         // Create upload directories if they don't exist
-        $legacyDirs = ['properties', 'videos', 'galleries', 'temp', 'blogs'];
+        $legacyDirs = ['properties', 'videos', 'galleries', 'temp', 'blogs', 'attachments'];
         $imageDirs = ['images', 'images/blog', 'images/video', 'images/properties', 'images/city', 'images/area'];
         $dirs = array_merge($legacyDirs, $imageDirs);
         foreach ($dirs as $dir) {
@@ -467,6 +478,54 @@ class UploadController {
      */
     public function uploadAreaImage($file) {
         return $this->uploadGenericImage($file, 'area');
+    }
+
+    /**
+     * Upload generic attachment (pdf, docx, xlsx, pptx, txt)
+     * Max size 10MB
+     */
+    public function uploadAttachment($file) {
+        try {
+            if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+                return $this->errorResponse('No file uploaded or upload error occurred');
+            }
+
+            // Validate mime type using finfo
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+
+            if (!in_array($mimeType, $this->allowedDocumentTypes)) {
+                return $this->errorResponse('Invalid file type. Allowed: PDF, Word, Excel, PowerPoint, TXT');
+            }
+
+            if ($file['size'] > $this->maxDocumentSize) {
+                return $this->errorResponse('File is too large. Maximum size: 10MB');
+            }
+
+            $originalName = $file['name'];
+            $tempPath = $file['tmp_name'];
+            $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+            $filename = $this->generateUniqueFilename($extension, 'attachment', $originalName);
+            $destinationPath = $this->uploadDir . '/attachments/' . $filename;
+
+            if (!move_uploaded_file($tempPath, $destinationPath)) {
+                return $this->errorResponse('Failed to save attachment');
+            }
+
+            return $this->successResponse([
+                'filename'   => $filename,
+                'url'        => '/uploads/attachments/' . $filename,
+                'mime_type'  => $mimeType,
+                'size'       => filesize($destinationPath),
+                'original'   => $originalName
+            ], 201);
+
+        } catch (Exception $e) {
+            error_log("Upload attachment error: " . $e->getMessage());
+            return $this->errorResponse('An error occurred during upload');
+        }
     }
 
     /**

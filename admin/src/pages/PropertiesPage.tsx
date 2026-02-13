@@ -36,7 +36,7 @@ type Property = {
   slug: string
   title: string
   subtitle?: string
-  property_type: 'active' | 'development'
+  property_type: 'active' | 'development' | 'hot_deal' | 'off_market' | 'land'
   status: 'for_sale' | 'sold' | 'reserved'
   property_category: string
   price_usd?: number
@@ -68,6 +68,9 @@ const statusLabels = {
 const typeLabels = {
   active: 'Active Property',
   development: 'Development',
+  hot_deal: 'Hot Deals',
+  off_market: 'Off Market',
+  land: 'Land',
 }
 
 // Sortable Property Card component
@@ -550,6 +553,9 @@ export default function PropertiesPage() {
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="development">Development</SelectItem>
+                <SelectItem value="hot_deal">Hot Deals</SelectItem>
+                <SelectItem value="off_market">Off Market</SelectItem>
+                <SelectItem value="land">Land</SelectItem>
               </SelectContent>
             </Select>
             

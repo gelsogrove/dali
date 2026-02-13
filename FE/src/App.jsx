@@ -18,6 +18,8 @@ import BlogDetailPage from './pages/BlogDetailPage';
 import TestimonialsPage from './pages/TestimonialsPage';
 import ActivePropertiesPage from './pages/ActivePropertiesPage';
 import NewDevelopmentsPage from './pages/NewDevelopmentsPage';
+import HotDealsPage from './pages/HotDealsPage';
+import LandPage from './pages/LandPage';
 import VideosPage from './pages/VideosPage';
 import CommunitiesPage from './pages/CommunitiesPage';
 import ListWithDaliPage from './pages/ListWithDaliPage';
@@ -38,7 +40,12 @@ function AppLayout() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const forceFixedHeader = location.pathname === '/active-properties' || location.pathname === '/new-developments';
+  const forceFixedHeader = [
+    '/active-properties',
+    '/new-developments',
+    '/hot-deals',
+    '/land'
+  ].includes(location.pathname);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
@@ -62,6 +69,17 @@ function AppLayout() {
             <Route path="/properties" element={<PropertiesPage />} />
             <Route path="/active-properties" element={<ActivePropertiesPage />} />
             <Route path="/new-developments" element={<NewDevelopmentsPage />} />
+            <Route path="/hot-deals" element={
+              <PasswordGate
+                storageKey="private_sections_auth"
+                title="Private Listings"
+                message="These listings are private. Please enter the password to continue."
+              >
+                <HotDealsPage />
+              </PasswordGate>
+            } />
+            <Route path="/off-market" element={<Navigate to="/contact-us" replace />} />
+            <Route path="/land" element={<LandPage />} />
             <Route path="/communities" element={<CommunitiesPage />} />
             <Route path="/list-with-dali" element={<ListWithDaliPage />} />
             <Route path="/videos" element={<VideosPage />} />
@@ -94,11 +112,9 @@ export default function App() {
 
   return (
     <HelmetProvider>
-      <PasswordGate>
-        <Router>
-          <AppLayout />
-        </Router>
-      </PasswordGate>
+      <Router>
+        <AppLayout />
+      </Router>
     </HelmetProvider>
   );
 }

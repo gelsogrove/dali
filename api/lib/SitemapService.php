@@ -111,6 +111,7 @@ class SitemapService {
             $query = "SELECT slug, updated_at, property_type FROM properties 
                      WHERE deleted_at IS NULL 
                      AND status IN ('for_sale', 'reserved', 'sold') 
+                     AND property_type NOT IN ('hot_deal', 'off_market')
                      ORDER BY updated_at DESC";
             $result = $this->conn->query($query);
 

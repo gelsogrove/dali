@@ -1,8 +1,10 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Link2, Repeat } from 'lucide-react'
+import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Link2, Repeat, Home, Mail, Shield } from 'lucide-react'
 import { useState } from 'react'
+import { api } from '@/lib/api'
 
 export default function DashboardLayout() {
   const user = useAuthStore((state) => state.user)
@@ -10,12 +12,24 @@ export default function DashboardLayout() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
+  // Fetch unviewed access requests count for badge
+  const { data: countData } = useQuery({
+    queryKey: ['access-requests-count'],
+    queryFn: async () => {
+      const res = await api.get('/access-requests/unviewed-count')
+      return res.data
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+  })
+  const unviewedCount = countData?.data?.count || 0
+
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
 
   const navigation = [
+    { name: 'Exchange Rates', href: '/', icon: Home },
     { name: 'Properties', href: '/properties', icon: FileText },
     { name: 'Link Generation', href: '/link-generation', icon: Link2, nested: true },
     { name: 'Blogs', href: '/blogs', icon: BookOpen },
@@ -26,6 +40,8 @@ export default function DashboardLayout() {
   ]
 
   const utilityNav = [
+    { name: 'Access Requests', href: '/access-requests', icon: Mail, badge: unviewedCount },
+    { name: 'Off Market Invites', href: '/off-market-invites', icon: Shield },
     { name: 'Redirects', href: '/redirects', icon: Repeat },
   ]
 
@@ -67,9 +83,16 @@ export default function DashboardLayout() {
             <Link
               key={item.name}
               to={item.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors relative"
             >
-              <item.icon className="h-5 w-5" />
+              <div className="relative">
+                <item.icon className="h-5 w-5" />
+                {'badge' in item && (item as any).badge > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 animate-pulse">
+                    {(item as any).badge > 9 ? '9+' : (item as any).badge}
+                  </span>
+                )}
+              </div>
               {sidebarOpen && <span>{item.name}</span>}
             </Link>
           ))}

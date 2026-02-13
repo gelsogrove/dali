@@ -64,7 +64,10 @@ export default function SearchPage() {
         setProperties([]);
       } else {
         const list = response?.data?.properties || [];
-        setProperties(list);
+        const filtered = filters.type
+          ? list
+          : list.filter((property) => !['hot_deal', 'off_market'].includes(property.property_type));
+        setProperties(filtered);
         setShowResults(true);
       }
     } catch (err) {
@@ -136,6 +139,7 @@ export default function SearchPage() {
                   <option value="">All Types</option>
                   <option value="active">Active Property</option>
                   <option value="development">New Development</option>
+                  <option value="land">Land</option>
                 </select>
 
                 <select

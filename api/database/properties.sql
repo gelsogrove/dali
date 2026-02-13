@@ -8,6 +8,7 @@
 
 -- Drop tables if exist (per re-run puliti)
 DROP TABLE IF EXISTS property_landing_pages;
+DROP TABLE IF EXISTS property_attachments;
 DROP TABLE IF EXISTS property_photos;
 DROP TABLE IF EXISTS properties;
 
@@ -24,7 +25,7 @@ CREATE TABLE properties (
     -- Basic Info
     title VARCHAR(255) NOT NULL,
     subtitle VARCHAR(255) DEFAULT NULL,
-    property_type ENUM('active', 'development') NOT NULL DEFAULT 'active' COMMENT 'Active Property | New Development',
+    property_type ENUM('active', 'development', 'hot_deal', 'off_market', 'land') NOT NULL DEFAULT 'active' COMMENT 'Active Property | New Development | Hot Deal | Off Market | Land',
     status ENUM('for_sale', 'sold', 'reserved') NOT NULL DEFAULT 'for_sale',
     property_category ENUM('apartment', 'house', 'villa', 'condo', 'penthouse', 'land', 'commercial') NOT NULL,
     
@@ -136,6 +137,24 @@ CREATE TABLE property_landing_pages (
     INDEX idx_landing_slug (landing_page_slug),
     UNIQUE KEY unique_property_landing (property_id, landing_page_slug) COMMENT 'Prevent duplicate associations'
     
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- TABLE: property_attachments
+-- ============================================
+CREATE TABLE property_attachments (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    property_id INT UNSIGNED NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    url TEXT NOT NULL,
+    mime_type VARCHAR(120) DEFAULT NULL,
+    size_bytes INT UNSIGNED DEFAULT NULL,
+    display_order INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+    INDEX idx_property (property_id),
+    INDEX idx_display_order (display_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================

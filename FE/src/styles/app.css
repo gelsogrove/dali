@@ -5333,7 +5333,7 @@ html::-webkit-scrollbar {
 
 .image-overlay-content h3 {
   font-family: var(--font-family-default);
-  font-size: 28px;
+  font-size: 22px;
   text-transform: uppercase;
   color: #ffffff;
   font-weight: 400;
@@ -5342,13 +5342,14 @@ html::-webkit-scrollbar {
 }
 
 .image-overlay-content h4 {
-  font-family: var(--font-family-default);
-  font-size: 18px;
-  text-transform: uppercase;
+  font-family: var(--font-family-title);
+  font-size: 20px;
+  text-transform: none;
   color: #ffffff;
-  font-weight: 400;
+  font-weight: var(--font-weight-medium);
   margin: 0;
   line-height: 1.4;
+  letter-spacing: 0.5px;
 }
 
 .image-overlay-content h5 {

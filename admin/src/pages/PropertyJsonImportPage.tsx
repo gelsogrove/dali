@@ -202,7 +202,7 @@ export default function PropertyJsonImportPage() {
             <CardContent className="text-sm space-y-2">
               <ul className="list-disc list-inside space-y-1">
                 <li>title (string)</li>
-                <li>property_type (active/development)</li>
+                <li>property_type (active/development/hot_deal/off_market/land)</li>
                 <li>property_categories (array)</li>
                 <li>city (string)</li>
                 <li>latitude (number)</li>

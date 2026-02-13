@@ -1,30 +1,36 @@
 import { useState, useEffect } from 'react';
 import ButtonDali from './ButtonDali';
 
-export default function PasswordGate({ children }) {
+export default function PasswordGate({
+  children,
+  requiredPassword = 'Admin@123',
+  storageKey = 'site_auth',
+  title = 'Site Access',
+  message = 'This site is temporarily protected. Please enter the password to continue.'
+}) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
   const [error, setError] = useState('');
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     // Check if already authenticated
-    const auth = localStorage.getItem('site_auth');
+    const auth = localStorage.getItem(storageKey);
     if (auth === 'true') {
       setIsAuthenticated(true);
     }
     setIsChecking(false);
-  }, []);
+  }, [storageKey]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (password === 'Admin@123') {
-      localStorage.setItem('site_auth', 'true');
+    if (passwordInput === requiredPassword) {
+      localStorage.setItem(storageKey, 'true');
       setIsAuthenticated(true);
       setError('');
     } else {
       setError('Password incorrect');
-      setPassword('');
+      setPasswordInput('');
     }
   };
 
@@ -58,7 +64,7 @@ export default function PasswordGate({ children }) {
             textAlign: 'center',
             marginBottom: '20px'
           }}>
-            Site Access
+            {title}
           </h2>
           <p style={{
             fontFamily: 'Glacial Indifference, sans-serif',
@@ -67,13 +73,13 @@ export default function PasswordGate({ children }) {
             textAlign: 'center',
             marginBottom: '30px'
           }}>
-            This site is temporarily protected. Please enter the password to continue.
+            {message}
           </p>
           <form onSubmit={handleSubmit}>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
               placeholder="Enter password"
               autoFocus
               style={{

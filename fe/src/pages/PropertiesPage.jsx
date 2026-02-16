@@ -36,13 +36,10 @@ export default function PropertiesPage() {
               New Developments
             </ButtonDali>
             <ButtonDali href="/hot-deals">
-              Hot Deals (Oportunidades)
-            </ButtonDali>
-            <ButtonDali href="/off-market">
-              Off Market
+              Hot Deals
             </ButtonDali>
             <ButtonDali href="/land">
-              Land (Tierra)
+              Land
             </ButtonDali>
           </div>
         </div>

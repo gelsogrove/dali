@@ -3,12 +3,14 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/jwt.php';
 
-class AuthController {
+class AuthController
+{
     private $db;
     private $conn;
     private $jwt;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
         $this->jwt = new JWTHandler();
@@ -20,7 +22,8 @@ class AuthController {
      * @param string $password User password
      * @return array Response with token or error
      */
-    public function login($email, $password) {
+    public function login($email, $password)
+    {
         try {
             // Validate input
             if (empty($email) || empty($password)) {
@@ -31,7 +34,7 @@ class AuthController {
             // Get user from database
             $query = "SELECT id, email, password_hash, first_name, last_name, role, is_active 
                      FROM admin_users WHERE email = ? LIMIT 1";
-            
+
             $result = $this->db->executePrepared($query, [$email], 's');
 
             if (!$result || $result->num_rows === 0) {
@@ -93,10 +96,11 @@ class AuthController {
      * @param string $token JWT token
      * @return array Response
      */
-    public function logout($token) {
+    public function logout($token)
+    {
         try {
             $payload = $this->jwt->verifyToken($token);
-            
+
             if (!$payload) {
                 return $this->errorResponse('Invalid token', 401);
             }
@@ -118,9 +122,10 @@ class AuthController {
      * @param string $token JWT token
      * @return array Response with user data or error
      */
-    public function verifyToken($token) {
+    public function verifyToken($token)
+    {
         $payload = $this->jwt->verifyToken($token);
-        
+
         if (!$payload) {
             return $this->errorResponse('Invalid or expired token', 401);
         }
@@ -145,17 +150,18 @@ class AuthController {
      * @param string $token JWT token
      * @param string $refreshToken Refresh token
      */
-    private function storeSession($userId, $token, $refreshToken) {
+    private function storeSession($userId, $token, $refreshToken)
+    {
         $expiresAt = date('Y-m-d H:i:s', time() + $this->jwt->getTokenExpiry());
         $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
         $query = "INSERT INTO sessions (user_id, token, refresh_token, ip_address, user_agent, expires_at) 
                  VALUES (?, ?, ?, ?, ?, ?)";
-        
+
         // Store variables to pass by reference
         $params = [$userId, $token, $refreshToken, $ipAddress, $userAgent, $expiresAt];
-        
+
         $this->db->executePrepared($query, $params, 'isssss');
     }
 
@@ -163,7 +169,8 @@ class AuthController {
      * Update last login timestamp
      * @param int $userId User ID
      */
-    private function updateLastLogin($userId) {
+    private function updateLastLogin($userId)
+    {
         $query = "UPDATE admin_users SET last_login = NOW() WHERE id = ?";
         $this->db->executePrepared($query, [$userId], 'i');
     }
@@ -176,16 +183,53 @@ class AuthController {
      * @param int $entityId Entity ID
      * @param string $description Description
      */
-    private function logActivity($userId, $action, $entityType, $entityId, $description) {
+    private function logActivity($userId, $action, $entityType, $entityId, $description)
+    {
         $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
-        
+
         $query = "INSERT INTO activity_log (user_id, action, entity_type, entity_id, description, ip_address) 
                  VALUES (?, ?, ?, ?, ?, ?)";
-        
-        $this->db->executePrepared($query, 
+
+        $this->db->executePrepared(
+            $query,
             [$userId, $action, $entityType, $entityId, $description, $ipAddress],
             'ississ'
         );
+    }
+
+    /**
+     * Cleanup old activity logs
+     * @param int $days Number of days to keep logs
+     * @param int $keepMin Minimum number of recent logs to always keep
+     * @return int Number of deleted rows
+     */
+    public function cleanupActivityLog($days = 30, $keepMin = 1000)
+    {
+        try {
+            // 1. Get the ID of the N-th most recent log to ensure we keep at least $keepMin logs
+            $minId = 0;
+            $res = $this->conn->query("SELECT id FROM activity_log ORDER BY created_at DESC LIMIT 1 OFFSET " . ($keepMin - 1));
+            if ($res && $res->num_rows > 0) {
+                $row = $res->fetch_row();
+                $minId = (int) $row[0];
+            }
+
+            // 2. Delete logs older than $days, but only if they are older than $minId
+            // This ensures we keep at least $keepMin records even if they are old
+            $query = "DELETE FROM activity_log 
+                     WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)";
+
+            if ($minId > 0) {
+                $query .= " AND id < ?";
+                return $this->db->executePrepared($query, [$days, $minId], 'ii');
+            } else {
+                return $this->db->executePrepared($query, [$days], 'i');
+            }
+
+        } catch (Exception $e) {
+            error_log("Activity log cleanup error: " . $e->getMessage());
+            return 0;
+        }
     }
 
     /**
@@ -193,7 +237,8 @@ class AuthController {
      * @param mixed $data Response data
      * @return array
      */
-    private function successResponse($data) {
+    private function successResponse($data)
+    {
         return [
             'success' => true,
             'data' => $data
@@ -206,7 +251,8 @@ class AuthController {
      * @param int $code HTTP status code
      * @return array
      */
-    private function errorResponse($message, $code = 400) {
+    private function errorResponse($message, $code = 400)
+    {
         http_response_code($code);
         return [
             'success' => false,

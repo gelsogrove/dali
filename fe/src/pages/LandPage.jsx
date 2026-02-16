@@ -7,10 +7,10 @@ export default function LandPage() {
   return (
     <>
       <SEO
-        title="Land (Tierra) for Sale in Riviera Maya"
+        title="Land for Sale in Riviera Maya"
         description="Browse land for sale in Riviera Maya. Discover lots and parcels in Tulum, Playa del Carmen, and beyond."
         keywords="land for sale Riviera Maya, lots Tulum, tierra Playa del Carmen, investment land Mexico"
-        ogTitle="Land (Tierra) - Buy With Dali"
+        ogTitle="Land - Buy With Dali"
         ogDescription="Explore land opportunities in Mexico's Riviera Maya."
         canonicalUrl="https://buywithdali.com/land"
         breadcrumbs={[

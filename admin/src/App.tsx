@@ -15,7 +15,6 @@ import PhotoGalleryFormPage from './pages/PhotoGalleryFormPage'
 import VideosPage from './pages/VideosPage'
 import VideoFormPage from './pages/VideoFormPage'
 // import CommunitiesPage from './pages/CommunitiesPage' // Not yet implemented
-import LinkGenerationPage from './pages/LinkGenerationPage'
 import TestimonialsPage from './pages/TestimonialsPage'
 import TestimonialFormPage from './pages/TestimonialFormPage'
 import RedirectsPage from './pages/RedirectsPage'
@@ -28,6 +27,8 @@ import AreaFormPage from './pages/AreaFormPage'
 import BuyersGuideAdminPage from './pages/BuyersGuideAdminPage'
 import AccessRequestsPage from './pages/AccessRequestsPage'
 import OffMarketInvitesPage from './pages/OffMarketInvitesPage'
+import TodoPage from './pages/TodoPage'
+import BackupsPage from './pages/BackupsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
@@ -105,7 +106,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      
+
       <Route
         path="/"
         element={
@@ -142,9 +143,10 @@ function App() {
         <Route path="areas/new" element={<AreaFormPage />} />
         <Route path="areas/:id/edit" element={<AreaFormPage />} />
         <Route path="buyers-guide" element={<BuyersGuideAdminPage />} />
-        <Route path="link-generation" element={<LinkGenerationPage />} />
         <Route path="access-requests" element={<AccessRequestsPage />} />
         <Route path="off-market-invites" element={<OffMarketInvitesPage />} />
+        <Route path="todo" element={<TodoPage />} />
+        <Route path="backups" element={<BackupsPage />} />
         <Route path="seo-rules" element={<SeoRulesPage />} />
       </Route>
     </Routes>

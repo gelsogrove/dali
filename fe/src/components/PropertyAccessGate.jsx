@@ -19,6 +19,14 @@ export default function PropertyAccessGate({
   attachmentIcon,
   formatBytes,
 }) {
+  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const fileUrl = (url) => {
+    if (!url) return '#';
+    if (url.startsWith('http')) return url;
+    // ensure we drop trailing /api if present in VITE_API_URL
+    const base = API_BASE.replace(/\/api\/?$/, '');
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
   const storageKey = 'hot_deal_access';
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showCodeInput, setShowCodeInput] = useState(false);
@@ -92,16 +100,18 @@ export default function PropertyAccessGate({
 
     setIsSubmitting(true);
     try {
-      await api.post('/access-requests', {
+      const res = await api.post('/access-requests', {
         ...formData,
         property_id: property.id,
       });
-      setShowRequestForm(false);
-      setShowThankYou(true);
+      if (res?.success) {
+        setShowRequestForm(false);
+        setShowThankYou(true);
+      } else {
+        setCodeError(res?.error || 'Request failed, please try again.');
+      }
     } catch (err) {
-      // Still show thank you even on error to avoid confusion
-      setShowRequestForm(false);
-      setShowThankYou(true);
+      setCodeError('Request failed, please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -134,7 +144,7 @@ export default function PropertyAccessGate({
             <li key={file.id} className="attachment-item">
               <span className="attachment-icon" aria-hidden="true">{attachmentIcon(file.filename, file.mime_type)}</span>
               <div className="attachment-meta">
-                <a href={file.url} target="_blank" rel="noopener noreferrer">
+                <a href={fileUrl(file.url)} target="_blank" rel="noopener noreferrer">
                   {file.title || file.filename}
                 </a>
                 <span className="attachment-info">

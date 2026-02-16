@@ -13,20 +13,21 @@
     "docker:rebuild": "docker-compose down && docker-compose build --no-cache && docker-compose up -d && echo '⏳ Waiting for services...' && sleep 10",
     "docker:restart": "docker-compose restart",
     "docker:logs": "docker-compose logs -f",
-    "build": "bash scripts/build-production.sh",
-    "build:fe": "cd fe && npm run build",
-    "build:admin": "cd admin && npm run build",
-    "deploy": "bash scripts/prepare-deploy.sh",
+    "build": "bash scripts/prepare-deploy.sh",
+    "publish": "node scripts/upload-ftp.js",
     "seed": "docker exec -it dalila-backend php /var/www/html/database/migrate.php",
     "db:init": "docker exec -it dalila-mysql mysql -udalila_user -p${MYSQL_PASSWORD} dalila_db < BE/database/init.sql",
     "db:reset": "npm run docker:restart && sleep 5 && npm run db:init",
     "logs:backend": "docker-compose logs -f backend",
     "logs:mysql": "docker-compose logs -f mysql",
     "logs:admin": "docker-compose logs -f admin",
-    "deploy:prepare": "npm run build && echo '\n✅ Build completato! Carica questi file su FTP:\n\n  fe/dist/ → new-site/fe/\n  admin/dist/ → new-site/admin/\n  api/ → new-site/api/\n  .env.example → new-site/.env (configuralo sul server!)\n'"
+    "deploy:prepare": "npm run build && echo '\n✅ Build completato! Carica questi file su FTP:\n\n  fe/dist/ → new-site/fe/\n  admin/dist/ → new-site/admin/\n  api/ → new-site/api/\n  .env.example → new-site/.env (configuralo sul server!)\n'",
+    "backup": "node scripts/backup-remote.js"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "dotenv": "^17.3.1",
+    "ftp-deploy": "^2.4.7"
   },
   "engines": {
     "node": ">=18.0.0",

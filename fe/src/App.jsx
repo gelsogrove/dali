@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import AOS from 'aos';
-import PasswordGate from './components/PasswordGate';
 import RedirectChecker from './components/RedirectChecker';
 import Header from './components/Header';
 import SideMenu from './components/SideMenu';
@@ -28,6 +27,7 @@ import CityPage from './pages/CityPage';
 import AreaPage from './pages/AreaPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ListingDetailPage from './pages/ListingDetailPage';
+import OffMarketPage from './pages/OffMarketPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Redirect component for old /properties/:slug URLs
@@ -69,16 +69,8 @@ function AppLayout() {
             <Route path="/properties" element={<PropertiesPage />} />
             <Route path="/active-properties" element={<ActivePropertiesPage />} />
             <Route path="/new-developments" element={<NewDevelopmentsPage />} />
-            <Route path="/hot-deals" element={
-              <PasswordGate
-                storageKey="private_sections_auth"
-                title="Private Listings"
-                message="These listings are private. Please enter the password to continue."
-              >
-                <HotDealsPage />
-              </PasswordGate>
-            } />
-            <Route path="/off-market" element={<Navigate to="/contact-us" replace />} />
+            <Route path="/hot-deals" element={<HotDealsPage />} />
+            <Route path="/off-market" element={<OffMarketPage />} />
             <Route path="/land" element={<LandPage />} />
             <Route path="/communities" element={<CommunitiesPage />} />
             <Route path="/list-with-dali" element={<ListWithDaliPage />} />

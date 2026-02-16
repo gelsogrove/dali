@@ -218,7 +218,7 @@ export const testimonials = [
   },
   {
     quote:
-      "Finalmente trovato la cosa che cercavo da 2 anni.\n\nGrazie a Dalila ho potuto trovare tantissime appartamenti da visitare e trovare fiducia in tutto il procedimento, spero di poter ripetere nuovamente l'operazione, per il momento il primo passo è fatto , sono un proprietario in messico!!!\n\nOjalá un prossimo depa molto presto!!!\n\nGrazie Dali, mi sento realizzato.\n\nA prestissimo",
+      "Finally found what I was looking for for 2 years.\n\nThanks to Dalila I was able to find many apartments to visit and find confidence in the whole process, I hope to repeat the operation again, for now the first step is done, I am an owner in Mexico!!!\n\nHopefully another depa very soon!!!\n\nThanks Dali, I feel fulfilled.\n\nSee you very soon",
     author: 'Leandro Licata',
   },
   {

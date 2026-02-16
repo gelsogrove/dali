@@ -98,7 +98,7 @@ export default function PhotoGalleryFormPage() {
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('Il file è troppo grande. Massimo 10MB');
+      alert('File is too large. Maximum 10MB');
       return;
     }
 
@@ -246,33 +246,33 @@ export default function PhotoGalleryFormPage() {
 
           {/* Caption */}
           <div className="space-y-2">
-            <Label htmlFor="caption">Didascalia</Label>
+            <Label htmlFor="caption">Caption</Label>
             <Input
               id="caption"
               value={formData.caption}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, caption: e.target.value }))
               }
-              placeholder="Es: Vista del soggiorno"
+              placeholder="e.g.: Living room view"
             />
           </div>
 
           {/* Alt Text */}
           <div className="space-y-2">
-            <Label htmlFor="alt_text">Testo Alternativo</Label>
+            <Label htmlFor="alt_text">Alternative Text</Label>
             <Input
               id="alt_text"
               value={formData.alt_text}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, alt_text: e.target.value }))
               }
-              placeholder="Descrizione per accessibilità e SEO"
+              placeholder="Description for accessibility and SEO"
             />
           </div>
 
           {/* Display Order */}
           <div className="space-y-2">
-            <Label htmlFor="display_order">Ordine di Visualizzazione</Label>
+            <Label htmlFor="display_order">Display Order</Label>
             <Input
               id="display_order"
               type="number"
@@ -286,7 +286,7 @@ export default function PhotoGalleryFormPage() {
               min="0"
             />
             <p className="text-xs text-muted-foreground">
-              Numeri più bassi appaiono per primi
+              Lower numbers appear first
             </p>
           </div>
 
@@ -315,13 +315,13 @@ export default function PhotoGalleryFormPage() {
               className="flex-1"
             >
               {createMutation.isPending || updateMutation.isPending
-                ? 'Salvataggio...'
+                ? 'Saving...'
                 : isEdit
-                ? 'Update Photo'
-                : 'Upload Photo'}
+                  ? 'Update Photo'
+                  : 'Upload Photo'}
             </Button>
             <Button type="button" variant="outline" onClick={handleCancel}>
-              Annulla
+              Cancel
             </Button>
           </div>
         </Card>

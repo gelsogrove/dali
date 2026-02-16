@@ -4,16 +4,12 @@ import './OffMarketGate.css';
 
 /**
  * OffMarketGate - Blocks access to off-market property pages unless user has valid token + code.
- * 
- * Flow:
- * 1. User arrives at /listings/slug?token=ABC
- * 2. Check localStorage for existing valid access
- * 3. If not, show code entry popup
- * 4. Valid code → localStorage saves access for 7 days
- * 5. Expired/no token → "Property not found"
+ * Now supports global session access via 'off_market_session' storage key.
  */
 export default function OffMarketGate({ token, propertyId, slug, children }) {
-  const storageKey = `off_market_${propertyId}`;
+  const globalStorageKey = 'off_market_session';
+  const propertyStorageKey = propertyId ? `off_market_${propertyId}` : null;
+
   const [isVerified, setIsVerified] = useState(false);
   const [isCheckingToken, setIsCheckingToken] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
@@ -25,23 +21,43 @@ export default function OffMarketGate({ token, propertyId, slug, children }) {
 
   // Step 1: Check localStorage for existing access
   useEffect(() => {
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
+    // 1a. Check Global Session first
+    const globalStored = localStorage.getItem(globalStorageKey);
+    if (globalStored) {
       try {
-        const parsed = JSON.parse(stored);
+        const parsed = JSON.parse(globalStored);
         if (parsed.expires_at && new Date(parsed.expires_at).getTime() > Date.now()) {
           setIsVerified(true);
           setIsCheckingToken(false);
           return;
         } else {
-          localStorage.removeItem(storageKey);
+          localStorage.removeItem(globalStorageKey);
         }
       } catch {
-        localStorage.removeItem(storageKey);
+        localStorage.removeItem(globalStorageKey);
       }
     }
 
-    // Step 2: Validate token with backend
+    // 1b. Check Property-specific access if applicable
+    if (propertyStorageKey) {
+      const propertyStored = localStorage.getItem(propertyStorageKey);
+      if (propertyStored) {
+        try {
+          const parsed = JSON.parse(propertyStored);
+          if (parsed.expires_at && new Date(parsed.expires_at).getTime() > Date.now()) {
+            setIsVerified(true);
+            setIsCheckingToken(false);
+            return;
+          } else {
+            localStorage.removeItem(propertyStorageKey);
+          }
+        } catch {
+          localStorage.removeItem(propertyStorageKey);
+        }
+      }
+    }
+
+    // Step 2: Validate token with backend if no existing access and token provided
     if (!token) {
       setIsCheckingToken(false);
       return;
@@ -63,7 +79,7 @@ export default function OffMarketGate({ token, propertyId, slug, children }) {
     };
 
     checkToken();
-  }, [token, storageKey]);
+  }, [token, propertyStorageKey]);
 
   const handleVerifyCode = async (e) => {
     e.preventDefault();
@@ -79,11 +95,22 @@ export default function OffMarketGate({ token, propertyId, slug, children }) {
       });
 
       if (response.success && response.data) {
-        localStorage.setItem(storageKey, JSON.stringify({
+        // ALWAYS grant global session as per requirements
+        localStorage.setItem(globalStorageKey, JSON.stringify({
           token: token,
           expires_at: response.data.expires_at,
           granted_at: new Date().toISOString(),
         }));
+
+        // Also store property-specific access if it was for a specific property
+        if (response.data.property_id) {
+          localStorage.setItem(`off_market_${response.data.property_id}`, JSON.stringify({
+            token: token,
+            expires_at: response.data.expires_at,
+            granted_at: new Date().toISOString(),
+          }));
+        }
+
         setIsVerified(true);
       } else {
         setCodeError(response.error || 'Invalid or expired code');
@@ -109,32 +136,58 @@ export default function OffMarketGate({ token, propertyId, slug, children }) {
     );
   }
 
-  // Verified → show property
+  // Verified → show children
   if (isVerified) {
     return children;
   }
 
-  // No token or invalid token → "not found"
-  if (!token || (!tokenValid && !tokenExpired)) {
-    return null; // Let parent handle notFound state
+  // No EXISTING access (verified or local)
+
+  // CASE 1: No token in URL → Show "Private Access" but no input
+  if (!token) {
+    return (
+      <section className="off-market-gate">
+        <div className="off-market-gate-container">
+          <div className="off-market-gate-card">
+            <div className="gate-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+            <h2>Private Access</h2>
+            <p className="gate-description">
+              This gallery is reserved for Dali Exclusive clients. Access is provided via direct invitation only.
+            </p>
+            <div className="gate-footer" style={{ borderTop: '1px solid #eee', paddingTop: '20px', marginTop: '20px' }}>
+              <p>Requested access? <a href="/contact-us">Contact us</a></p>
+              <a href="/" className="gate-btn gate-btn-primary" style={{ marginTop: '15px', display: 'inline-block' }}>
+                Back to Public Site
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
-  // Token expired
-  if (tokenExpired) {
+  // CASE 2: Token is invalid (and no session)
+  if (!tokenValid && !tokenExpired) {
     return (
       <section className="off-market-gate">
         <div className="off-market-gate-container">
           <div className="off-market-gate-card">
             <div className="gate-icon gate-icon-expired">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
               </svg>
             </div>
-            <h2>Invite Expired</h2>
-            <p>This invite link has expired. Please contact us to request a new one.</p>
-            <a href="/contact-us" className="gate-btn gate-btn-primary">
-              Contact Us
+            <h2>Invalid Invite</h2>
+            <p>The invite link you followed is invalid or has been revoked.</p>
+            <a href="/" className="gate-btn gate-btn-primary" style={{ marginTop: '20px' }}>
+              Back to Home
             </a>
           </div>
         </div>
@@ -142,22 +195,48 @@ export default function OffMarketGate({ token, propertyId, slug, children }) {
     );
   }
 
-  // Valid token → show code input
+  // CASE 3: Token expired
+  if (tokenExpired) {
+    return (
+      <section className="off-market-gate">
+        <div className="off-market-gate-container">
+          <div className="off-market-gate-card">
+            <div className="gate-icon gate-icon-expired">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <h2>Invite Expired</h2>
+            <p>This invite link has expired (72h limit). Please contact your agent for a new one.</p>
+            <a href="/contact-us" className="gate-btn gate-btn-primary">
+              Request New Access
+            </a>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // CASE 4: Valid token → show code input
   return (
     <section className="off-market-gate">
       <div className="off-market-gate-container">
         <div className="off-market-gate-card">
           <div className="gate-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
           </div>
-          <h2>Private Listing</h2>
-          {propertyTitle && (
+          <h2>Private Access</h2>
+          {propertyTitle && propertyTitle !== 'Global Session' && (
             <p className="gate-property-title">{propertyTitle}</p>
           )}
+          {propertyTitle === 'Global Session' && (
+            <p className="gate-property-title">Dali Exclusive Database</p>
+          )}
           <p className="gate-description">
-            Enter your 6-character access code to view this exclusive property.
+            Enter your 6-character access code to unlock this private collection.
           </p>
           <form onSubmit={handleVerifyCode}>
             <div className="gate-code-wrapper">
@@ -182,14 +261,16 @@ export default function OffMarketGate({ token, propertyId, slug, children }) {
               className="gate-btn gate-btn-primary"
               disabled={isVerifying || codeValue.length < 6}
             >
-              {isVerifying ? 'Verifying...' : 'Access Property'}
+              {isVerifying ? 'Verifying...' : 'Unlock Database'}
             </button>
           </form>
           <p className="gate-footer">
-            Don't have a code? <a href="/contact-us">Contact us</a> to request access.
+            Don't have a code? <a href="/contact-us">Contact us</a> for private access.
           </p>
         </div>
       </div>
     </section>
   );
 }
+
+

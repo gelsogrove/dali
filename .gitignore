@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
 vendor/
+deploy/
+build/
+dist/
+fe/dist/
+admin/dist/
 
 # Environment (all env files, keep only examples)
 .env

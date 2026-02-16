@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowDown, ArrowUp, Download, FileText, GripVertical, Trash } from 'lucide-react'
+import { ArrowDown, ArrowUp, Download, GripVertical, Trash, Loader2 } from 'lucide-react'
 import api from '@/lib/api'
 
 type Attachment = {
@@ -24,7 +24,7 @@ interface Props {
   propertyId: number
 }
 
-const MAX_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_SIZE = 20 * 1024 * 1024 // 20MB
 const ACCEPT =
   '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain'
 
@@ -104,7 +104,7 @@ export default function PropertyAttachments({ propertyId }: Props) {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > MAX_SIZE) {
-      alert('File too large. Max 10MB.')
+      alert('File too large. Max 20MB.')
       return
     }
     setUploading(true)
@@ -115,7 +115,7 @@ export default function PropertyAttachments({ propertyId }: Props) {
     const next = [...localItems]
     const target = direction === 'up' ? index - 1 : index + 1
     if (target < 0 || target >= next.length) return
-    ;[next[index], next[target]] = [next[target], next[index]]
+      ;[next[index], next[target]] = [next[target], next[index]]
     setLocalItems(next)
     reorderMutation.mutate(next)
   }
@@ -158,12 +158,17 @@ export default function PropertyAttachments({ propertyId }: Props) {
             <div>
               <h3 className="text-base font-medium">Attachments</h3>
               <p className="text-sm text-muted-foreground">
-                Upload PDFs, Word, Excel, PowerPoint or TXT files (max 10MB). Visible on the property page for download.
+                Upload PDFs, Word, Excel, PowerPoint or TXT files (max 20MB). Visible on the property page for download.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Input type="file" accept={ACCEPT} onChange={handleUpload} disabled={uploading} />
-              {uploading && <span className="text-sm text-blue-600">Uploading...</span>}
+              <Input type="file" accept={ACCEPT} onChange={handleUpload} disabled={uploading} className="w-[300px]" />
+              {uploading && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-md border border-blue-100 animate-pulse">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm font-medium">Uploading...</span>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

@@ -1,5 +1,9 @@
 RewriteEngine On
 
+# Direct access to uploads (with or without /api prefix)
+RewriteRule ^api/uploads/(.*)$ uploads/$1 [L]
+RewriteRule ^uploads/(.*)$ uploads/$1 [L]
+
 # Redirect API requests to index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

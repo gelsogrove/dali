@@ -56,6 +56,11 @@ export default function SideMenu({ open, onClose }) {
                 <i className="ai-font-envelope"></i> {contactInfo.email}
               </a>
             </div>
+            <div className="side-menu-todo" style={{ marginTop: '20px' }}>
+              <a href="https://new.buywithdali.com/admin/todo" target="_blank" rel="noopener noreferrer">
+                <i className="ai-font-check-list"></i> TODO
+              </a>
+            </div>
           </div>
         </div>
       </div>

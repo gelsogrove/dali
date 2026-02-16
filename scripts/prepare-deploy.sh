@@ -28,7 +28,7 @@ fi
 
 # Crea struttura deploy
 echo -e "${GREEN}📁 Creo struttura deploy...${NC}"
-mkdir -p "$DEPLOY_DIR"/{public_html,admin,api/uploads/{properties,videos,galleries,blogs}}
+mkdir -p "$DEPLOY_DIR"/{admin,api/uploads/{properties,videos,galleries,blogs}}
 
 # ============================================
 # BUILD FRONTEND
@@ -52,9 +52,9 @@ if [ ! -d "fe/dist" ]; then
 fi
 
 echo -e "${GREEN}✅ Frontend build completato${NC}"
-cp -r fe/dist/* "$DEPLOY_DIR/public_html/"
-cp fe/public/fonts "$DEPLOY_DIR/public_html/" 2>/dev/null || true
-cp fe/public/images "$DEPLOY_DIR/public_html/" 2>/dev/null || true
+cp -r fe/dist/* "$DEPLOY_DIR/"
+cp fe/public/fonts "$DEPLOY_DIR/" 2>/dev/null || true
+cp fe/public/images "$DEPLOY_DIR/" 2>/dev/null || true
 
 # ============================================
 # BUILD ADMIN
@@ -87,15 +87,21 @@ echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BLUE}   📦 Preparazione API Backend (PHP)${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 
-echo -e "${GREEN}📋 Copio file API...${NC}"
+echo -e "${GREEN}📋 Copio file API e Migrazioni...${NC}"
 cp api/index.php "$DEPLOY_DIR/api/"
 cp -r api/controllers "$DEPLOY_DIR/api/"
 cp -r api/middleware "$DEPLOY_DIR/api/"
 cp -r api/config "$DEPLOY_DIR/api/"
+cp -r api/lib "$DEPLOY_DIR/api/" 2>/dev/null || true
 cp api/.htaccess "$DEPLOY_DIR/api/" 2>/dev/null || true
-cp init.sql "$DEPLOY_DIR/init.sql"
 
-echo -e "${GREEN}✅ File API copiati${NC}"
+# Copia database scripts e migrazioni
+mkdir -p "$DEPLOY_DIR/api/database/migrations"
+cp api/database/*.php "$DEPLOY_DIR/api/database/"
+cp database/*.sql "$DEPLOY_DIR/api/database/migrations/" 2>/dev/null || true
+cp database/init.sql "$DEPLOY_DIR/init.sql" 2>/dev/null || cp api/database/init.sql "$DEPLOY_DIR/init.sql" 2>/dev/null || true
+
+echo -e "${GREEN}✅ File API e Migrazioni copiati${NC}"
 
 # ============================================
 # CREA .htaccess FILES
@@ -104,8 +110,8 @@ echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━�
 echo -e "${BLUE}   ⚙️  Creazione file .htaccess${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 
-# Frontend .htaccess (public_html)
-cat > "$DEPLOY_DIR/public_html/.htaccess" << 'EOF'
+# Frontend .htaccess
+cat > "$DEPLOY_DIR/.htaccess" << 'EOF'
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -211,21 +217,8 @@ fi
 echo -e "${GREEN}✅ File .htaccess creati${NC}"
 
 # ============================================
-# COPIA DATABASE INIT
+# END PREPARATION
 # ============================================
-echo -e "\n${GREEN}📋 Copio file database...${NC}"
-if [ -f "api/database/init.sql" ]; then
-    cp api/database/init.sql "$DEPLOY_DIR/dalila_db_full.sql"
-    echo -e "${GREEN}✅ Database SQL pronto${NC}"
-else
-    echo -e "${YELLOW}⚠️  init.sql non trovato, uso DEPLOYMENT.sql${NC}"
-    if [ -f "DEPLOYMENT.sql" ]; then
-        cp DEPLOYMENT.sql "$DEPLOY_DIR/dalila_db_full.sql"
-        echo -e "${GREEN}✅ Database SQL pronto${NC}"
-    else
-        echo -e "${RED}⚠️  Nessun file SQL trovato${NC}"
-    fi
-fi
 
 # ============================================
 # CREA .env.example
@@ -261,10 +254,9 @@ cat > "$DEPLOY_DIR/README_DEPLOY.md" << 'EOF'
 
 ```
 deploy/
-├── public_html/          # Frontend pubblico (sito React)
-│   ├── index.html
-│   ├── assets/
-│   └── .htaccess
+├── index.html            # Frontend pubblico (sito React)
+├── assets/
+├── .htaccess
 ├── admin/                # Admin panel
 │   ├── index.html
 │   ├── assets/
@@ -291,9 +283,9 @@ deploy/
 ### Carica i file così:
 
 ```
-deploy/public_html/*  →  public_html/          # Radice sito pubblico
-deploy/admin/*        →  public_html/admin/    # Pannello admin
-deploy/api/*          →  public_html/api/      # Backend API
+deploy/* (eccetto admin/ e api/)  →  public_html/          # Radice sito pubblico
+deploy/admin/*                  →  public_html/admin/    # Pannello admin
+deploy/api/*                    →  public_html/api/      # Backend API
 ```
 
 **⚠️ IMPORTANTE:**
@@ -302,15 +294,22 @@ deploy/api/*          →  public_html/api/      # Backend API
 
 ---
 
-## 🗄️ STEP 2: IMPORTA DATABASE
+---
 
-### Via phpMyAdmin (GoDaddy)
+## 🗄️ STEP 2: DATABASE & MIGRATIONS
+
+### Opzione A: Migrazioni Automatiche (Consigliata)
+Invece di lanciare query manuali, usa il nuovo Migration Runner:
+1. Assicurati di aver configurato le credenziali nel punto successivo.
+2. Vai all'URL: `https://tuodominio.com/api/database/apply_migrations.php?token=dalila_secret_2026`
+3. Lo script troverà ed eseguirà automaticamente tutti i file nuovi nella cartella `database/`.
+
+### Opzione B: Via phpMyAdmin (Manuale)
 1. Accedi a cPanel → **phpMyAdmin**
-2. Crea database `dalila_db` (se non esiste)
-3. Seleziona il database
-4. Clicca **Importa**
-5. Scegli `dalila_db_full.sql`
-6. Clicca **Esegui**
+2. Seleziona il database
+3. Clicca **Importa**
+4. Scegli `dalila_db_full.sql` (solo per prima installazione) o carica singoli file da `api/database/migrations/`
+5. Clicca **Esegui**
 
 ### Credenziali Database
 Annota le credenziali fornite da GoDaddy:
@@ -464,7 +463,7 @@ cat > "$DEPLOY_DIR/RIEPILOGO_FILE.txt" << EOF
 
 📦 CONTENUTO PACCHETTO:
 
-✅ public_html/         Frontend pubblico (React build)
+✅ (root files)         Frontend pubblico (React build)
 ✅ admin/               Admin panel (React build)  
 ✅ api/                 Backend PHP API
 ✅ dalila_db_full.sql   Database completo con dati esempio
@@ -474,7 +473,7 @@ cat > "$DEPLOY_DIR/RIEPILOGO_FILE.txt" << EOF
 📋 PROSSIMI STEP:
 
 1. Carica tutto su GoDaddy via FTP:
-   - public_html/*  →  public_html/
+   - File nella root di deploy/ (index.html, assets, .htaccess)  →  public_html/
    - admin/*        →  public_html/admin/
    - api/*          →  public_html/api/
 
@@ -500,24 +499,6 @@ cat > "$DEPLOY_DIR/RIEPILOGO_FILE.txt" << EOF
 EOF
 
 # ============================================
-# CREA ARCHIVIO ZIP (opzionale)
-# ============================================
-echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}   📦 Creazione archivio ZIP${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
-
-if command -v zip &> /dev/null; then
-    ARCHIVE_NAME="dalila-deploy-${TIMESTAMP}.zip"
-    echo -e "${GREEN}📦 Creo archivio $ARCHIVE_NAME...${NC}"
-    cd "$DEPLOY_DIR"
-    zip -r "../$ARCHIVE_NAME" . -x "*.DS_Store" > /dev/null
-    cd ..
-    echo -e "${GREEN}✅ Archivio creato: $ARCHIVE_NAME${NC}"
-else
-    echo -e "${YELLOW}⚠️  zip non trovato, salto creazione archivio${NC}"
-fi
-
-# ============================================
 # RIEPILOGO FINALE
 # ============================================
 echo -e "\n${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -533,12 +514,6 @@ echo -e "   3. Importa database dalila_db_full.sql"
 echo -e "   4. Configura api/config/database.php"
 echo -e "   5. Test finale degli endpoint"
 echo ""
-
-if [ -f "$ARCHIVE_NAME" ]; then
-    echo -e "${GREEN}📦 Archivio ZIP:${NC} ./$ARCHIVE_NAME"
-    echo -e "   ${BLUE}Puoi caricare questo file su GoDaddy e estrarlo${NC}"
-    echo ""
-fi
 
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}   🚀 Pronto per il deploy!${NC}"

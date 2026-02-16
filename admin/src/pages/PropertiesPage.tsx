@@ -132,7 +132,7 @@ function SortablePropertyCard({
             e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="96"%3E%3Crect fill="%23ddd" width="128" height="96"/%3E%3C/svg%3E';
           }}
         />
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
@@ -154,30 +154,30 @@ function SortablePropertyCard({
                 <span className="truncate">{property.city}, {property.country}</span>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Published</span>
-                  <Switch
-                    checked={!!property.is_active}
-                    onCheckedChange={(v) => onToggleActive(property, v)}
-                    className="data-[state=checked]:bg-green-500"
-                    aria-label="Toggle property active"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs ${!property.is_active ? 'text-gray-400' : 'text-muted-foreground'}`}>
-                    Show in Home
-                  </span>
-                  <Switch
-                    checked={!!property.show_in_home}
-                    onCheckedChange={(v) => onToggleHome(property, v)}
-                    disabled={!property.is_active}
-                    className="data-[state=checked]:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label="Toggle show in home"
-                  />
-                </div>
-              
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Published</span>
+                <Switch
+                  checked={!!property.is_active}
+                  onCheckedChange={(v) => onToggleActive(property, v)}
+                  className="data-[state=checked]:bg-green-500"
+                  aria-label="Toggle property active"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${!property.is_active ? 'text-gray-400' : 'text-muted-foreground'}`}>
+                  Show in Home
+                </span>
+                <Switch
+                  checked={!!property.show_in_home}
+                  onCheckedChange={(v) => onToggleHome(property, v)}
+                  disabled={!property.is_active}
+                  className="data-[state=checked]:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Toggle show in home"
+                />
+              </div>
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -185,7 +185,7 @@ function SortablePropertyCard({
                 title="View on site"
               >
                 <a
-                  href={`${SITE_URL}/new/properties/${property.slug}`}
+                  href={`${SITE_URL}/properties/${property.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -223,21 +223,21 @@ export default function PropertiesPage() {
     category: 'all',
     furnishing: 'all',
   }
-  
-  // Stati di ricerca - cambiano solo quando clicchi Search
+
+  // Search states - only change when Search is clicked
   const [searchTerm, setSearchTerm] = useState(defaultFilters.search)
   const [statusFilter, setStatusFilter] = useState<string>(defaultFilters.status)
   const [typeFilter, setTypeFilter] = useState<string>(defaultFilters.type)
   const [categoryFilter, setCategoryFilter] = useState<string>(defaultFilters.category)
   const [furnishingFilter, setFurnishingFilter] = useState<string>(defaultFilters.furnishing)
-  
-  // Input temporanei - salvano i valori prima di Search
+
+  // Temporary inputs - store values before Search
   const [tempSearch, setTempSearch] = useState(defaultFilters.search)
   const [tempStatus, setTempStatus] = useState<string>(defaultFilters.status)
   const [tempType, setTempType] = useState<string>(defaultFilters.type)
   const [tempCategory, setTempCategory] = useState<string>(defaultFilters.category)
   const [tempFurnishing, setTempFurnishing] = useState<string>(defaultFilters.furnishing)
-  
+
   const [list, setList] = useState<Property[]>([])
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [readyAfterDelay, setReadyAfterDelay] = useState(false)
@@ -277,7 +277,7 @@ export default function PropertiesPage() {
   }
 
   const API_BASE = import.meta.env.VITE_API_URL || '/api'
-  const SITE_URL = 'https://buywithdali.com'
+  const SITE_URL = 'https://new.buywithdali.com'
   const assetBase = useMemo(() => API_BASE.replace(/\/api$/, ''), [API_BASE])
   const toAbsoluteUrl = (url?: string) => {
     if (!url) return ''
@@ -371,12 +371,12 @@ export default function PropertiesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const toggleActive = async (property: Property, value: boolean) => {
-    // Se si disattiva la pubblicazione, disattivare anche show_in_home
+    // If unpublishing, also deactivate show_in_home
     const updates: any = { is_active: value };
     if (!value && property.show_in_home) {
       updates.show_in_home = 0;
     }
-    
+
     // Optimistic update
     setList((prev) =>
       prev.map((p) => (p.id === property.id ? { ...p, is_active: value, ...(updates.show_in_home !== undefined ? { show_in_home: false } : {}) } : p))
@@ -401,13 +401,13 @@ export default function PropertiesPage() {
   }
 
   const toggleHome = async (property: Property, value: boolean) => {
-    // Non permettere di attivare show_in_home se la proprietà non è pubblicata
+    // Do not allow activating show_in_home if the property is not published
     if (value && !property.is_active) {
       setErrorMessage('Cannot show in home: property must be published first');
       setTimeout(() => setErrorMessage(null), 3000);
       return;
     }
-    
+
     // Optimistic update
     setList((prev) =>
       prev.map((p) => (p.id === property.id ? { ...p, show_in_home: value } : p))
@@ -531,7 +531,7 @@ export default function PropertiesPage() {
               onKeyDown={handleSearchKeyDown}
               className="flex-1 min-w-[280px]"
             />
-            
+
             {/* Filters */}
             <Select value={tempStatus} onValueChange={setTempStatus}>
               <SelectTrigger className="w-[140px]">
@@ -544,7 +544,7 @@ export default function PropertiesPage() {
                 <SelectItem value="reserved">Reserved</SelectItem>
               </SelectContent>
             </Select>
-            
+
             <Select value={tempType} onValueChange={setTempType}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Type" />
@@ -558,7 +558,7 @@ export default function PropertiesPage() {
                 <SelectItem value="land">Land</SelectItem>
               </SelectContent>
             </Select>
-            
+
             <Select value={tempCategory} onValueChange={setTempCategory}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Category" />
@@ -573,7 +573,7 @@ export default function PropertiesPage() {
                 <SelectItem value="commercial">Commercial</SelectItem>
               </SelectContent>
             </Select>
-            
+
             <Select value={tempFurnishing} onValueChange={setTempFurnishing}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Furnishing" />
@@ -585,7 +585,7 @@ export default function PropertiesPage() {
                 <SelectItem value="unfurnished">Unfurnished</SelectItem>
               </SelectContent>
             </Select>
-            
+
             {/* Action Buttons */}
             <div className="flex items-center gap-2 ml-auto">
               <Button onClick={applyFilters} size="sm">

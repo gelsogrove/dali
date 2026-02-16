@@ -3,15 +3,17 @@
 $__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
 require_once $__baseDir . '/../config/database.php';
 
-class PropertyPhotoController {
+class PropertyPhotoController
+{
     private $db;
     private $conn;
     private $uploadDir;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
-        $this->uploadDir = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/uploads';
+        $this->uploadDir = dirname(__DIR__) . '/uploads';
     }
 
     /**
@@ -19,16 +21,17 @@ class PropertyPhotoController {
      * @param int $propertyId Property ID
      * @return array
      */
-    public function getByPropertyId($propertyId) {
+    public function getByPropertyId($propertyId)
+    {
         try {
             $query = "SELECT id, property_id, filename, filepath, url, alt_text, is_cover, `order`, 
                       created_at
                       FROM property_photos 
                       WHERE property_id = ? 
                       ORDER BY is_cover DESC, `order` ASC, created_at ASC";
-            
+
             $result = $this->db->executePrepared($query, [$propertyId], 'i');
-            
+
             if ($result === false) {
                 return $this->errorResponse('Failed to fetch property photos');
             }
@@ -36,14 +39,14 @@ class PropertyPhotoController {
             $photos = [];
             while ($row = $result->fetch_assoc()) {
                 $photos[] = [
-                    'id' => (int)$row['id'],
-                    'property_id' => (int)$row['property_id'],
+                    'id' => (int) $row['id'],
+                    'property_id' => (int) $row['property_id'],
                     'filename' => $row['filename'],
                     'filepath' => $row['filepath'],
                     'url' => $row['url'],
                     'alt_text' => $row['alt_text'],
-                    'is_cover' => (bool)$row['is_cover'],
-                    'order' => (int)$row['order'],
+                    'is_cover' => (bool) $row['is_cover'],
+                    'order' => (int) $row['order'],
                     'created_at' => $row['created_at']
                 ];
             }
@@ -60,29 +63,30 @@ class PropertyPhotoController {
      * @param int $id Photo ID
      * @return array
      */
-    public function getById($id) {
+    public function getById($id)
+    {
         try {
             $query = "SELECT id, property_id, filename, filepath, url, alt_text, is_cover, `order`, 
                       created_at
                       FROM property_photos 
                       WHERE id = ?";
-            
+
             $result = $this->db->executePrepared($query, [$id], 'i');
-            
+
             if ($result === false || $result->num_rows === 0) {
                 return $this->errorResponse('Photo not found', 404);
             }
 
             $row = $result->fetch_assoc();
             $photo = [
-                'id' => (int)$row['id'],
-                'property_id' => (int)$row['property_id'],
+                'id' => (int) $row['id'],
+                'property_id' => (int) $row['property_id'],
                 'filename' => $row['filename'],
                 'filepath' => $row['filepath'],
                 'url' => $row['url'],
                 'alt_text' => $row['alt_text'],
-                'is_cover' => (bool)$row['is_cover'],
-                'order' => (int)$row['order'],
+                'is_cover' => (bool) $row['is_cover'],
+                'order' => (int) $row['order'],
                 'created_at' => $row['created_at']
             ];
 
@@ -98,7 +102,8 @@ class PropertyPhotoController {
      * @param array $data Photo data
      * @return array
      */
-    public function create($data) {
+    public function create($data)
+    {
         try {
             // Validate required fields
             $validation = $this->validatePhotoData($data);
@@ -127,7 +132,7 @@ class PropertyPhotoController {
             $orderResult = $this->db->executePrepared($orderQuery, [$data['property_id']], 'i');
             $maxOrder = 0;
             if ($orderResult && $row = $orderResult->fetch_assoc()) {
-                $maxOrder = (int)($row['max_order'] ?? 0);
+                $maxOrder = (int) ($row['max_order'] ?? 0);
             }
             $order = $maxOrder + 1;
 
@@ -135,14 +140,14 @@ class PropertyPhotoController {
             $query = "INSERT INTO property_photos 
                       (property_id, filename, filepath, url, alt_text, is_cover, `order`) 
                       VALUES (?, ?, ?, ?, ?, ?, ?)";
-            
+
             $params = [
                 $data['property_id'],
                 $data['filename'] ?? basename($data['url']),
                 $data['filepath'] ?? $data['url'],
                 $data['url'],
                 $data['alt_text'] ?? '',
-                !empty($data['is_cover']) ? 1 : 0,
+                (!empty($data['is_cover']) || $maxOrder === 0) ? 1 : 0,
                 $order
             ];
 
@@ -169,7 +174,8 @@ class PropertyPhotoController {
      * @param array $data Updated data
      * @return array
      */
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
         try {
             // Check if photo exists
             $checkQuery = "SELECT id, property_id FROM property_photos WHERE id = ?";
@@ -211,7 +217,7 @@ class PropertyPhotoController {
 
             if (isset($data['order'])) {
                 $updateFields[] = "`order` = ?";
-                $params[] = (int)$data['order'];
+                $params[] = (int) $data['order'];
                 $types .= 'i';
             }
 
@@ -243,11 +249,12 @@ class PropertyPhotoController {
      * @param int $id Photo ID
      * @return array
      */
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             // Get photo details before deleting
             $photo = $this->getById($id);
-            
+
             if (!$photo['success']) {
                 return $photo;
             }
@@ -281,7 +288,8 @@ class PropertyPhotoController {
      * @param array $items Array of ['id' => photo_id, 'order' => order]
      * @return array
      */
-    public function reorder($items) {
+    public function reorder($items)
+    {
         try {
             if (!is_array($items) || empty($items)) {
                 return $this->errorResponse('Invalid items array');
@@ -305,8 +313,8 @@ class PropertyPhotoController {
 
                 $query = "UPDATE property_photos SET `order` = ? WHERE id = ?";
                 $result = $this->db->executePrepared(
-                    $query, 
-                    [$item['order'], $item['id']], 
+                    $query,
+                    [$item['order'], $item['id']],
                     'ii'
                 );
 
@@ -330,7 +338,7 @@ class PropertyPhotoController {
                 // Reset all covers for this property
                 $resetQuery = "UPDATE property_photos SET is_cover = 0 WHERE property_id = ?";
                 $this->db->executePrepared($resetQuery, [$propertyId], 'i');
-                
+
                 // Set first photo as cover
                 $coverQuery = "UPDATE property_photos SET is_cover = 1 WHERE id = ?";
                 $this->db->executePrepared($coverQuery, [$firstPhotoId], 'i');
@@ -355,11 +363,12 @@ class PropertyPhotoController {
      * @param int $id Photo ID
      * @return array
      */
-    public function setCover($id) {
+    public function setCover($id)
+    {
         try {
             // Get photo details
             $photo = $this->getById($id);
-            
+
             if (!$photo['success']) {
                 return $photo;
             }
@@ -392,7 +401,8 @@ class PropertyPhotoController {
      * Remove cover status from all photos of a property
      * @param int $propertyId Property ID
      */
-    private function removeCoverStatus($propertyId) {
+    private function removeCoverStatus($propertyId)
+    {
         $query = "UPDATE property_photos SET is_cover = 0 WHERE property_id = ?";
         $this->db->executePrepared($query, [$propertyId], 'i');
     }
@@ -401,7 +411,8 @@ class PropertyPhotoController {
      * Delete physical photo files
      * @param string $imageUrl Image URL
      */
-    private function deletePhotoFiles($imageUrl) {
+    private function deletePhotoFiles($imageUrl)
+    {
         try {
             // Extract path from URL
             $path = parse_url($imageUrl, PHP_URL_PATH);
@@ -416,12 +427,12 @@ class PropertyPhotoController {
             // Delete versions (medium, thumbnail)
             $pathInfo = pathinfo($originalPath);
             $versions = ['medium', 'thumbnail'];
-            
+
             foreach ($versions as $version) {
-                $versionPath = $pathInfo['dirname'] . '/' . 
-                               $pathInfo['filename'] . '_' . $version . '.' . 
-                               $pathInfo['extension'];
-                
+                $versionPath = $pathInfo['dirname'] . '/' .
+                    $pathInfo['filename'] . '_' . $version . '.' .
+                    $pathInfo['extension'];
+
                 if (file_exists($versionPath)) {
                     unlink($versionPath);
                 }
@@ -438,7 +449,8 @@ class PropertyPhotoController {
      * @param array $data Photo data
      * @return array
      */
-    private function validatePhotoData($data) {
+    private function validatePhotoData($data)
+    {
         $errors = [];
 
         if (empty($data['property_id'])) {
@@ -459,7 +471,8 @@ class PropertyPhotoController {
     /**
      * Success response
      */
-    private function successResponse($data, $code = 200) {
+    private function successResponse($data, $code = 200)
+    {
         http_response_code($code);
         return ['success' => true, 'data' => $data];
     }
@@ -467,7 +480,8 @@ class PropertyPhotoController {
     /**
      * Error response
      */
-    private function errorResponse($message, $code = 400) {
+    private function errorResponse($message, $code = 400)
+    {
         http_response_code($code);
         return ['success' => false, 'error' => $message];
     }

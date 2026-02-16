@@ -32,7 +32,16 @@ class AccessRequestController {
         }
 
         // Check property exists
+        // Prefer soft-delete aware query; fall back if column missing
         $stmt = $this->conn->prepare("SELECT id, title FROM properties WHERE id = ? AND deleted_at IS NULL");
+        if (!$stmt) {
+            // Retry without deleted_at (older schemas)
+            $stmt = $this->conn->prepare("SELECT id, title FROM properties WHERE id = ?");
+        }
+        if (!$stmt) {
+            error_log('AccessRequestController::create prepare failed (properties): ' . $this->conn->error);
+            return $this->errorResponse('Database error (properties lookup)', 500);
+        }
         $stmt->bind_param('i', $propertyId);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -51,6 +60,10 @@ class AccessRequestController {
             "INSERT INTO property_access_requests (property_id, first_name, last_name, phone, email, message) 
              VALUES (?, ?, ?, ?, ?, ?)"
         );
+        if (!$stmt) {
+            error_log('AccessRequestController::create prepare failed (insert): ' . $this->conn->error);
+            return $this->errorResponse('Database error (insert)', 500);
+        }
         $stmt->bind_param('isssss', $propertyId, $firstName, $lastName, $phone, $email, $message);
 
         if (!$stmt->execute()) {
@@ -78,20 +91,27 @@ class AccessRequestController {
         $countSql = "SELECT COUNT(*) as total FROM property_access_requests ar 
                      JOIN properties p ON ar.property_id = p.id";
         $countResult = $this->conn->query($countSql);
-        $total = $countResult->fetch_assoc()['total'];
+        if (!$countResult) {
+            error_log('AccessRequestController::getAll count query failed: ' . $this->conn->error);
+            return $this->errorResponse('Database error (count)', 500);
+        }
+        $total = $countResult->fetch_assoc()['total'] ?? 0;
 
-        // Get requests with property info
+        // Get requests with property info (keep columns compatible with older schemas)
         $sql = "SELECT ar.*, 
                        p.title as property_title, 
                        p.slug as property_slug,
-                       p.property_type,
-                       p.cover_image_url as property_image
+                       p.property_type
                 FROM property_access_requests ar
                 JOIN properties p ON ar.property_id = p.id
                 ORDER BY ar.created_at DESC
                 LIMIT ? OFFSET ?";
         
         $stmt = $this->conn->prepare($sql);
+        if (!$stmt) {
+            error_log('AccessRequestController::getAll prepare failed: ' . $this->conn->error);
+            return $this->errorResponse('Database error (list)', 500);
+        }
         $stmt->bind_param('ii', $perPage, $offset);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -124,7 +144,11 @@ class AccessRequestController {
     public function getUnviewedCount() {
         $sql = "SELECT COUNT(*) as count FROM property_access_requests WHERE viewed = 0";
         $result = $this->conn->query($sql);
-        $count = $result->fetch_assoc()['count'];
+        if (!$result) {
+            error_log('AccessRequestController::getUnviewedCount failed: ' . $this->conn->error);
+            return $this->errorResponse('Database error (count)', 500);
+        }
+        $count = $result->fetch_assoc()['count'] ?? 0;
 
         return $this->successResponse(['count' => (int)$count]);
     }

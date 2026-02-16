@@ -446,6 +446,9 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ============================================================================
 
 -- Trigger bidirezionale INSERT
+DROP TRIGGER IF EXISTS properties_price_calculation_bidirectional;
+DROP TRIGGER IF EXISTS properties_price_update_bidirectional;
+
 DELIMITER $$
 
 CREATE TRIGGER properties_price_calculation_bidirectional

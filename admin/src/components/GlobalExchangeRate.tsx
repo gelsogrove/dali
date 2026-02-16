@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, RefreshCw, Save } from 'lucide-react';
+import { Loader2, TrendingUp, RefreshCw } from 'lucide-react';
 
 interface ExchangeRate {
   id?: string;
@@ -38,21 +37,8 @@ export function GlobalExchangeRate({ currencyTo = 'MXN', title }: GlobalExchange
   // Auto-fetch rate from external API
   const fetchExternalRateMutation = useMutation({
     mutationFn: async () => {
-      // Use free exchangerate-api.com
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-      if (!response.ok) throw new Error('Failed to fetch external rates');
-      const data = await response.json();
-      const rate = data.rates[currencyTo];
-      if (!rate) throw new Error(`Rate not found for ${currencyTo}`);
-      
-      // Save to database
-      const saveResponse = await api.post('/exchange-rate', {
-        rate: rate.toString(),
-        date: new Date().toISOString().split('T')[0],
-        currency_from: 'USD',
-        currency_to: currencyTo,
-      });
-      return saveResponse.data;
+      const response = await api.post('/exchange-rate/refresh');
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['exchange-rate-current', currencyTo] });
@@ -102,7 +88,7 @@ export function GlobalExchangeRate({ currencyTo = 'MXN', title }: GlobalExchange
           <div className="text-sm text-muted-foreground">
             1 USD = {rateValue.toFixed(4)} {currencyTo}
           </div>
-          <Button 
+          <Button
             onClick={handleAutoUpdate}
             disabled={fetchExternalRateMutation.isPending}
             className="w-full"

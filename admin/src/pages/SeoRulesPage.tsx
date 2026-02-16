@@ -1,14 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import './SeoRulesPage.css'
-import { 
-  Link2, 
-  Heading2, 
-  FileText, 
-  BookOpen, 
-  RotateCcw, 
-  Image, 
-  Zap, 
-  Share2, 
+import {
+  Link2,
+  Heading2,
+  FileText,
+  BookOpen,
+  RotateCcw,
+  Image,
+  Zap,
+  Share2,
   Layers,
   CheckCircle2
 } from 'lucide-react'
@@ -25,8 +25,8 @@ export default function SeoRulesPage() {
       description: 'Every piece of content must have a clear, readable, and concise URL. It\'s recommended not to exceed 80 characters and to avoid unnecessary elements like numbers, dates, or redundant words. Once published, a URL should never be deleted.',
       example: {
         title: 'Example',
-        good: 'buywithdali.com/luxury-properties-playa-del-carmen',
-        bad: 'buywithdali.com/page-123-luxury-prop-2024-01-22-final',
+        good: 'new.buywithdali.com/luxury-properties-playa-del-carmen',
+        bad: 'new.buywithdali.com/page-123-luxury-prop-2024-01-22-final',
       }
     },
     {
@@ -172,8 +172,8 @@ export default function SeoRulesPage() {
         {rules.map((rule) => {
           const IconComponent = rule.icon
           return (
-            <Card 
-              key={rule.number} 
+            <Card
+              key={rule.number}
               className={`seo-rule-card ${rule.color} border-2 ${rule.borderColor}`}
             >
               <CardHeader className="pb-3">
@@ -187,18 +187,18 @@ export default function SeoRulesPage() {
               </CardHeader>
               <CardContent>
                 <p className="rule-description">{rule.description}</p>
-                
+
                 {/* Example Section */}
                 <div className="rule-example mt-4 pt-4 border-t border-gray-200">
                   <p className="example-label font-semibold text-sm mb-3">{rule.example.title}</p>
-                  
+
                   <div className="example-item mb-3">
                     <p className="example-type text-xs font-bold text-green-700 mb-1">✓ GOOD:</p>
                     <p className="example-text text-sm text-gray-700 bg-green-50 p-2 rounded border-l-2 border-green-500">
                       {rule.example.good}
                     </p>
                   </div>
-                  
+
                   <div className="example-item">
                     <p className="example-type text-xs font-bold text-red-700 mb-1">✗ BAD:</p>
                     <p className="example-text text-sm text-gray-700 bg-red-50 p-2 rounded border-l-2 border-red-500">

@@ -102,7 +102,7 @@ export default function RedirectsPage() {
       setError('')
     },
     onError: (err: any) => {
-      setError(err?.response?.data?.error || 'Errore creazione redirect')
+      setError(err?.response?.data?.error || 'Error creating redirect')
       setNewInvalid({ old: true, neu: true })
     },
   })
@@ -120,7 +120,7 @@ export default function RedirectsPage() {
       })
     },
     onError: (err: any, variables) => {
-      setError(err?.response?.data?.error || 'Errore salvataggio redirect')
+      setError(err?.response?.data?.error || 'Error saving redirect')
       setRowInvalid((prev) => ({
         ...prev,
         [variables.id]: { old: true, neu: true },
@@ -138,7 +138,7 @@ export default function RedirectsPage() {
       const validated = validateRule(newRule.urlOld, newRule.urlNew, rules)
       createMutation.mutate(validated)
     } catch (e: any) {
-      setError(e?.message || 'Validazione fallita')
+      setError(e?.message || 'Validation failed')
       const msg = (e?.message || '').toLowerCase()
       setNewInvalid({
         old: msg.includes('old') || msg.includes('loop') || msg.includes('match'),
@@ -152,7 +152,7 @@ export default function RedirectsPage() {
       const validated = validateRule(rule.urlOld, rule.urlNew, rules, rule.id)
       updateMutation.mutate({ id: rule.id, ...validated })
     } catch (e: any) {
-      setError(e?.message || 'Validazione fallita')
+      setError(e?.message || 'Validation failed')
       const msg = (e?.message || '').toLowerCase()
       setRowInvalid((prev) => ({
         ...prev,
@@ -247,7 +247,7 @@ export default function RedirectsPage() {
 
       <Card>
         <CardHeader>
-   
+
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}

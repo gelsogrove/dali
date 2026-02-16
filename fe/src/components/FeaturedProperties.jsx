@@ -9,8 +9,9 @@ import { formatBedrooms, formatBathrooms, getShortSize } from '../utils/property
 const SECTION_LINKS = [
   { key: 'active', label: 'Active Properties', href: '/active-properties', type: 'active' },
   { key: 'new', label: 'New Developments', href: '/new-developments', type: 'development' },
-  { key: 'hot', label: 'Hot Deals (Oportunidades)', href: '/hot-deals', type: 'hot_deal' },
-  { key: 'land', label: 'Land (Tierra)', href: '/land', type: 'land' },
+  { key: 'hot', label: 'Hot Deals', href: '/hot-deals', type: 'hot_deal' },
+  { key: 'land', label: 'Land', href: '/land', type: 'land' },
+  { key: 'off', label: 'Off-Market', href: '/off-market', type: 'off_market' },
 ];
 
 /**
@@ -23,9 +24,9 @@ const SECTION_LINKS = [
  * - showTitle: boolean - Mostra header "Properties"
  * - disableAnimations: boolean - Disabilita animazioni AOS
  */
-export default function FeaturedProperties({ 
-  activeTab = 'properties', 
-  paginate = false, 
+export default function FeaturedProperties({
+  activeTab = 'properties',
+  paginate = false,
   pageSize = 12,
   showTitle = true,
   disableAnimations = false,
@@ -42,13 +43,13 @@ export default function FeaturedProperties({
     const fetchProperties = async () => {
       try {
         setLoading(true);
-        
+
         // Costruire query params
         const params = new URLSearchParams();
         params.append('is_active', '1');
         params.append('per_page', pageSize.toString());
         params.append('page', page.toString());
-        
+
         const tabConfig = SECTION_LINKS.find((tab) => tab.key === activeTab);
 
         // Filtrare per tipo se specificato
@@ -58,9 +59,9 @@ export default function FeaturedProperties({
           // Homepage: solo show_in_home, ordinati per order
           params.append('show_in_home', '1');
         }
-        
+
         const response = await api.get(`${endpoints.properties}?${params.toString()}`);
-        
+
         if (response.success && response.data) {
           const list = response.data.properties || [];
           const filtered = activeTab === 'properties'
@@ -86,7 +87,7 @@ export default function FeaturedProperties({
 
   const renderSectionLinks = (props = {}) => (
     <div className="fp-links" {...props}>
-      {SECTION_LINKS.map((section) => (
+      {SECTION_LINKS.filter(s => s.key !== 'off').map((section) => (
         <ButtonDali key={section.key} href={section.href} className={isActive(section.key) ? 'active' : ''}>
           {section.label}
         </ButtonDali>
@@ -99,18 +100,18 @@ export default function FeaturedProperties({
     if (property.price_on_demand) {
       return 'Price on Request';
     }
-    
+
     // Se development con range
     if (property.property_type === 'development' && property.price_from_usd && property.price_to_usd) {
       return `USD ${Number(property.price_from_usd).toLocaleString('en-US')} - ${Number(property.price_to_usd).toLocaleString('en-US')}`;
     }
-    
+
     // Prezzo singolo
     const price = property.price_usd;
     if (price) {
       return `USD ${Number(price).toLocaleString('en-US')}`;
     }
-    
+
     return 'Price on Request';
   };
 
@@ -163,8 +164,8 @@ export default function FeaturedProperties({
             return (
               <div className="fp-list" key={property.id}>
                 <a href={link}>
-                  <ImageWithOverlay 
-                    src={coverImage} 
+                  <ImageWithOverlay
+                    src={coverImage}
                     alt={property.title}
                     className="fp-list-item-image"
                     beds={formatBedrooms(property)}

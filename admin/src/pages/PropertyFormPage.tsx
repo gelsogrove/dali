@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import TrixEditor from '@/components/TrixEditor'
 import PropertyGalleryUpload from '@/components/PropertyGalleryUpload'
 import PropertyLandingPages from '@/components/PropertyLandingPages'
@@ -43,7 +43,7 @@ export default function PropertyFormPage() {
     price_usd: '',
     price_mxn: '',
     price_eur: '',
-    exchange_rate: '',  // L'utente deve inserire il rate attuale
+    exchange_rate: '',  // User must enter current rate
     price_on_demand: false,
     price_negotiable: false,
     price_from_usd: '',
@@ -125,7 +125,7 @@ export default function PropertyFormPage() {
         price_usd: property.price_usd?.toString() || '',
         price_mxn: property.price_mxn?.toString() || '',
         price_eur: property.price_eur?.toString() || '',
-        exchange_rate: property.exchange_rate?.toString() || '',  // Caricare dal DB, non default
+        exchange_rate: property.exchange_rate?.toString() || '',  // Load from DB, not default
         price_on_demand: property.price_on_demand || false,
         price_negotiable: property.price_negotiable || false,
         price_from_usd: property.price_from_usd?.toString() || '',
@@ -273,7 +273,7 @@ export default function PropertyFormPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setInvalidField(null)
-    
+
     // Validations for NEW (title, city, property_type)
     if (!id) {
       if (!formData.title.trim()) {
@@ -284,8 +284,25 @@ export default function PropertyFormPage() {
         focusField('city')
         return
       }
+      // Require SEO/OG fields before first save to avoid publishing without meta
+      if (!formData.seo_title.trim()) {
+        focusField('seo_title')
+        return
+      }
+      if (!formData.seo_description.trim()) {
+        focusField('seo_description')
+        return
+      }
+      if (!formData.og_title.trim()) {
+        focusField('og_title')
+        return
+      }
+      if (!formData.og_description.trim()) {
+        focusField('og_description')
+        return
+      }
     }
-    
+
     // Validations for EDIT (all required fields)
     if (id) {
       if (!formData.title.trim()) {
@@ -312,23 +329,8 @@ export default function PropertyFormPage() {
         setActiveTab('info')
         return
       }
-      // Price validation: per developments usare range, per active usare price_usd
-      if (!formData.price_on_demand) {
-        if (isActiveLike) {
-          if (!formData.price_usd || parseFloat(formData.price_usd) <= 0) {
-            focusField('price_usd')
-            return
-          }
-        } else if (isDevelopment) {
-          // Per developments: validare che ci sia almeno un range
-          if ((!formData.price_from_usd || parseFloat(formData.price_from_usd) <= 0) &&
-              (!formData.price_from_mxn || parseFloat(formData.price_from_mxn) <= 0)) {
-            alert('Please enter a price range for the development')
-            focusField('price_from_usd')
-            return
-          }
-        }
-      }
+      // Price validation removed - no longer required
+
       // SEO fields required for EDIT
       if (!formData.seo_title.trim()) {
         focusField('seo_title')
@@ -348,7 +350,7 @@ export default function PropertyFormPage() {
       }
     }
 
-    // Costruire payload pulito in base a property_type
+    // Build clean payload based on property_type
     const payload: any = {
       title: formData.title,
       slug: formData.slug,
@@ -394,6 +396,7 @@ export default function PropertyFormPage() {
       seo_title: formData.seo_title,
       seo_description: formData.seo_description,
       seo_keywords: formData.seo_keywords,
+      og_description: formData.og_description,
     };
 
     // Always send property_categories (unified)
@@ -467,26 +470,28 @@ export default function PropertyFormPage() {
           <SelectContent>
             <SelectItem value="active">Active Property</SelectItem>
             <SelectItem value="development">New Development</SelectItem>
-            <SelectItem value="hot_deal">Hot Deals (Oportunidades)</SelectItem>
-            <SelectItem value="off_market">Off Market</SelectItem>
-            <SelectItem value="land">Land (Tierra)</SelectItem>
+            <SelectItem value="hot_deal">Hot Deals</SelectItem>
+            <SelectItem value="off_market">Off-Market</SelectItem>
+            <SelectItem value="land">Land</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
     </div>
   )
 
   // EDIT: 7 tabs with all fields
   const editForm = (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-8">
+      <TabsList className={`grid w-full ${formData.property_type === 'off_market' ? 'grid-cols-8' : 'grid-cols-9'}`}>
         <TabsTrigger value="info">Basic Info & SEO</TabsTrigger>
-        <TabsTrigger value="price">Pricing</TabsTrigger>
         <TabsTrigger value="location">Location</TabsTrigger>
+        <TabsTrigger value="price">Pricing</TabsTrigger>
         <TabsTrigger value="gallery">Gallery</TabsTrigger>
         <TabsTrigger value="attachments">Attachments</TabsTrigger>
+        <TabsTrigger value="details">Details</TabsTrigger>
         <TabsTrigger value="tags">Tags</TabsTrigger>
-        <TabsTrigger value="landing">Landing</TabsTrigger>
+        {formData.property_type !== 'off_market' && <TabsTrigger value="landing">Landing</TabsTrigger>}
         <TabsTrigger value="notes">Notes</TabsTrigger>
       </TabsList>
 
@@ -495,9 +500,9 @@ export default function PropertyFormPage() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-sm font-medium">Title <span className="text-red-500">*</span></Label>
-            <Input 
-              name="title" 
-              value={formData.title} 
+            <Input
+              name="title"
+              value={formData.title}
               onChange={(e) => {
                 const title = e.target.value;
                 setFormData(prev => ({
@@ -507,8 +512,8 @@ export default function PropertyFormPage() {
                   slug: isEdit ? prev.slug : slugify(title)
                 }));
               }}
-              required 
-              className={!formData.title.trim() ? 'border-red-300' : ''} 
+              required
+              className={!formData.title.trim() ? 'border-red-300' : ''}
             />
             <p className="text-xs text-muted-foreground mt-1">
               📌 <strong>Main heading</strong> displayed at the top of the property page and in listings
@@ -521,9 +526,9 @@ export default function PropertyFormPage() {
               <SelectContent>
                 <SelectItem value="active">Active Property</SelectItem>
                 <SelectItem value="development">New Development</SelectItem>
-                <SelectItem value="hot_deal">Hot Deals (Oportunidades)</SelectItem>
-                <SelectItem value="off_market">Off Market</SelectItem>
-                <SelectItem value="land">Land (Tierra)</SelectItem>
+                <SelectItem value="hot_deal">Hot Deals</SelectItem>
+                <SelectItem value="off_market">Off-Market</SelectItem>
+                <SelectItem value="land">Land</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -533,11 +538,11 @@ export default function PropertyFormPage() {
         {isEdit && (
           <div>
             <Label className="text-sm font-medium">URL Slug <span className="text-red-500">*</span></Label>
-            <Input 
-              name="slug" 
-              value={formData.slug} 
+            <Input
+              name="slug"
+              value={formData.slug}
               onChange={(e) => setFormData(prev => ({ ...prev, slug: slugify(e.target.value) }))}
-              required 
+              required
             />
             <p className="text-xs text-muted-foreground mt-1">
               🔗 URL-friendly version: <strong>/properties/{formData.slug || 'property-url'}</strong>
@@ -649,7 +654,7 @@ export default function PropertyFormPage() {
           <p className="text-sm text-muted-foreground mb-4">
             These fields control how your property appears in Google search results and when shared on social media platforms.
           </p>
-          
+
           {/* Info Box for SEO vs OG */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div className="grid md:grid-cols-2 gap-4">
@@ -667,574 +672,562 @@ export default function PropertyFormPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="space-y-4">
             <div>
               <Label>SEO Title (max 160 chars) <span className="text-red-500">*</span></Label>
-              <Input 
-                name="seo_title" 
-                value={formData.seo_title} 
-                onChange={handleChange} 
+              <Input
+                name="seo_title"
+                value={formData.seo_title}
+                onChange={handleChange}
                 maxLength={160}
                 className={getFieldClass('seo_title')}
               />
               <p className="text-xs text-muted-foreground mt-1">{formData.seo_title.length}/160 characters</p>
             </div>
-            
+
             <div>
               <Label>SEO Description (max 320 chars) <span className="text-red-500">*</span></Label>
-              <Textarea 
-                name="seo_description" 
-                value={formData.seo_description} 
-                onChange={handleChange} 
-                maxLength={320} 
+              <Textarea
+                name="seo_description"
+                value={formData.seo_description}
+                onChange={handleChange}
+                maxLength={320}
                 rows={3}
                 className={getFieldClass('seo_description')}
               />
               <p className="text-xs text-muted-foreground mt-1">{formData.seo_description.length}/320 characters</p>
             </div>
-            
+
             <div>
               <Label>OG Title (Facebook/LinkedIn) <span className="text-red-500">*</span></Label>
-              <Input 
-                name="og_title" 
-                value={formData.og_title} 
-                onChange={handleChange} 
+              <Input
+                name="og_title"
+                value={formData.og_title}
+                onChange={handleChange}
                 maxLength={160}
                 className={getFieldClass('og_title')}
               />
             </div>
-            
+
             <div>
               <Label>OG Description (Facebook/LinkedIn) <span className="text-red-500">*</span></Label>
-              <Textarea 
-                name="og_description" 
-                value={formData.og_description} 
-                onChange={handleChange} 
-                maxLength={320} 
+              <Textarea
+                name="og_description"
+                value={formData.og_description}
+                onChange={handleChange}
+                maxLength={320}
                 rows={3}
                 className={getFieldClass('og_description')}
               />
               <p className="text-xs text-muted-foreground mt-1">{formData.og_description.length}/320 characters</p>
             </div>
+
           </div>
-          
-          {/* Summary Box */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mt-6">
-            <h4 className="font-semibold text-sm mb-3">📋 Quick Reference: Where Each Text Appears</h4>
-            <div className="space-y-2 text-xs">
-              <div className="flex gap-2">
-                <span className="font-semibold min-w-[140px]">Title:</span>
-                <span className="text-muted-foreground">Main heading on property page + listing cards</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="font-semibold min-w-[140px]">Subtitle:</span>
-                <span className="text-muted-foreground">Secondary text below title (optional tagline)</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="font-semibold min-w-[140px]">Description:</span>
-                <span className="text-muted-foreground">Short summary in property cards/previews</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="font-semibold min-w-[140px]">Content:</span>
-                <span className="text-muted-foreground">Full rich-text description in detail page</span>
-              </div>
-              <div className="flex gap-2 pt-2 border-t">
-                <span className="font-semibold min-w-[140px]">Address:</span>
-                <span className="text-muted-foreground">Full street address shown on property page</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="font-semibold min-w-[140px]">Neighborhood:</span>
-                <span className="text-muted-foreground">Area/zone name in property details</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="font-semibold min-w-[140px]">City:</span>
-                <span className="text-muted-foreground">City name in property details + filters</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="font-semibold min-w-[140px]">State:</span>
-                <span className="text-muted-foreground">State/region in property details</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="font-semibold min-w-[140px]">Google Maps URL:</span>
-                <span className="text-muted-foreground">Interactive map embed on property page</span>
-              </div>
-              <div className="flex gap-2 pt-2 border-t">
-                <span className="font-semibold min-w-[140px]">SEO Title/Desc:</span>
-                <span className="text-muted-foreground">SEO for Google indexing and search results</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="font-semibold min-w-[140px]">OG Title/Desc:</span>
-                <span className="text-muted-foreground">Preview card for social media sharing (WhatsApp, Facebook, LinkedIn)</span>
-              </div>
+        </div>
+
+        {/* Summary Box */}
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mt-6">
+          <h4 className="font-semibold text-sm mb-3">📋 Quick Reference: Where Each Text Appears</h4>
+          <div className="space-y-2 text-xs">
+            <div className="flex gap-2">
+              <span className="font-semibold min-w-[140px]">Title:</span>
+              <span className="text-muted-foreground">Main heading on property page + listing cards</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-semibold min-w-[140px]">Subtitle:</span>
+              <span className="text-muted-foreground">Secondary text below title (optional tagline)</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-semibold min-w-[140px]">Description:</span>
+              <span className="text-muted-foreground">Short summary in property cards/previews</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-semibold min-w-[140px]">Content:</span>
+              <span className="text-muted-foreground">Full rich-text description in detail page</span>
+            </div>
+            <div className="flex gap-2 pt-2 border-t">
+              <span className="font-semibold min-w-[140px]">Address:</span>
+              <span className="text-muted-foreground">Full street address shown on property page</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-semibold min-w-[140px]">Neighborhood:</span>
+              <span className="text-muted-foreground">Area/zone name in property details</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-semibold min-w-[140px]">City:</span>
+              <span className="text-muted-foreground">City name in property details + filters</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-semibold min-w-[140px]">State:</span>
+              <span className="text-muted-foreground">State/region in property details</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-semibold min-w-[140px]">Google Maps URL:</span>
+              <span className="text-muted-foreground">Interactive map embed on property page</span>
+            </div>
+            <div className="flex gap-2 pt-2 border-t">
+              <span className="font-semibold min-w-[140px]">SEO Title/Desc:</span>
+              <span className="text-muted-foreground">SEO for Google indexing and search results</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="font-semibold min-w-[140px]">OG Title/Desc:</span>
+              <span className="text-muted-foreground">Preview card for social media sharing (WhatsApp, Facebook, LinkedIn)</span>
             </div>
           </div>
         </div>
       </TabsContent>
 
       {/* TAB 2: Pricing */}
-      <TabsContent value="price" className="space-y-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Switch checked={formData.price_on_demand} onCheckedChange={(c) => handleSwitchChange('price_on_demand', c)} />
-          <Label>Price on Demand</Label>
+      <TabsContent value="price" className="space-y-6">
+        {/* SECTION 1: Price on Demand */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <Switch checked={formData.price_on_demand} onCheckedChange={(c) => handleSwitchChange('price_on_demand', c)} />
+            <Label className="font-medium">Price on Demand</Label>
+          </div>
+          <p className="text-xs text-amber-800 mt-2">Enable this if you prefer to show "Contact for pricing" instead of actual price</p>
         </div>
 
         {!formData.price_on_demand && (
           <>
-            {/* BASE CURRENCY TOGGLE */}
-            <div className="bg-slate-50 border rounded-lg p-4 mb-4">
-              <Label className="text-sm font-medium mb-2 block">Base Currency</Label>
+            {/* SECTION 2: Base Currency */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-sm font-semibold mb-3 text-gray-900">💱 Base Currency</h3>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, price_base_currency: 'USD' }))}
-                  className={`flex-1 py-2 px-4 rounded-md font-medium transition ${
-                    formData.price_base_currency === 'USD'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-md font-medium transition ${formData.price_base_currency === 'USD'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
-                  🇺🇸 USD (Dollars)
+                  🇺🇸 USD
                 </button>
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, price_base_currency: 'MXN' }))}
-                  className={`flex-1 py-2 px-4 rounded-md font-medium transition ${
-                    formData.price_base_currency === 'MXN'
-                      ? 'bg-green-600 text-white'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-md font-medium transition ${formData.price_base_currency === 'MXN'
+                    ? 'bg-green-600 text-white shadow-md'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
-                  🇲🇽 MXN (Pesos)
+                  🇲🇽 MXN
                 </button>
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, price_base_currency: 'EUR' }))}
-                  className={`flex-1 py-2 px-4 rounded-md font-medium transition ${
-                    formData.price_base_currency === 'EUR'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className={`flex-1 py-2 px-4 rounded-md font-medium transition ${formData.price_base_currency === 'EUR'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
                 >
-                  🇪🇺 EUR (Euros)
+                  🇪🇺 EUR
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                {formData.price_base_currency === 'USD' 
-                  ? 'Prices entered in USD will be automatically converted to MXN and EUR'
+              <p className="text-xs text-blue-800 mt-3">
+                {formData.price_base_currency === 'USD'
+                  ? 'Enter price in USD - other currencies auto-calculated'
                   : formData.price_base_currency === 'MXN'
-                  ? 'Prices entered in MXN will be automatically converted to USD and EUR'
-                  : 'Prices entered in EUR will be automatically converted to USD and MXN'}
+                    ? 'Enter price in MXN - other currencies auto-calculated'
+                    : 'Enter price in EUR - other currencies auto-calculated'}
               </p>
             </div>
 
-            {/* EXCHANGE RATE */}
-            <div>
-              <Label className="flex items-center gap-2">
-                Exchange Rate (1 USD = ? MXN)
-                <span className="text-xs font-normal text-muted-foreground bg-blue-50 px-2 py-0.5 rounded">
-                  Global Rate (Auto-loaded)
-                </span>
-              </Label>
-              <Input 
-                type="number" 
-                step="0.01" 
-                name="exchange_rate" 
-                value={formData.exchange_rate} 
-                onChange={(e) => {
-                  const newRate = e.target.value;
-                  setFormData(prev => {
-                    const updated = { ...prev, exchange_rate: newRate };
-                    // Auto-recalculate based on base currency
-                    if (prev.price_base_currency === 'USD' && prev.price_usd) {
-                      updated.price_mxn = (parseFloat(prev.price_usd) * parseFloat(newRate || '0')).toFixed(2);
-                    } else if (prev.price_base_currency === 'MXN' && prev.price_mxn) {
-                      updated.price_usd = (parseFloat(prev.price_mxn) / parseFloat(newRate || '1')).toFixed(2);
-                    }
-                    return updated;
-                  });
-                }}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                This rate is automatically loaded from the global settings. You can adjust it if needed for this specific property.
-              </p>
-            </div>
+            {/* SECTION 3: Main Price */}
+            {!formData.price_negotiable && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold mb-3 text-gray-900">💰 {isDevelopment ? 'Fixed Price (Optional)' : 'Property Price'}</h3>
+                {formData.price_base_currency === 'USD' ? (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">
+                        Price USD
+                      </Label>
+                      <Input
+                        type="number"
+                        name="price_usd"
+                        value={formData.price_usd}
+                        onChange={(e) => {
+                          const usdValue = e.target.value;
+                          const mxnValue = usdValue ? Math.round(parseFloat(usdValue) * usdToMxn).toString() : '';
+                          const eurValue = usdValue ? Math.round(parseFloat(usdValue) * usdToEur).toString() : '';
+                          setFormData(prev => ({ ...prev, price_usd: usdValue, price_mxn: mxnValue, price_eur: eurValue }));
+                        }}
+                        step="0.01"
+                        className={getFieldClass('price_usd')}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">Price MXN (auto)</Label>
+                      <Input
+                        type="text"
+                        value={formData.price_mxn ? `$${parseFloat(formData.price_mxn).toLocaleString('es-MX', { maximumFractionDigits: 0 })}` : ''}
+                        disabled
+                        className="bg-gray-50 text-gray-600"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">Price EUR (auto)</Label>
+                      <Input
+                        type="text"
+                        value={formData.price_eur ? `€${parseFloat(formData.price_eur).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : ''}
+                        disabled
+                        className="bg-gray-50 text-gray-600"
+                      />
+                    </div>
+                  </div>
+                ) : formData.price_base_currency === 'MXN' ? (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">
+                        Price MXN {isActiveLike && <span className="text-red-500">*</span>}
+                        {isDevelopment && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
+                      </Label>
+                      <Input
+                        type="number"
+                        name="price_mxn"
+                        value={formData.price_mxn}
+                        onChange={(e) => {
+                          const mxnValue = e.target.value;
+                          const usdValue = mxnValue ? Math.round(parseFloat(mxnValue) * mxnToUsd).toString() : '';
+                          const eurValue = mxnValue ? Math.round(parseFloat(mxnValue) * mxnToEur).toString() : '';
+                          setFormData(prev => ({ ...prev, price_mxn: mxnValue, price_usd: usdValue, price_eur: eurValue }));
+                        }}
+                        step="0.01"
+                        className={getFieldClass('price_mxn')}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">Price USD (auto)</Label>
+                      <Input
+                        type="text"
+                        value={formData.price_usd ? `$${parseFloat(formData.price_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : ''}
+                        disabled
+                        className="bg-gray-50 text-gray-600"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">Price EUR (auto)</Label>
+                      <Input
+                        type="text"
+                        value={formData.price_eur ? `€${parseFloat(formData.price_eur).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : ''}
+                        disabled
+                        className="bg-gray-50 text-gray-600"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">
+                        Price EUR {isActiveLike && <span className="text-red-500">*</span>}
+                        {isDevelopment && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
+                      </Label>
+                      <Input
+                        type="number"
+                        name="price_eur"
+                        value={formData.price_eur}
+                        onChange={(e) => {
+                          const eurValue = e.target.value;
+                          const usdValue = eurValue ? Math.round(parseFloat(eurValue) * eurToUsd).toString() : '';
+                          const mxnValue = eurValue ? Math.round(parseFloat(eurValue) * eurToMxn).toString() : '';
+                          setFormData(prev => ({ ...prev, price_eur: eurValue, price_usd: usdValue, price_mxn: mxnValue }));
+                        }}
+                        step="0.01"
+                        className={getFieldClass('price_eur')}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">Price USD (auto)</Label>
+                      <Input
+                        type="text"
+                        value={formData.price_usd ? `$${parseFloat(formData.price_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : ''}
+                        disabled
+                        className="bg-gray-50 text-gray-600"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-gray-600">Price MXN (auto)</Label>
+                      <Input
+                        type="text"
+                        value={formData.price_mxn ? `$${parseFloat(formData.price_mxn).toLocaleString('es-MX', { maximumFractionDigits: 0 })}` : ''}
+                        disabled
+                        className="bg-gray-50 text-gray-600"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* MAIN PRICE - CONDITIONAL BASED ON BASE CURRENCY */}
-            {/* Per developments, il prezzo singolo è opzionale */}
-            {formData.price_base_currency === 'USD' ? (
-              <div className="grid grid-cols-3 gap-4">
+            {/* SECTION 4: Price Range for Developments */}
+            {isDevelopment && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold mb-3 text-gray-900">📊 Price Range</h3>
+                <p className="text-xs text-purple-800 mb-3">For developments, specify a price range for units</p>
                 <div>
-                  <Label className="text-sm font-medium">
-                    Price USD {isActiveLike && <span className="text-red-500">*</span>}
-                    {isDevelopment && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
-                  </Label>
-                  <Input 
-                    type="number" 
-                    name="price_usd" 
-                    value={formData.price_usd} 
-                    onChange={(e) => {
-                      const usdValue = e.target.value;
-                      const mxnValue = usdValue ? (parseFloat(usdValue) * usdToMxn).toFixed(2) : '';
-                      const eurValue = usdValue ? (parseFloat(usdValue) * usdToEur).toFixed(2) : '';
-                      setFormData(prev => ({ ...prev, price_usd: usdValue, price_mxn: mxnValue, price_eur: eurValue }));
-                    }}
-                    step="0.01" 
-                    className={getFieldClass('price_usd')} 
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-600">Price MXN (auto)</Label>
-                  <Input 
-                    type="text" 
-                    value={formData.price_mxn ? `$${parseFloat(formData.price_mxn).toLocaleString('es-MX')}` : ''} 
-                    disabled 
-                    className="bg-gray-50 text-gray-600"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-600">Price EUR (auto)</Label>
-                  <Input 
-                    type="text" 
-                    value={formData.price_eur ? `€${parseFloat(formData.price_eur).toLocaleString('it-IT')}` : ''} 
-                    disabled 
-                    className="bg-gray-50 text-gray-600"
-                  />
+                  {formData.price_base_currency === 'USD' ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-xs">From USD</Label>
+                          <Input
+                            type="number"
+                            name="price_from_usd"
+                            value={formData.price_from_usd}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const mxn = val ? Math.round(parseFloat(val) * usdToMxn).toString() : '';
+                              const eur = val ? Math.round(parseFloat(val) * usdToEur).toString() : '';
+                              setFormData(prev => ({ ...prev, price_from_usd: val, price_from_mxn: mxn, price_from_eur: eur }));
+                            }}
+                            step="0.01"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">To USD</Label>
+                          <Input
+                            type="number"
+                            name="price_to_usd"
+                            value={formData.price_to_usd}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const mxn = val ? Math.round(parseFloat(val) * usdToMxn).toString() : '';
+                              const eur = val ? Math.round(parseFloat(val) * usdToEur).toString() : '';
+                              setFormData(prev => ({ ...prev, price_to_usd: val, price_to_mxn: mxn, price_to_eur: eur }));
+                            }}
+                            step="0.01"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                        <div>MXN: {formData.price_from_mxn ? `$${parseFloat(formData.price_from_mxn).toLocaleString('es-MX', { maximumFractionDigits: 0 })}` : '-'}</div>
+                        <div>MXN: {formData.price_to_mxn ? `$${parseFloat(formData.price_to_mxn).toLocaleString('es-MX', { maximumFractionDigits: 0 })}` : '-'}</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                        <div>EUR: {formData.price_from_eur ? `€${parseFloat(formData.price_from_eur).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '-'}</div>
+                        <div>EUR: {formData.price_to_eur ? `€${parseFloat(formData.price_to_eur).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '-'}</div>
+                      </div>
+                    </div>
+                  ) : formData.price_base_currency === 'MXN' ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-xs">From MXN</Label>
+                          <Input
+                            type="number"
+                            name="price_from_mxn"
+                            value={formData.price_from_mxn}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const usd = val ? Math.round(parseFloat(val) * mxnToUsd).toString() : '';
+                              const eur = val ? Math.round(parseFloat(val) * mxnToEur).toString() : '';
+                              setFormData(prev => ({ ...prev, price_from_mxn: val, price_from_usd: usd, price_from_eur: eur }));
+                            }}
+                            step="0.01"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">To MXN</Label>
+                          <Input
+                            type="number"
+                            name="price_to_mxn"
+                            value={formData.price_to_mxn}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const usd = val ? Math.round(parseFloat(val) * mxnToUsd).toString() : '';
+                              const eur = val ? Math.round(parseFloat(val) * mxnToEur).toString() : '';
+                              setFormData(prev => ({ ...prev, price_to_mxn: val, price_to_usd: usd, price_to_eur: eur }));
+                            }}
+                            step="0.01"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                        <div>USD: {formData.price_from_usd ? `$${parseFloat(formData.price_from_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '-'}</div>
+                        <div>USD: {formData.price_to_usd ? `$${parseFloat(formData.price_to_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '-'}</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                        <div>EUR: {formData.price_from_eur ? `€${parseFloat(formData.price_from_eur).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '-'}</div>
+                        <div>EUR: {formData.price_to_eur ? `€${parseFloat(formData.price_to_eur).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '-'}</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-xs">From EUR</Label>
+                          <Input
+                            type="number"
+                            name="price_from_eur"
+                            value={formData.price_from_eur}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const usd = val ? Math.round(parseFloat(val) * eurToUsd).toString() : '';
+                              const mxn = val ? Math.round(parseFloat(val) * eurToMxn).toString() : '';
+                              setFormData(prev => ({ ...prev, price_from_eur: val, price_from_usd: usd, price_from_mxn: mxn }));
+                            }}
+                            step="0.01"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">To EUR</Label>
+                          <Input
+                            type="number"
+                            name="price_to_eur"
+                            value={formData.price_to_eur}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const usd = val ? Math.round(parseFloat(val) * eurToUsd).toString() : '';
+                              const mxn = val ? Math.round(parseFloat(val) * eurToMxn).toString() : '';
+                              setFormData(prev => ({ ...prev, price_to_eur: val, price_to_usd: usd, price_to_mxn: mxn }));
+                            }}
+                            step="0.01"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                        <div>USD: {formData.price_from_usd ? `$${parseFloat(formData.price_from_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '-'}</div>
+                        <div>USD: {formData.price_to_usd ? `$${parseFloat(formData.price_to_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '-'}</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                        <div>MXN: {formData.price_from_mxn ? `$${parseFloat(formData.price_from_mxn).toLocaleString('es-MX', { maximumFractionDigits: 0 })}` : '-'}</div>
+                        <div>MXN: {formData.price_to_mxn ? `$${parseFloat(formData.price_to_mxn).toLocaleString('es-MX', { maximumFractionDigits: 0 })}` : '-'}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            ) : formData.price_base_currency === 'MXN' ? (
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">
-                    Price MXN {isActiveLike && <span className="text-red-500">*</span>}
-                    {isDevelopment && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
-                  </Label>
-                  <Input 
-                    type="number" 
-                    name="price_mxn" 
-                    value={formData.price_mxn} 
-                    onChange={(e) => {
-                      const mxnValue = e.target.value;
-                      const usdValue = mxnValue ? (parseFloat(mxnValue) * mxnToUsd).toFixed(2) : '';
-                      const eurValue = mxnValue ? (parseFloat(mxnValue) * mxnToEur).toFixed(2) : '';
-                      setFormData(prev => ({ ...prev, price_mxn: mxnValue, price_usd: usdValue, price_eur: eurValue }));
-                    }}
-                    step="0.01" 
-                    className={getFieldClass('price_mxn')} 
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-600">Price USD (auto)</Label>
-                  <Input 
-                    type="text" 
-                    value={formData.price_usd ? `$${parseFloat(formData.price_usd).toLocaleString('en-US')}` : ''} 
-                    disabled 
-                    className="bg-gray-50 text-gray-600"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-600">Price EUR (auto)</Label>
-                  <Input 
-                    type="text" 
-                    value={formData.price_eur ? `€${parseFloat(formData.price_eur).toLocaleString('it-IT')}` : ''} 
-                    disabled 
-                    className="bg-gray-50 text-gray-600"
-                  />
+            )}
+
+            {/* SECTION 5: Price Negotiable Toggle */}
+            {!isDevelopment && (
+              <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold mb-3 text-gray-900">🤝 Price Negotiable</h3>
+                <div className="flex items-center gap-2">
+                  <Switch checked={formData.price_negotiable} onCheckedChange={(c) => handleSwitchChange('price_negotiable', c)} />
+                  <Label>Allow price negotiation (shows negotiable range below)</Label>
                 </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-4">
+            )}
+
+            {/* SECTION 6: Negotiable Range */}
+            {formData.price_negotiable && !isDevelopment && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                <h3 className="text-sm font-semibold mb-3 text-gray-900">🔄 Negotiable Price Range</h3>
+                <p className="text-xs text-indigo-800 mb-3">Specify the negotiable price range for this property</p>
                 <div>
-                  <Label className="text-sm font-medium">
-                    Price EUR {isActiveLike && <span className="text-red-500">*</span>}
-                    {isDevelopment && <span className="text-gray-400 text-xs ml-1">(optional)</span>}
-                  </Label>
-                  <Input 
-                    type="number" 
-                    name="price_eur" 
-                    value={formData.price_eur} 
-                    onChange={(e) => {
-                      const eurValue = e.target.value;
-                      const usdValue = eurValue ? (parseFloat(eurValue) * eurToUsd).toFixed(2) : '';
-                      const mxnValue = eurValue ? (parseFloat(eurValue) * eurToMxn).toFixed(2) : '';
-                      setFormData(prev => ({ ...prev, price_eur: eurValue, price_usd: usdValue, price_mxn: mxnValue }));
-                    }}
-                    step="0.01" 
-                    className={getFieldClass('price_eur')} 
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-600">Price USD (auto)</Label>
-                  <Input 
-                    type="text" 
-                    value={formData.price_usd ? `$${parseFloat(formData.price_usd).toLocaleString('en-US')}` : ''} 
-                    disabled 
-                    className="bg-gray-50 text-gray-600"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm text-gray-600">Price MXN (auto)</Label>
-                  <Input 
-                    type="text" 
-                    value={formData.price_mxn ? `$${parseFloat(formData.price_mxn).toLocaleString('es-MX')}` : ''} 
-                    disabled 
-                    className="bg-gray-50 text-gray-600"
-                  />
+                  {formData.price_base_currency === 'USD' ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs">From USD</Label>
+                        <Input
+                          type="number"
+                          name="price_from_usd"
+                          value={formData.price_from_usd}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const mxn = val ? Math.round(parseFloat(val) * usdToMxn).toString() : '';
+                            const eur = val ? Math.round(parseFloat(val) * usdToEur).toString() : '';
+                            setFormData(prev => ({ ...prev, price_from_usd: val, price_from_mxn: mxn, price_from_eur: eur }));
+                          }}
+                          step="0.01"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">To USD</Label>
+                        <Input
+                          type="number"
+                          name="price_to_usd"
+                          value={formData.price_to_usd}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const mxn = val ? Math.round(parseFloat(val) * usdToMxn).toString() : '';
+                            const eur = val ? Math.round(parseFloat(val) * usdToEur).toString() : '';
+                            setFormData(prev => ({ ...prev, price_to_usd: val, price_to_mxn: mxn, price_to_eur: eur }));
+                          }}
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  ) : formData.price_base_currency === 'MXN' ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs">From MXN</Label>
+                        <Input
+                          type="number"
+                          name="price_from_mxn"
+                          value={formData.price_from_mxn}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const usd = val ? Math.round(parseFloat(val) * mxnToUsd).toString() : '';
+                            const eur = val ? Math.round(parseFloat(val) * mxnToEur).toString() : '';
+                            setFormData(prev => ({ ...prev, price_from_mxn: val, price_from_usd: usd, price_from_eur: eur }));
+                          }}
+                          step="0.01"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">To MXN</Label>
+                        <Input
+                          type="number"
+                          name="price_to_mxn"
+                          value={formData.price_to_mxn}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const usd = val ? Math.round(parseFloat(val) * mxnToUsd).toString() : '';
+                            const eur = val ? Math.round(parseFloat(val) * mxnToEur).toString() : '';
+                            setFormData(prev => ({ ...prev, price_to_mxn: val, price_to_usd: usd, price_to_eur: eur }));
+                          }}
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs">From EUR</Label>
+                        <Input
+                          type="number"
+                          name="price_from_eur"
+                          value={formData.price_from_eur}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const usd = val ? Math.round(parseFloat(val) * eurToUsd).toString() : '';
+                            const mxn = val ? Math.round(parseFloat(val) * eurToMxn).toString() : '';
+                            setFormData(prev => ({ ...prev, price_from_eur: val, price_from_usd: usd, price_from_mxn: mxn }));
+                          }}
+                          step="0.01"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">To EUR</Label>
+                        <Input
+                          type="number"
+                          name="price_to_eur"
+                          value={formData.price_to_eur}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const usd = val ? Math.round(parseFloat(val) * eurToUsd).toString() : '';
+                            const mxn = val ? Math.round(parseFloat(val) * eurToMxn).toString() : '';
+                            setFormData(prev => ({ ...prev, price_to_eur: val, price_to_usd: usd, price_to_mxn: mxn }));
+                          }}
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </>
         )}
+      </TabsContent>
 
-        {/* PRICE RANGE FOR DEVELOPMENTS */}
-        {isDevelopment && !formData.price_on_demand && (
-          <div>
-            <Label className="text-sm font-medium mb-2">Price Range (for developments)</Label>
-            {formData.price_base_currency === 'USD' ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs">From USD</Label>
-                    <Input 
-                      type="number" 
-                      name="price_from_usd" 
-                      value={formData.price_from_usd} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const mxn = val ? (parseFloat(val) * usdToMxn).toFixed(2) : '';
-                        const eur = val ? (parseFloat(val) * usdToEur).toFixed(2) : '';
-                        setFormData(prev => ({ ...prev, price_from_usd: val, price_from_mxn: mxn, price_from_eur: eur }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">To USD</Label>
-                    <Input 
-                      type="number" 
-                      name="price_to_usd" 
-                      value={formData.price_to_usd} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const mxn = val ? (parseFloat(val) * usdToMxn).toFixed(2) : '';
-                        const eur = val ? (parseFloat(val) * usdToEur).toFixed(2) : '';
-                        setFormData(prev => ({ ...prev, price_to_usd: val, price_to_mxn: mxn, price_to_eur: eur }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                  <div>MXN: {formData.price_from_mxn ? `$${parseFloat(formData.price_from_mxn).toLocaleString('es-MX')}` : '-'}</div>
-                  <div>MXN: {formData.price_to_mxn ? `$${parseFloat(formData.price_to_mxn).toLocaleString('es-MX')}` : '-'}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                  <div>EUR: {formData.price_from_eur ? `€${parseFloat(formData.price_from_eur).toLocaleString('it-IT')}` : '-'}</div>
-                  <div>EUR: {formData.price_to_eur ? `€${parseFloat(formData.price_to_eur).toLocaleString('it-IT')}` : '-'}</div>
-                </div>
-              </div>
-            ) : formData.price_base_currency === 'MXN' ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs">From MXN</Label>
-                    <Input 
-                      type="number" 
-                      name="price_from_mxn" 
-                      value={formData.price_from_mxn} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const usd = val ? (parseFloat(val) * mxnToUsd).toFixed(2) : '';
-                        const eur = val ? (parseFloat(val) * mxnToEur).toFixed(2) : '';
-                        setFormData(prev => ({ ...prev, price_from_mxn: val, price_from_usd: usd, price_from_eur: eur }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">To MXN</Label>
-                    <Input 
-                      type="number" 
-                      name="price_to_mxn" 
-                      value={formData.price_to_mxn} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const usd = val ? (parseFloat(val) * mxnToUsd).toFixed(2) : '';
-                        const eur = val ? (parseFloat(val) * mxnToEur).toFixed(2) : '';
-                        setFormData(prev => ({ ...prev, price_to_mxn: val, price_to_usd: usd, price_to_eur: eur }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                  <div>USD: {formData.price_from_usd ? `$${parseFloat(formData.price_from_usd).toLocaleString('en-US')}` : '-'}</div>
-                  <div>USD: {formData.price_to_usd ? `$${parseFloat(formData.price_to_usd).toLocaleString('en-US')}` : '-'}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                  <div>EUR: {formData.price_from_eur ? `€${parseFloat(formData.price_from_eur).toLocaleString('it-IT')}` : '-'}</div>
-                  <div>EUR: {formData.price_to_eur ? `€${parseFloat(formData.price_to_eur).toLocaleString('it-IT')}` : '-'}</div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs">From EUR</Label>
-                    <Input 
-                      type="number" 
-                      name="price_from_eur" 
-                      value={formData.price_from_eur} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const usd = val ? (parseFloat(val) * eurToUsd).toFixed(2) : '';
-                        const mxn = val ? (parseFloat(val) * eurToMxn).toFixed(2) : '';
-                        setFormData(prev => ({ ...prev, price_from_eur: val, price_from_usd: usd, price_from_mxn: mxn }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">To EUR</Label>
-                    <Input 
-                      type="number" 
-                      name="price_to_eur" 
-                      value={formData.price_to_eur} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const usd = val ? (parseFloat(val) * eurToUsd).toFixed(2) : '';
-                        const mxn = val ? (parseFloat(val) * eurToMxn).toFixed(2) : '';
-                        setFormData(prev => ({ ...prev, price_to_eur: val, price_to_usd: usd, price_to_mxn: mxn }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                  <div>USD: {formData.price_from_usd ? `$${parseFloat(formData.price_from_usd).toLocaleString('en-US')}` : '-'}</div>
-                  <div>USD: {formData.price_to_usd ? `$${parseFloat(formData.price_to_usd).toLocaleString('en-US')}` : '-'}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                  <div>MXN: {formData.price_from_mxn ? `$${parseFloat(formData.price_from_mxn).toLocaleString('es-MX')}` : '-'}</div>
-                  <div>MXN: {formData.price_to_mxn ? `$${parseFloat(formData.price_to_mxn).toLocaleString('es-MX')}` : '-'}</div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {formData.price_negotiable && !isDevelopment && !formData.price_on_demand && (
-          <div>
-            <Label className="text-sm font-medium mb-2">Negotiable Range</Label>
-            {formData.price_base_currency === 'USD' ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs">From USD</Label>
-                  <Input 
-                    type="number" 
-                    name="price_from_usd" 
-                    value={formData.price_from_usd} 
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const mxn = val ? (parseFloat(val) * usdToMxn).toFixed(2) : '';
-                      const eur = val ? (parseFloat(val) * usdToEur).toFixed(2) : '';
-                      setFormData(prev => ({ ...prev, price_from_usd: val, price_from_mxn: mxn, price_from_eur: eur }));
-                    }}
-                    step="0.01" 
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">To USD</Label>
-                  <Input 
-                    type="number" 
-                    name="price_to_usd" 
-                    value={formData.price_to_usd} 
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const mxn = val ? (parseFloat(val) * usdToMxn).toFixed(2) : '';
-                      const eur = val ? (parseFloat(val) * usdToEur).toFixed(2) : '';
-                      setFormData(prev => ({ ...prev, price_to_usd: val, price_to_mxn: mxn, price_to_eur: eur }));
-                    }}
-                    step="0.01" 
-                  />
-                </div>
-              </div>
-            ) : formData.price_base_currency === 'MXN' ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs">From MXN</Label>
-                  <Input 
-                    type="number" 
-                    name="price_from_mxn" 
-                    value={formData.price_from_mxn} 
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const usd = val ? (parseFloat(val) * mxnToUsd).toFixed(2) : '';
-                      const eur = val ? (parseFloat(val) * mxnToEur).toFixed(2) : '';
-                      setFormData(prev => ({ ...prev, price_from_mxn: val, price_from_usd: usd, price_from_eur: eur }));
-                    }}
-                    step="0.01" 
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">To MXN</Label>
-                  <Input 
-                    type="number" 
-                    name="price_to_mxn" 
-                    value={formData.price_to_mxn} 
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const usd = val ? (parseFloat(val) * mxnToUsd).toFixed(2) : '';
-                      const eur = val ? (parseFloat(val) * mxnToEur).toFixed(2) : '';
-                      setFormData(prev => ({ ...prev, price_to_mxn: val, price_to_usd: usd, price_to_eur: eur }));
-                    }}
-                    step="0.01" 
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs">From EUR</Label>
-                  <Input 
-                    type="number" 
-                    name="price_from_eur" 
-                    value={formData.price_from_eur} 
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const usd = val ? (parseFloat(val) * eurToUsd).toFixed(2) : '';
-                      const mxn = val ? (parseFloat(val) * eurToMxn).toFixed(2) : '';
-                      setFormData(prev => ({ ...prev, price_from_eur: val, price_from_usd: usd, price_from_mxn: mxn }));
-                    }}
-                    step="0.01" 
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">To EUR</Label>
-                  <Input 
-                    type="number" 
-                    name="price_to_eur" 
-                    value={formData.price_to_eur} 
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const usd = val ? (parseFloat(val) * eurToUsd).toFixed(2) : '';
-                      const mxn = val ? (parseFloat(val) * eurToMxn).toFixed(2) : '';
-                      setFormData(prev => ({ ...prev, price_to_eur: val, price_to_usd: usd, price_to_mxn: mxn }));
-                    }}
-                    step="0.01" 
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2">
-          <Switch checked={formData.price_negotiable} onCheckedChange={(c) => handleSwitchChange('price_negotiable', c)} />
-          <Label>Price Negotiable</Label>
-        </div>
-
-        {/* BEDROOMS AND BATHROOMS - CONDITIONAL BASED ON PROPERTY TYPE */}
+      {/* TAB 3: Details */}
+      <TabsContent value="details" className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           {isActiveLike ? (
             // ACTIVE-LIKE: Single select for bedrooms
@@ -1288,7 +1281,7 @@ export default function PropertyFormPage() {
               </div>
             </div>
           )}
-          
+
           {isActiveLike ? (
             // ACTIVE-LIKE: Single select for bathrooms
             <div>
@@ -1337,28 +1330,26 @@ export default function PropertyFormPage() {
         {/* SIZE FIELDS WITH UNIT SELECTOR */}
         <div className="bg-slate-50 border rounded-lg p-4">
           <Label className="text-sm font-medium mb-3 block">Property Size</Label>
-          
+
           {/* UNIT SELECTOR */}
           <div className="flex gap-2 mb-4">
             <button
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, size_unit: 'sqm' }))}
-              className={`flex-1 py-2 px-4 rounded-md font-medium transition ${
-                formData.size_unit === 'sqm'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
+              className={`flex-1 py-2 px-4 rounded-md font-medium transition ${formData.size_unit === 'sqm'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
             >
               m² (Square Meters)
             </button>
             <button
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, size_unit: 'sqft' }))}
-              className={`flex-1 py-2 px-4 rounded-md font-medium transition ${
-                formData.size_unit === 'sqft'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
+              className={`flex-1 py-2 px-4 rounded-md font-medium transition ${formData.size_unit === 'sqft'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
             >
               sq ft (Square Feet)
             </button>
@@ -1371,24 +1362,24 @@ export default function PropertyFormPage() {
                 <>
                   <div>
                     <Label className="text-xs">Size (m²)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqm" 
-                      value={formData.sqm} 
+                    <Input
+                      type="number"
+                      name="sqm"
+                      value={formData.sqm}
                       onChange={(e) => {
                         const sqmValue = e.target.value;
-                        const sqftValue = sqmValue ? (parseFloat(sqmValue) * 10.7639).toFixed(2) : '';
+                        const sqftValue = sqmValue ? (parseFloat(sqmValue) * 10.7639).toFixed(0) : '';
                         setFormData(prev => ({ ...prev, sqm: sqmValue, sqft: sqftValue }));
                       }}
-                      step="0.01" 
+                      step="0.01"
                     />
                   </div>
                   <div>
                     <Label className="text-xs text-gray-600">Size (sq ft) - auto</Label>
-                    <Input 
-                      type="text" 
-                      value={formData.sqft ? `${parseFloat(formData.sqft).toFixed(2)} sq ft` : ''} 
-                      disabled 
+                    <Input
+                      type="text"
+                      value={formData.sqft ? `${parseFloat(formData.sqft).toFixed(0)} sq ft` : ''}
+                      disabled
                       className="bg-gray-50 text-gray-600"
                     />
                   </div>
@@ -1397,24 +1388,24 @@ export default function PropertyFormPage() {
                 <>
                   <div>
                     <Label className="text-xs">Size (sq ft)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqft" 
-                      value={formData.sqft} 
+                    <Input
+                      type="number"
+                      name="sqft"
+                      value={formData.sqft}
                       onChange={(e) => {
                         const sqftValue = e.target.value;
                         const sqmValue = sqftValue ? (parseFloat(sqftValue) / 10.7639).toFixed(2) : '';
                         setFormData(prev => ({ ...prev, sqft: sqftValue, sqm: sqmValue }));
                       }}
-                      step="0.01" 
+                      step="0.01"
                     />
                   </div>
                   <div>
                     <Label className="text-xs text-gray-600">Size (m²) - auto</Label>
-                    <Input 
-                      type="text" 
-                      value={formData.sqm ? `${parseFloat(formData.sqm).toFixed(2)} m²` : ''} 
-                      disabled 
+                    <Input
+                      type="text"
+                      value={formData.sqm ? `${parseFloat(formData.sqm).toFixed(2)} m²` : ''}
+                      disabled
                       className="bg-gray-50 text-gray-600"
                     />
                   </div>
@@ -1429,37 +1420,37 @@ export default function PropertyFormPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-xs">From (m²)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqm_min" 
-                      value={formData.sqm_min} 
+                    <Input
+                      type="number"
+                      name="sqm_min"
+                      value={formData.sqm_min}
                       onChange={(e) => {
                         const val = e.target.value;
-                        const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(2) : '';
+                        const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(0) : '';
                         setFormData(prev => ({ ...prev, sqm_min: val, sqft_min: sqftVal }));
                       }}
-                      step="0.01" 
+                      step="0.01"
                     />
                   </div>
                   <div>
                     <Label className="text-xs">To (m²)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqm_max" 
-                      value={formData.sqm_max} 
+                    <Input
+                      type="number"
+                      name="sqm_max"
+                      value={formData.sqm_max}
                       onChange={(e) => {
                         const val = e.target.value;
-                        const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(2) : '';
+                        const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(0) : '';
                         setFormData(prev => ({ ...prev, sqm_max: val, sqft_max: sqftVal }));
                       }}
-                      step="0.01" 
+                      step="0.01"
                     />
                   </div>
                   <div className="col-span-2">
                     <Label className="text-xs text-gray-600">Range in sq ft (auto-calculated)</Label>
                     <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
-                      {formData.sqft_min && formData.sqft_max 
-                        ? `${parseFloat(formData.sqft_min).toFixed(2)} - ${parseFloat(formData.sqft_max).toFixed(2)} sq ft`
+                      {formData.sqft_min && formData.sqft_max
+                        ? `${parseFloat(formData.sqft_min).toFixed(0)} - ${parseFloat(formData.sqft_max).toFixed(0)} sq ft`
                         : 'Enter m² range above'}
                     </div>
                   </div>
@@ -1468,36 +1459,36 @@ export default function PropertyFormPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-xs">From (sq ft)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqft_min" 
-                      value={formData.sqft_min} 
+                    <Input
+                      type="number"
+                      name="sqft_min"
+                      value={formData.sqft_min}
                       onChange={(e) => {
                         const val = e.target.value;
                         const sqmVal = val ? (parseFloat(val) / 10.7639).toFixed(2) : '';
                         setFormData(prev => ({ ...prev, sqft_min: val, sqm_min: sqmVal }));
                       }}
-                      step="0.01" 
+                      step="0.01"
                     />
                   </div>
                   <div>
                     <Label className="text-xs">To (sq ft)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqft_max" 
-                      value={formData.sqft_max} 
+                    <Input
+                      type="number"
+                      name="sqft_max"
+                      value={formData.sqft_max}
                       onChange={(e) => {
                         const val = e.target.value;
                         const sqmVal = val ? (parseFloat(val) / 10.7639).toFixed(2) : '';
                         setFormData(prev => ({ ...prev, sqft_max: val, sqm_max: sqmVal }));
                       }}
-                      step="0.01" 
+                      step="0.01"
                     />
                   </div>
                   <div className="col-span-2">
                     <Label className="text-xs text-gray-600">Range in m² (auto-calculated)</Label>
                     <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
-                      {formData.sqm_min && formData.sqm_max 
+                      {formData.sqm_min && formData.sqm_max
                         ? `${parseFloat(formData.sqm_min).toFixed(2)} - ${parseFloat(formData.sqm_max).toFixed(2)} m²`
                         : 'Enter sq ft range above'}
                     </div>
@@ -1512,20 +1503,20 @@ export default function PropertyFormPage() {
           <div className="col-span-2 grid grid-cols-2 gap-4">
             <div>
               <Label>Lot Size (m²)</Label>
-              <Input 
-                type="number" 
-                name="lot_size_sqm" 
-                value={formData.lot_size_sqm} 
-                onChange={handleChange} 
-                step="0.01" 
+              <Input
+                type="number"
+                name="lot_size_sqm"
+                value={formData.lot_size_sqm}
+                onChange={handleChange}
+                step="0.01"
               />
             </div>
             <div>
               <Label className="text-gray-600">Lot Size (sq ft) - auto</Label>
-              <Input 
-                type="text" 
-                value={formData.lot_size_sqm ? `${(parseFloat(formData.lot_size_sqm) * 10.7639).toFixed(2)} sq ft` : ''} 
-                disabled 
+              <Input
+                type="text"
+                value={formData.lot_size_sqm ? `${(parseFloat(formData.lot_size_sqm) * 10.7639).toFixed(0)} sq ft` : ''}
+                disabled
                 className="bg-gray-50 text-gray-600"
               />
             </div>
@@ -1535,7 +1526,7 @@ export default function PropertyFormPage() {
             <Input type="number" name="year_built" value={formData.year_built} onChange={handleChange} />
           </div>
         </div>
-        
+
         <div>
           <Label>Furnishing Status</Label>
           <Select value={formData.furnishing_status} onValueChange={(v) => handleSelectChange('furnishing_status', v)}>
@@ -1587,10 +1578,10 @@ export default function PropertyFormPage() {
 
         <div>
           <Label>Google Maps Embed URL</Label>
-          <Textarea 
-            name="google_maps_url" 
-            value={formData.google_maps_url} 
-            onChange={handleChange} 
+          <Textarea
+            name="google_maps_url"
+            value={formData.google_maps_url}
+            onChange={handleChange}
             rows={3}
             placeholder="Paste your Google Maps embed URL here (e.g. https://www.google.com/maps/embed?pb=...)"
           />
@@ -1602,18 +1593,18 @@ export default function PropertyFormPage() {
 
       {/* TAB 4: Gallery */}
       <TabsContent value="gallery" className="space-y-4">
-        {/* YouTube Video URL */}
+        {/* Video URL */}
         <div>
-          <Label>YouTube Video URL (optional)</Label>
-          <Textarea 
-            name="youtube_video_url" 
-            value={formData.youtube_video_url} 
-            onChange={handleChange} 
+          <Label>Video URL (YouTube o Vimeo, opzionale)</Label>
+          <Textarea
+            name="youtube_video_url"
+            value={formData.youtube_video_url}
+            onChange={handleChange}
             rows={3}
-            placeholder="Paste YouTube embed URL here (e.g., https://www.youtube.com/embed/VIDEO_ID or https://youtu.be/VIDEO_ID)"
+            placeholder="Incolla il link YouTube o Vimeo (es. https://youtu.be/VIDEO_ID o https://vimeo.com/VIDEO_ID)"
           />
           <p className="text-xs text-muted-foreground mt-1">
-            🎥 Add a YouTube video to showcase this property. The video will be displayed on the property detail page.
+            📝 We accept YouTube or Vimeo; the video will be shown on the listing page.
           </p>
         </div>
 
@@ -1649,50 +1640,63 @@ export default function PropertyFormPage() {
       </TabsContent>
 
       {/* TAB 7: Landing Pages */}
-      <TabsContent value="landing" className="space-y-4">
-        {id ? (
-          <PropertyLandingPages propertyId={Number(id)} />
-        ) : (
-          <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
-            <p className="text-muted-foreground mb-2">Landing Pages</p>
-            <p className="text-sm">Save the property first to associate landing pages</p>
-          </div>
-        )}
-      </TabsContent>
+      {
+        formData.property_type !== 'off_market' && (
+          <TabsContent value="landing" className="space-y-4">
+            {id ? (
+              <PropertyLandingPages propertyId={Number(id)} />
+            ) : (
+              <div className="border-2 border-dashed rounded-lg p-8 text-center bg-muted/50">
+                <p className="text-muted-foreground mb-2">Landing Pages</p>
+                <p className="text-sm">Save the property first to associate landing pages</p>
+              </div>
+            )}
+          </TabsContent>
+        )
+      }
 
       {/* TAB 7: Notes (Internal) */}
       <TabsContent value="notes" className="space-y-4">
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-          <p className="text-sm text-amber-800">
-            <strong>Internal Notes:</strong> These notes are only visible in the admin panel and will NOT be displayed on the public website.
-          </p>
-        </div>
+
         <div>
-          <Label>Internal Notes</Label>
-          <Textarea 
-            name="internal_notes" 
-            value={formData.internal_notes} 
-            onChange={handleChange} 
+
+          <Textarea
+            name="internal_notes"
+            value={formData.internal_notes}
+            onChange={handleChange}
             rows={10}
             placeholder="Add private notes about this property..."
           />
         </div>
       </TabsContent>
-    </Tabs>
+    </Tabs >
   )
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/properties')}>
-            <ArrowLeft className="h-4 w-4" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/properties')}
+            className="px-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" /> back to properties
           </Button>
           <h1 className="text-3xl font-bold">{isEdit ? 'Edit Property' : 'New Property'}</h1>
         </div>
-        <Button type="button" onClick={handleSubmit} disabled={mutation.isPending}>
-          <Save className="mr-2 h-4 w-4" />
-          {mutation.isPending ? 'Saving...' : isEdit ? 'Update' : 'Create'}
+        <Button
+          onClick={handleSubmit}
+          disabled={mutation.isPending}
+          className="bg-slate-900 text-white hover:bg-slate-800 px-6 py-2 rounded-lg shadow-sm font-semibold transition-all active:scale-95"
+        >
+          {mutation.isPending ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
+          {mutation.isPending ? (isEdit ? 'Updating...' : 'Creating...') : (isEdit ? 'Update' : 'Create')}
         </Button>
       </div>
 

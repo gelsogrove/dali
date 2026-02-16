@@ -2,7 +2,7 @@ import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Link2, Repeat, Home, Mail, Shield } from 'lucide-react'
+import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Repeat, Mail, Shield, DollarSign, ListChecks } from 'lucide-react'
 import { useState } from 'react'
 import { api } from '@/lib/api'
 
@@ -29,29 +29,28 @@ export default function DashboardLayout() {
   }
 
   const navigation = [
-    { name: 'Exchange Rates', href: '/', icon: Home },
     { name: 'Properties', href: '/properties', icon: FileText },
-    { name: 'Link Generation', href: '/link-generation', icon: Link2, nested: true },
     { name: 'Blogs', href: '/blogs', icon: BookOpen },
     { name: 'Videos', href: '/videos', icon: Video },
     { name: 'Testimonials', href: '/testimonials', icon: MessageSquare },
     { name: 'Landing Page', href: '/landing-pages', icon: MapPin },
-    { name: 'Cities', href: '/cities', icon: MapPin, nested: true },
   ]
 
   const utilityNav = [
     { name: 'Access Requests', href: '/access-requests', icon: Mail, badge: unviewedCount },
     { name: 'Off Market Invites', href: '/off-market-invites', icon: Shield },
     { name: 'Redirects', href: '/redirects', icon: Repeat },
+    { name: 'Exchange Rates', href: '/', icon: DollarSign },
+    { name: 'Backups', href: '/backups', icon: Shield },
+    { name: 'TODO', href: '/todo', icon: ListChecks },
   ]
 
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <aside
-        className={`${
-          sidebarOpen ? 'w-64' : 'w-20'
-        } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}
+        className={`${sidebarOpen ? 'w-64' : 'w-20'
+          } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}
       >
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {sidebarOpen && <h1 className="text-xl font-bold text-primary">Dalila Admin</h1>}
@@ -70,20 +69,20 @@ export default function DashboardLayout() {
               key={item.name}
               type="button"
               onClick={() => navigate(item.href)}
-              className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors ${item.nested ? 'pl-8 text-sm' : ''}`}
+              className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg text-gray-900 hover:bg-gray-100 transition-colors"
             >
               <item.icon className="h-5 w-5" />
               {sidebarOpen && <span>{item.name}</span>}
             </button>
           ))}
 
-          <div className="border-t border-gray-200 my-3"></div>
+          <div className="border-t border-gray-200 my-6 pt-2"></div>
 
           {utilityNav.map((item) => (
             <Link
               key={item.name}
               to={item.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors relative"
+              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-900 hover:bg-gray-100 transition-colors relative"
             >
               <div className="relative">
                 <item.icon className="h-5 w-5" />

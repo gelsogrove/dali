@@ -1,8 +1,9 @@
 <?php
 
-class UploadController {
+class UploadController
+{
     private $uploadDir;
-    
+
     // Configurazioni upload - definite direttamente nel codice
     private $allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
     private $allowedVideoTypes = ['video/mp4', 'video/mpeg', 'video/quicktime'];
@@ -18,22 +19,33 @@ class UploadController {
     ];
     private $maxImageSize = 5242880; // 5MB (5 * 1024 * 1024 bytes)
     private $maxVideoSize = 104857600; // 100MB (100 * 1024 * 1024 bytes)
-    private $maxDocumentSize = 10485760; // 10MB
+    private $maxDocumentSize = 20971520; // 20MB (20 * 1024 * 1024 bytes)
 
-    public function __construct() {
-        // Prefer an uploads folder inside the webroot to avoid permission issues on /var/www
-        $this->uploadDir = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/uploads';
-        
+    public function __construct()
+    {
+        // Use __DIR__ to find the api/uploads folder reliably
+        // This controller is in api/controllers/UploadController.php
+        $this->uploadDir = dirname(__DIR__) . '/uploads';
+
         // Create upload directories if they don't exist
         $legacyDirs = ['properties', 'videos', 'galleries', 'temp', 'blogs', 'attachments'];
-        $imageDirs = ['images', 'images/blog', 'images/video', 'images/properties', 'images/city', 'images/area'];
+        $imageDirs = ['images', 'images/blog', 'images/video', 'images/properties', 'images/city', 'images/area', 'images/editor'];
         $dirs = array_merge($legacyDirs, $imageDirs);
         foreach ($dirs as $dir) {
-            $path = $this->uploadDir . '/' . $dir;
-            if (!is_dir($path)) {
-                mkdir($path, 0755, true);
+            $this->ensureDirectory($dir);
+        }
+    }
+
+    private function ensureDirectory($subDir)
+    {
+        $path = $this->uploadDir . '/' . $subDir;
+        if (!is_dir($path)) {
+            if (!mkdir($path, 0755, true)) {
+                error_log("UploadController: Failed to create directory: " . $path);
+                return false;
             }
         }
+        return true;
     }
 
     /**
@@ -41,7 +53,8 @@ class UploadController {
      * @param array $file Uploaded file
      * @return array
      */
-    public function uploadPropertyImage($file) {
+    public function uploadPropertyImage($file)
+    {
         try {
             // Validate file
             $validation = $this->validateImageUpload($file);
@@ -52,8 +65,9 @@ class UploadController {
             $originalName = $file['name'];
             $tempPath = $file['tmp_name'];
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-            
+
             // Generate unique filename with timestamp + random + slug
+            $this->ensureDirectory('images/properties');
             $filename = $this->generateUniqueFilename($extension, 'property', $originalName);
             $basePath = $this->uploadDir . '/images/properties';
 
@@ -66,14 +80,14 @@ class UploadController {
             ];
 
             $urls = [];
-            
+
             foreach ($versions as $version => $settings) {
-                $versionFilename = $version === 'original' 
-                    ? $filename 
+                $versionFilename = $version === 'original'
+                    ? $filename
                     : str_replace(".{$extension}", "_{$version}.{$extension}", $filename);
-                
+
                 $destinationPath = $basePath . '/' . $versionFilename;
-                
+
                 // Resize and optimize image
                 $result = $this->resizeImage(
                     $tempPath,
@@ -88,7 +102,7 @@ class UploadController {
                     return $this->errorResponse('Failed to process image');
                 }
 
-                $urls[$version] = '/uploads/images/properties/' . $versionFilename;
+                $urls[$version] = '/api/uploads/images/properties/' . $versionFilename;
             }
 
             return $this->successResponse([
@@ -110,7 +124,8 @@ class UploadController {
      * @param array $file Uploaded file
      * @return array
      */
-    public function uploadVideo($file) {
+    public function uploadVideo($file)
+    {
         try {
             // Validate file
             if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
@@ -128,8 +143,9 @@ class UploadController {
             $originalName = $file['name'];
             $tempPath = $file['tmp_name'];
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-            
+
             // Generate unique filename with timestamp + random + slug
+            $this->ensureDirectory('videos');
             $filename = $this->generateUniqueFilename($extension, 'video', $originalName);
             $destinationPath = $this->uploadDir . '/videos/' . $filename;
 
@@ -146,7 +162,7 @@ class UploadController {
 
             return $this->successResponse([
                 'filename' => $filename,
-                'url' => '/uploads/videos/' . $filename,
+                'url' => '/api/uploads/videos/' . $filename,
                 'thumbnail_url' => $thumbnailUrl,
                 'size' => filesize($destinationPath)
             ], 201);
@@ -162,7 +178,8 @@ class UploadController {
      * @param array $file Uploaded file
      * @return array
      */
-    public function uploadVideoImage($file) {
+    public function uploadVideoImage($file)
+    {
         try {
             $validation = $this->validateImageUpload($file);
             if (!$validation['success']) {
@@ -174,6 +191,7 @@ class UploadController {
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
             $filename = $this->generateUniqueFilename($extension, 'video-thumb', $originalName);
+            $this->ensureDirectory('images/video');
             $basePath = $this->uploadDir . '/images/video';
 
             $versions = [
@@ -203,7 +221,7 @@ class UploadController {
                     return $this->errorResponse('Failed to process image');
                 }
 
-                $urls[$version] = '/uploads/images/video/' . $versionFilename;
+                $urls[$version] = '/api/uploads/images/video/' . $versionFilename;
             }
 
             return $this->successResponse([
@@ -223,7 +241,8 @@ class UploadController {
      * @param array $file Uploaded file
      * @return array
      */
-    private function validateImageUpload($file) {
+    private function validateImageUpload($file)
+    {
         if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
             return $this->errorResponse('No file uploaded or upload error occurred');
         }
@@ -259,7 +278,8 @@ class UploadController {
      * @param int $quality JPEG quality
      * @return bool
      */
-    private function resizeImage($sourcePath, $destinationPath, $maxWidth, $quality) {
+    private function resizeImage($sourcePath, $destinationPath, $maxWidth, $quality)
+    {
         $imageInfo = getimagesize($sourcePath);
         if (!$imageInfo) {
             return false;
@@ -308,16 +328,22 @@ class UploadController {
 
         // Resize image
         imagecopyresampled(
-            $newImage, $sourceImage,
-            0, 0, 0, 0,
-            $newWidth, $newHeight,
-            $originalWidth, $originalHeight
+            $newImage,
+            $sourceImage,
+            0,
+            0,
+            0,
+            0,
+            $newWidth,
+            $newHeight,
+            $originalWidth,
+            $originalHeight
         );
 
         // Save image
         $result = false;
         $extension = pathinfo($destinationPath, PATHINFO_EXTENSION);
-        
+
         switch (strtolower($extension)) {
             case 'jpg':
             case 'jpeg':
@@ -343,7 +369,8 @@ class UploadController {
      * @param string $extension File extension
      * @return string
      */
-    private function generateUniqueFilename($extension, $prefix = 'file', $originalName = '') {
+    private function generateUniqueFilename($extension, $prefix = 'file', $originalName = '')
+    {
         $timestamp = time();
         try {
             $random = bin2hex(random_bytes(4));
@@ -370,17 +397,18 @@ class UploadController {
      * @param string $videoPath Video file path
      * @return string|null Thumbnail URL
      */
-    private function generateVideoThumbnail($videoPath) {
+    private function generateVideoThumbnail($videoPath)
+    {
         $thumbnailFilename = pathinfo($videoPath, PATHINFO_FILENAME) . '_thumb.jpg';
         $thumbnailPath = $this->uploadDir . '/images/video/' . $thumbnailFilename;
 
         // Use FFmpeg to generate thumbnail at 2 seconds
         $command = "ffmpeg -i " . escapeshellarg($videoPath) . " -ss 00:00:02 -vframes 1 -q:v 2 " . escapeshellarg($thumbnailPath) . " 2>&1";
-        
+
         exec($command, $output, $returnCode);
 
         if ($returnCode === 0 && file_exists($thumbnailPath)) {
-            return '/uploads/images/video/' . $thumbnailFilename;
+            return '/api/uploads/images/video/' . $thumbnailFilename;
         }
 
         return null;
@@ -390,7 +418,8 @@ class UploadController {
      * Cleanup files on error
      * @param array $urls Array of file URLs to delete
      */
-    private function cleanupFiles($urls) {
+    private function cleanupFiles($urls)
+    {
         foreach ($urls as $url) {
             $path = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/' . ltrim($url, '/');
             if (file_exists($path)) {
@@ -404,7 +433,8 @@ class UploadController {
      * @param array $file Uploaded file
      * @return array
      */
-    public function uploadBlogImage($file) {
+    public function uploadBlogImage($file)
+    {
         try {
             // Validate file
             $validation = $this->validateImageUpload($file);
@@ -415,7 +445,7 @@ class UploadController {
             $originalName = $file['name'];
             $tempPath = $file['tmp_name'];
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-            
+
             // Generate unique filename with timestamp + random + slug
             $filename = $this->generateUniqueFilename($extension, 'blog', $originalName);
             $basePath = $this->uploadDir . '/images/blog';
@@ -428,14 +458,14 @@ class UploadController {
             ];
 
             $urls = [];
-            
+
             foreach ($versions as $version => $settings) {
-                $versionFilename = $version === 'original' 
-                    ? $filename 
+                $versionFilename = $version === 'original'
+                    ? $filename
                     : str_replace(".{$extension}", "_{$version}.{$extension}", $filename);
-                
+
                 $destinationPath = $basePath . '/' . $versionFilename;
-                
+
                 // Resize and optimize image
                 $result = $this->resizeImage(
                     $tempPath,
@@ -450,41 +480,52 @@ class UploadController {
                     return $this->errorResponse('Failed to process image');
                 }
 
-                $urls[$version] = '/uploads/images/blog/' . $versionFilename;
+                $urls[$version] = '/api/uploads/images/blog/' . $versionFilename;
             }
 
-        return $this->successResponse([
-            'filename' => $filename,
-            'url' => $urls['original'],
-            'urls' => $urls,
-            'size' => filesize($basePath . '/' . $filename)
-        ], 201);
+            return $this->successResponse([
+                'filename' => $filename,
+                'url' => $urls['original'],
+                'urls' => $urls,
+                'size' => filesize($basePath . '/' . $filename)
+            ], 201);
 
-    } catch (Exception $e) {
-        error_log("Upload blog image error: " . $e->getMessage());
-        return $this->errorResponse('An error occurred during upload');
+        } catch (Exception $e) {
+            error_log("Upload blog image error: " . $e->getMessage());
+            return $this->errorResponse('An error occurred during upload');
+        }
     }
-}
 
     /**
      * Upload city image (cover/content) stored under /uploads/images/city
      */
-    public function uploadCityImage($file) {
+    public function uploadCityImage($file)
+    {
         return $this->uploadGenericImage($file, 'city');
     }
 
     /**
      * Upload area image (cover/content) stored under /uploads/images/area
      */
-    public function uploadAreaImage($file) {
+    public function uploadAreaImage($file)
+    {
         return $this->uploadGenericImage($file, 'area');
     }
 
     /**
-     * Upload generic attachment (pdf, docx, xlsx, pptx, txt)
-     * Max size 10MB
+     * Upload image from WYSIWYG editor
      */
-    public function uploadAttachment($file) {
+    public function uploadEditorImage($file)
+    {
+        return $this->uploadGenericImage($file, 'editor');
+    }
+
+    /**
+     * Upload generic attachment (pdf, docx, xlsx, pptx, txt)
+     * Max size 20MB
+     */
+    public function uploadAttachment($file)
+    {
         try {
             if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
                 return $this->errorResponse('No file uploaded or upload error occurred');
@@ -495,18 +536,21 @@ class UploadController {
             $mimeType = finfo_file($finfo, $file['tmp_name']);
             finfo_close($finfo);
 
-            if (!in_array($mimeType, $this->allowedDocumentTypes)) {
-                return $this->errorResponse('Invalid file type. Allowed: PDF, Word, Excel, PowerPoint, TXT');
+            $allowed = array_merge($this->allowedDocumentTypes, $this->allowedImageTypes);
+
+            if (!in_array($mimeType, $allowed)) {
+                return $this->errorResponse('Invalid file type. Allowed: PDF, Word, Excel, PowerPoint, TXT, Images (JPEG, PNG, WebP)');
             }
 
             if ($file['size'] > $this->maxDocumentSize) {
-                return $this->errorResponse('File is too large. Maximum size: 10MB');
+                return $this->errorResponse('File is too large. Maximum size: 20MB');
             }
 
             $originalName = $file['name'];
             $tempPath = $file['tmp_name'];
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
+            $this->ensureDirectory('attachments');
             $filename = $this->generateUniqueFilename($extension, 'attachment', $originalName);
             $destinationPath = $this->uploadDir . '/attachments/' . $filename;
 
@@ -515,11 +559,11 @@ class UploadController {
             }
 
             return $this->successResponse([
-                'filename'   => $filename,
-                'url'        => '/uploads/attachments/' . $filename,
-                'mime_type'  => $mimeType,
-                'size'       => filesize($destinationPath),
-                'original'   => $originalName
+                'filename' => $filename,
+                'url' => '/api/uploads/attachments/' . $filename,
+                'mime_type' => $mimeType,
+                'size' => filesize($destinationPath),
+                'original' => $originalName
             ], 201);
 
         } catch (Exception $e) {
@@ -531,7 +575,8 @@ class UploadController {
     /**
      * Generic image upload for city/area
      */
-    private function uploadGenericImage($file, $folder) {
+    private function uploadGenericImage($file, $folder)
+    {
         try {
             $validation = $this->validateImageUpload($file);
             if (!$validation['success']) {
@@ -542,6 +587,7 @@ class UploadController {
             $tempPath = $file['tmp_name'];
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
+            $this->ensureDirectory('images/' . $folder); // Ensure directory exists for generic images
             $filename = $this->generateUniqueFilename($extension, $folder, $originalName);
             $basePath = $this->uploadDir . '/images/' . $folder;
 
@@ -572,7 +618,7 @@ class UploadController {
                     return $this->errorResponse('Failed to process image');
                 }
 
-                $urls[$version] = "/uploads/images/{$folder}/" . $versionFilename;
+                $urls[$version] = "/api/uploads/images/{$folder}/" . $versionFilename;
             }
 
             return $this->successResponse([
@@ -593,7 +639,8 @@ class UploadController {
      * @param string $url File URL
      * @return array
      */
-    public function deleteFile($url) {
+    public function deleteFile($url)
+    {
         try {
             if (empty($url)) {
                 return $this->errorResponse('File URL is required', 400);
@@ -646,7 +693,8 @@ class UploadController {
     /**
      * Success response
      */
-    private function successResponse($data, $code = 200) {
+    private function successResponse($data, $code = 200)
+    {
         http_response_code($code);
         return ['success' => true, 'data' => $data];
     }
@@ -654,7 +702,8 @@ class UploadController {
     /**
      * Error response
      */
-    private function errorResponse($message, $code = 400) {
+    private function errorResponse($message, $code = 400)
+    {
         http_response_code($code);
         return ['success' => false, 'error' => $message];
     }

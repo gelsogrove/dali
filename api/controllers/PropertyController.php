@@ -1507,12 +1507,7 @@ class PropertyController
                 }
             }
 
-            // Price validation (only for full UPDATE when price fields are included)
-            if (array_key_exists('price_usd', $data) && empty($data['price_on_demand'])) {
-                if (empty($data['price_usd']) || $data['price_usd'] <= 0) {
-                    return "price_usd is required and must be greater than 0 when price_on_demand is false";
-                }
-            }
+
         }
 
         // Validate ENUMs

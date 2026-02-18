@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import 'trix'
 import 'trix/dist/trix.css'
 import './TrixEditor.css'
@@ -18,17 +18,33 @@ interface TrixEditorProps {
   placeholder?: string
 }
 
+let trixIdCounter = 0
+
 const TrixEditor = ({ value, onChange, placeholder }: TrixEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const trixRef = useRef<any>(null)
+  const isInternalChange = useRef(false)
+  const onChangeRef = useRef(onChange)
+  const inputId = useMemo(() => `trix-input-${++trixIdCounter}`, [])
 
+  // Keep onChange ref up to date without triggering effects
   useEffect(() => {
-    const editor = editorRef.current?.querySelector('trix-editor') as any
+    onChangeRef.current = onChange
+  }, [onChange])
 
+  // Setup event listeners ONCE on mount
+  useEffect(() => {
+    const container = editorRef.current
+    if (!container) return
+
+    const editor = container.querySelector('trix-editor') as any
     if (!editor) return
+    trixRef.current = editor
 
-    const handleChange = (e: any) => {
-      onChange(e.target.value)
+    const handleChange = () => {
+      isInternalChange.current = true
+      onChangeRef.current(editor.value)
     }
 
     const uploadFileAttachment = async (attachment: any) => {
@@ -58,7 +74,7 @@ const TrixEditor = ({ value, onChange, placeholder }: TrixEditorProps) => {
             href: data.data.url
           })
 
-          onChange(editor.value)
+          onChangeRef.current(editor.value)
 
           // @ts-ignore
           if (window.sonner) {
@@ -113,27 +129,66 @@ const TrixEditor = ({ value, onChange, placeholder }: TrixEditorProps) => {
     editor.addEventListener('trix-attachment-add', handleAttachmentAdd)
     editor.addEventListener('trix-attachment-remove', handleAttachmentRemove)
 
-    if (value !== editor.value) {
-      editor.loadHTML(value || '')
-    }
-
     return () => {
       editor.removeEventListener('trix-change', handleChange)
       editor.removeEventListener('trix-attachment-add', handleAttachmentAdd)
       editor.removeEventListener('trix-attachment-remove', handleAttachmentRemove)
     }
-  }, [onChange, value])
+  }, []) // Mount only
+
+  // Sync external value changes into the Trix editor
+  useEffect(() => {
+    const editor = trixRef.current
+
+    // If the change came from the user typing inside the editor, skip the sync
+    if (isInternalChange.current) {
+      isInternalChange.current = false
+      return
+    }
+
+    if (!editor) return
+
+    // If the editor's internal API isn't ready yet, wait for trix-initialize
+    if (!editor.editor) {
+      const handleInitialize = () => {
+        if (value) {
+          editor.editor.loadHTML(value)
+        }
+        editor.removeEventListener('trix-initialize', handleInitialize)
+      }
+      editor.addEventListener('trix-initialize', handleInitialize)
+      return () => {
+        editor.removeEventListener('trix-initialize', handleInitialize)
+      }
+    }
+
+    // Editor is ready – compare the actual document text (not the hidden input value)
+    const currentDocText = editor.editor.getDocument().toString().trim()
+    const incomingText = (value || '').trim()
+
+    // Strip HTML tags for a plain-text comparison to detect real content differences
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = incomingText
+    const incomingPlain = tempDiv.textContent?.trim() || ''
+
+    // Only update if there's a real difference
+    if (incomingPlain && currentDocText !== incomingPlain) {
+      editor.editor.loadHTML(value)
+    } else if (!incomingPlain && currentDocText) {
+      editor.editor.loadHTML('')
+    }
+  }, [value])
 
   return (
     <div ref={editorRef} className="trix-editor-container">
       <input
         ref={inputRef}
-        id="trix-editor-input"
+        id={inputId}
         type="hidden"
-        value={value}
+        defaultValue={value}
       />
       <trix-editor
-        input="trix-editor-input"
+        input={inputId}
         placeholder={placeholder || 'Start writing...'}
       />
     </div>

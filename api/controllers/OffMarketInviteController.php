@@ -98,7 +98,21 @@ class OffMarketInviteController
         $stmt->close();
 
         // Build invite link
-        $baseUrl = getenv('FRONTEND_URL') ?: 'https://buywithdali.com';
+        $frontendUrl = getenv('FRONTEND_URL');
+        if (!$frontendUrl) {
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443 ? "https://" : "http://";
+            $host = $_SERVER['HTTP_HOST'] ?? 'buywithdali.com';
+            $frontendUrl = $protocol . $host;
+
+            // Check if we are in /new subfolder
+            if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/new/api') !== false) {
+                if (strpos($host, 'new.') === false) { // Only add /new if not already in a subdomain
+                    $frontendUrl .= '/new';
+                }
+            }
+        }
+        $baseUrl = rtrim($frontendUrl, '/');
+
         if ($property) {
             $inviteLink = "{$baseUrl}/listings/{$property['slug']}?token={$token}";
         } else {
@@ -132,10 +146,9 @@ class OffMarketInviteController
 
         $sql = "SELECT omi.*, 
                        p.title as property_title, 
-                       p.slug as property_slug,
-                       p.cover_image_url as property_image
+                       p.slug as property_slug
                 FROM off_market_invites omi
-                JOIN properties p ON omi.property_id = p.id
+                LEFT JOIN properties p ON omi.property_id = p.id
                 ORDER BY omi.created_at DESC
                 LIMIT ? OFFSET ?";
 
@@ -147,7 +160,21 @@ class OffMarketInviteController
         $invites = [];
         while ($row = $result->fetch_assoc()) {
             $row['is_expired'] = strtotime($row['expires_at']) < time();
-            $baseUrl = getenv('FRONTEND_URL') ?: 'https://buywithdali.com';
+
+            $frontendUrl = getenv('FRONTEND_URL');
+            if (!$frontendUrl) {
+                $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443 ? "https://" : "http://";
+                $host = $_SERVER['HTTP_HOST'] ?? 'buywithdali.com';
+                $frontendUrl = $protocol . $host;
+
+                // Check if we are in /new subfolder
+                if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/new/api') !== false) {
+                    if (strpos($host, 'new.') === false) { // Only add /new if not already in a subdomain
+                        $frontendUrl .= '/new';
+                    }
+                }
+            }
+            $baseUrl = rtrim($frontendUrl, '/');
 
             if ($row['property_slug']) {
                 $row['invite_link'] = "{$baseUrl}/listings/{$row['property_slug']}?token={$row['token']}";
@@ -248,24 +275,39 @@ class OffMarketInviteController
         $token = trim($data['token'] ?? '');
         $code = strtoupper(trim($data['code'] ?? ''));
 
-        if ($token === '' || $code === '') {
-            return $this->errorResponse('Token and code are required', 400);
+        if ($code === '') {
+            return $this->errorResponse('Access code is required', 400);
         }
 
-        $stmt = $this->conn->prepare(
-            "SELECT omi.id, omi.property_id, omi.expires_at, p.slug as property_slug
-             FROM off_market_invites omi
-             LEFT JOIN properties p ON omi.property_id = p.id
-             WHERE omi.token = ? AND omi.access_code = ?
-             LIMIT 1"
-        );
-        $stmt->bind_param('ss', $token, $code);
+        if ($token !== '') {
+            // Case 1: Token + Code (standard link)
+            $stmt = $this->conn->prepare(
+                "SELECT omi.id, omi.property_id, omi.expires_at, p.slug as property_slug
+                 FROM off_market_invites omi
+                 LEFT JOIN properties p ON omi.property_id = p.id
+                 WHERE omi.token = ? AND omi.access_code = ?
+                 LIMIT 1"
+            );
+            $stmt->bind_param('ss', $token, $code);
+        } else {
+            // Case 2: Code Only (manual entry)
+            $stmt = $this->conn->prepare(
+                "SELECT omi.id, omi.property_id, omi.expires_at, p.slug as property_slug
+                 FROM off_market_invites omi
+                 LEFT JOIN properties p ON omi.property_id = p.id
+                 WHERE omi.access_code = ? AND omi.expires_at > NOW()
+                 ORDER BY omi.created_at DESC
+                 LIMIT 1"
+            );
+            $stmt->bind_param('s', $code);
+        }
+
         $stmt->execute();
         $result = $stmt->get_result();
 
         if ($result->num_rows === 0) {
             $stmt->close();
-            return $this->errorResponse('Invalid token or access code', 401);
+            return $this->errorResponse('Invalid access code', 401);
         }
 
         $row = $result->fetch_assoc();

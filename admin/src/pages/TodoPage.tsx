@@ -120,7 +120,12 @@ export default function TodoPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => api.delete(`/todos/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos'] });
+      setSelectedItem(null);
+      // Explicitly requested page refresh to ensure sync
+      window.location.reload();
+    },
   });
 
   const addCommentMutation = useMutation({

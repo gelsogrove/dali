@@ -116,7 +116,7 @@ class OffMarketInviteController
         if ($property) {
             $inviteLink = "{$baseUrl}/listings/{$property['slug']}?token={$token}";
         } else {
-            $inviteLink = "{$baseUrl}/off-market?token={$token}";
+            $inviteLink = "{$baseUrl}/off-market";
         }
 
         return $this->successResponse([
@@ -179,7 +179,7 @@ class OffMarketInviteController
             if ($row['property_slug']) {
                 $row['invite_link'] = "{$baseUrl}/listings/{$row['property_slug']}?token={$row['token']}";
             } else {
-                $row['invite_link'] = "{$baseUrl}/off-market?token={$row['token']}";
+                $row['invite_link'] = "{$baseUrl}/off-market";
                 $row['property_title'] = 'Global Session';
             }
 

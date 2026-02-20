@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, RefreshCw, Save } from 'lucide-react';
+import { Loader2, TrendingUp, RefreshCw } from 'lucide-react';
 
 interface ExchangeRate {
   id?: string;

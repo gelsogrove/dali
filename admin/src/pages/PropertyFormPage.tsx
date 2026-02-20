@@ -1754,16 +1754,16 @@ export default function PropertyFormPage() {
         </div>
 
         <div>
-          <Label>Google Maps Embed URL</Label>
+          <Label>Google Maps URL</Label>
           <Textarea 
             name="google_maps_url" 
             value={formData.google_maps_url} 
             onChange={handleChange} 
             rows={3}
-            placeholder="Paste your Google Maps embed URL here (e.g. https://www.google.com/maps/embed?pb=...)"
+            placeholder="Paste any Google Maps URL (e.g., https://www.google.com/maps/place/...)"
           />
           <p className="text-xs text-muted-foreground mt-1">
-            Get the embed URL from Google Maps: Share → Embed a map → Copy the src URL from the iframe
+            🗺️ You can paste any Google Maps link. We'll automatically convert it to the correct format for embedding.
           </p>
         </div>
       </TabsContent>

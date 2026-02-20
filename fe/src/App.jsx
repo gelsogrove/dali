@@ -22,6 +22,7 @@ import LandPage from './pages/LandPage';
 import VideosPage from './pages/VideosPage';
 import CommunitiesPage from './pages/CommunitiesPage';
 import ListWithDaliPage from './pages/ListWithDaliPage';
+import OffMarketPage from './pages/OffMarketPage';
 import CommunityPage from './pages/CommunityPage';
 import CityPage from './pages/CityPage';
 import AreaPage from './pages/AreaPage';
@@ -69,7 +70,7 @@ function AppLayout() {
             <Route path="/active-properties" element={<ActivePropertiesPage />} />
             <Route path="/new-developments" element={<NewDevelopmentsPage />} />
             <Route path="/hot-deals" element={<HotDealsPage />} />
-            <Route path="/off-market" element={<Navigate to="/contact-us" replace />} />
+            <Route path="/off-market" element={<OffMarketPage />} />
             <Route path="/land" element={<LandPage />} />
             <Route path="/communities" element={<CommunitiesPage />} />
             <Route path="/list-with-dali" element={<ListWithDaliPage />} />

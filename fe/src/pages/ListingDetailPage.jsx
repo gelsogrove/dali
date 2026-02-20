@@ -13,6 +13,48 @@ import { listingContent } from '../data/listingContent';
 import { formatSize, formatBedrooms, formatBathrooms } from '../utils/propertyFormatters';
 import './ListingDetailPage.css';
 
+// Convert Google Maps URL to embeddable format
+const getGoogleMapsEmbedUrl = (url, latitude, longitude, city) => {
+  // If already an embed URL, use it
+  if (url && url.includes('/maps/embed')) {
+    return url;
+  }
+
+  // Try to extract coordinates from the URL
+  let lat = latitude;
+  let lng = longitude;
+
+  if (url) {
+    try {
+      // Format: /place/LAT,LNG or ?q=LAT,LNG or @LAT,LNG
+      const coordMatch = url.match(/[@/](-?\d+\.?\d*),(-?\d+\.?\d*)/);
+      if (coordMatch) {
+        lat = coordMatch[1];
+        lng = coordMatch[2];
+      }
+      
+      // Format: 3d20.1985629!4d-87.4801411 (from data parameter)
+      if (!lat || !lng) {
+        const dataMatch = url.match(/3d(-?\d+\.?\d*).*4d(-?\d+\.?\d*)/);
+        if (dataMatch) {
+          lat = dataMatch[1];
+          lng = dataMatch[2];
+        }
+      }
+    } catch (e) {
+      console.error('Error parsing Google Maps URL:', e);
+    }
+  }
+
+  // If we have coordinates, create embed URL
+  if (lat && lng) {
+    return `https://www.google.com/maps?q=${lat},${lng}&output=embed`;
+  }
+
+  // Fallback to default location (Playa del Carmen)
+  return `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14937.581829612898!2d-87.08963175000001!3d20.612731699999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f4e436c6ba8d5ff%3A0x20b898efa93c75bd!2sPlayacar%2C%20Playa%20del%20Carmen!5e0!3m2!1sen!2sph!4v1701826627668!5m2!1sen!2sph`;
+};
+
 // Normalize YouTube, Vimeo, or Instagram URL into an embeddable src
 const getVideoEmbed = (url) => {
   if (!url) return null;
@@ -464,6 +506,32 @@ export default function ListingDetailPage() {
   const getPriceForCurrency = () => {
     if (property.price_on_demand) return 'Price on Request';
     
+    // For developments, show price range (from - to)
+    if (property.property_type === 'development') {
+      let priceFrom = null;
+      let priceTo = null;
+      let symbol = '$';
+      
+      if (selectedCurrency === 'USD' && property.price_from_usd && property.price_to_usd) {
+        priceFrom = property.price_from_usd;
+        priceTo = property.price_to_usd;
+        symbol = '$';
+      } else if (selectedCurrency === 'MXN' && property.price_from_mxn && property.price_to_mxn) {
+        priceFrom = property.price_from_mxn;
+        priceTo = property.price_to_mxn;
+        symbol = '$';
+      } else if (selectedCurrency === 'EUR' && property.price_from_eur && property.price_to_eur) {
+        priceFrom = property.price_from_eur;
+        priceTo = property.price_to_eur;
+        symbol = '€';
+      }
+      
+      if (priceFrom && priceTo) {
+        return `${symbol}${Number(priceFrom).toLocaleString('en-US', { maximumFractionDigits: 0 })} - ${symbol}${Number(priceTo).toLocaleString('en-US', { maximumFractionDigits: 0 })} ${selectedCurrency}`;
+      }
+    }
+    
+    // For active properties, show single price
     let price = null;
     let symbol = '$';
     
@@ -884,14 +952,12 @@ export default function ListingDetailPage() {
               <div className="listing-map">
                 <iframe
                   title="Property map"
-                  src={property.google_maps_url 
-                    ? property.google_maps_url.replace('/maps/place/', '/maps/embed/v1/place?key=&q=').includes('embed') 
-                      ? property.google_maps_url 
-                      : `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3000!2d${property.longitude || '-87.0896'}!3d${property.latitude || '20.6127'}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s!2s${encodeURIComponent(property.city || 'Playa del Carmen')}!5e0!3m2!1sen!2smx`
-                    : (property.latitude && property.longitude)
-                      ? `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3000!2d${property.longitude}!3d${property.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s!2s${encodeURIComponent(property.city || 'Property Location')}!5e0!3m2!1sen!2smx`
-                      : `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14937.581829612898!2d-87.08963175000001!3d20.612731699999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f4e436c6ba8d5ff%3A0x20b898efa93c75bd!2sPlayacar%2C%20Playa%20del%20Carmen!5e0!3m2!1sen!2sph!4v1701826627668!5m2!1sen!2sph`
-                  }
+                  src={getGoogleMapsEmbedUrl(
+                    property.google_maps_url,
+                    property.latitude,
+                    property.longitude,
+                    property.city
+                  )}
                   width="100%"
                   height="450"
                   style={{ border: 0, borderRadius: '4px' }}

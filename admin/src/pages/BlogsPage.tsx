@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Plus, Edit, Trash2, GripVertical, Calendar, Link2 } from 'lucide-react'
@@ -45,7 +45,7 @@ export default function BlogsPage() {
     queryFn: async () => {
       const q = searchTerm ? `&q=${encodeURIComponent(searchTerm)}` : ''
       const response = await api.get(`/blogs?include_deleted=false${q}`)
-      // normalize: payload can be {blogs:[]}, or directly []
+      // normalizza: payload può essere {blogs:[]}, oppure direttamente []
       const raw = response.data?.data ?? response.data ?? []
       const blogs = Array.isArray(raw?.blogs) ? raw.blogs : Array.isArray(raw) ? raw : []
       const pagination = raw?.pagination ?? null
@@ -223,7 +223,7 @@ export default function BlogsPage() {
                   alt={blog.featured_image_alt || blog.title}
                   className="w-32 h-20 object-cover rounded flex-shrink-0"
                 />
-
+                
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-base mb-1 truncate">{blog.title}</h3>
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
@@ -236,7 +236,7 @@ export default function BlogsPage() {
                     </p>
                   )}
                 </div>
-
+                
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">Home</span>
@@ -246,16 +246,16 @@ export default function BlogsPage() {
                       className="data-[state=checked]:bg-green-500"
                     />
                   </div>
-
+                  
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span>
-                      {blog.published_date
+                      {blog.published_date 
                         ? format(new Date(blog.published_date), 'MMM dd, yyyy')
                         : 'No date'}
                     </span>
                   </div>
-
+                  
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/blogs/${blog.id}/edit`}>

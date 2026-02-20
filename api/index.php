@@ -46,7 +46,6 @@ require_once __DIR__ . '/controllers/ContactController.php';
 require_once __DIR__ . '/controllers/AccessRequestController.php';
 require_once __DIR__ . '/controllers/OffMarketInviteController.php';
 require_once __DIR__ . '/controllers/TodoController.php';
-require_once __DIR__ . '/controllers/BackupController.php';
 // Normalize base dir to avoid trailing spaces/newlines in production paths
 $__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
 require_once $__baseDir . '/config/database.php';
@@ -80,23 +79,23 @@ try {
         case 'auth':
             handleAuthRoutes($segments, $method);
             break;
-
+        
         case 'properties':
             handlePropertyRoutes($segments, $method);
             break;
-
+        
         case 'property-photos':
             handlePropertyPhotoRoutes($segments, $method);
             break;
-
+        
         case 'upload':
             handleUploadRoutes($segments, $method);
             break;
-
+        
         case 'home':
             handleHomeRoutes($segments, $method);
             break;
-
+        
         case 'blogs':
             handleBlogRoutes($segments, $method);
             break;
@@ -128,7 +127,7 @@ try {
         case 'redirects':
             handleRedirectRoutes($segments, $method);
             break;
-
+        
         case 'photogallery':
             handlePhotoGalleryRoutes($segments, $method);
             break;
@@ -144,11 +143,7 @@ try {
         case 'todos':
             handleTodoRoutes($segments, $method);
             break;
-
-        case 'backups':
-            handleBackupsRoutes($segments, $method);
-            break;
-
+        
         case 'health':
             echo json_encode([
                 'success' => true,
@@ -156,7 +151,7 @@ try {
                 'timestamp' => time()
             ]);
             break;
-
+        
         default:
             http_response_code(404);
             echo json_encode([
@@ -177,10 +172,9 @@ try {
 /**
  * Handle authentication routes
  */
-function handleAuthRoutes($segments, $method)
-{
+function handleAuthRoutes($segments, $method) {
     $controller = new AuthController();
-
+    
     if ($method === 'POST' && isset($segments[1])) {
         switch ($segments[1]) {
             case 'login':
@@ -188,7 +182,7 @@ function handleAuthRoutes($segments, $method)
                 $result = $controller->login($data['email'] ?? '', $data['password'] ?? '');
                 echo json_encode($result);
                 break;
-
+            
             case 'logout':
                 $auth = new AuthMiddleware();
                 $user = $auth->authenticate();
@@ -199,14 +193,14 @@ function handleAuthRoutes($segments, $method)
                     echo json_encode($result);
                 }
                 break;
-
+            
             case 'verify':
                 $headers = getallheaders();
                 $token = str_replace('Bearer ', '', $headers['Authorization'] ?? '');
                 $result = $controller->verifyToken($token);
                 echo json_encode($result);
                 break;
-
+            
             default:
                 http_response_code(404);
                 echo json_encode(['success' => false, 'error' => 'Auth endpoint not found']);
@@ -220,11 +214,10 @@ function handleAuthRoutes($segments, $method)
 /**
  * Handle property routes
  */
-function handlePropertyRoutes($segments, $method)
-{
+function handlePropertyRoutes($segments, $method) {
     $auth = new AuthMiddleware();
     $controller = new PropertyController();
-
+    
     switch ($method) {
         case 'GET':
             // Special endpoints
@@ -235,15 +228,15 @@ function handlePropertyRoutes($segments, $method)
                     echo json_encode($result);
                     break;
                 }
-
+                
                 // GET /api/properties/popular-tags - Get popular tags
                 if ($segments[1] === 'popular-tags') {
-                    $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 20;
+                    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
                     $result = $controller->getPopularTags($limit);
                     echo json_encode($result);
                     break;
                 }
-
+                
                 // GET /api/properties/:id/export-json - Export as JSON
                 if (isset($segments[2]) && $segments[2] === 'export-json') {
                     $user = $auth->authenticate();
@@ -253,7 +246,7 @@ function handlePropertyRoutes($segments, $method)
                     }
                     break;
                 }
-
+                
                 // GET /api/properties/:id/landing-pages - Get associated landing pages
                 if (isset($segments[2]) && $segments[2] === 'landing-pages') {
                     $result = $controller->getPropertyLandingPages($segments[1]);
@@ -267,7 +260,7 @@ function handlePropertyRoutes($segments, $method)
                     echo json_encode($result);
                     break;
                 }
-
+                
                 // GET /api/properties/:id or /api/properties/:slug - Get single property
                 $token = $_GET['token'] ?? null;
                 $result = $controller->getById($segments[1], $token);
@@ -279,13 +272,13 @@ function handlePropertyRoutes($segments, $method)
                 echo json_encode($result);
             }
             break;
-
+        
         case 'POST':
             $user = $auth->authenticate();
             if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
                 break;
             }
-
+            
             // POST /api/properties/reorder - Reorder properties
             if (isset($segments[1]) && $segments[1] === 'reorder') {
                 $data = json_decode(file_get_contents('php://input'), true);
@@ -293,7 +286,7 @@ function handlePropertyRoutes($segments, $method)
                 echo json_encode($result);
                 break;
             }
-
+            
             // POST /api/properties/import-json - Import from JSON
             if (isset($segments[1]) && $segments[1] === 'import-json') {
                 $data = json_decode(file_get_contents('php://input'), true);
@@ -310,13 +303,13 @@ function handlePropertyRoutes($segments, $method)
                 echo json_encode($result);
                 break;
             }
-
+            
             // POST /api/properties - Create new property
             $data = json_decode(file_get_contents('php://input'), true);
             $result = $controller->create($data, $user['user_id']);
             echo json_encode($result);
             break;
-
+        
         case 'PUT':
             $user = $auth->authenticate();
             if ($user && $auth->checkRole($user, ['admin', 'editor']) && isset($segments[1])) {
@@ -344,14 +337,14 @@ function handlePropertyRoutes($segments, $method)
                     echo json_encode($result);
                     break;
                 }
-
+                
                 // PUT /api/properties/:id - Update property
                 $data = json_decode(file_get_contents('php://input'), true);
                 $result = $controller->update($segments[1], $data, $user['user_id']);
                 echo json_encode($result);
             }
             break;
-
+        
         case 'DELETE':
             $user = $auth->authenticate();
             if ($user && $auth->checkRole($user, ['admin']) && isset($segments[1])) {
@@ -366,7 +359,7 @@ function handlePropertyRoutes($segments, $method)
                 echo json_encode($result);
             }
             break;
-
+        
         default:
             http_response_code(405);
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -376,24 +369,23 @@ function handlePropertyRoutes($segments, $method)
 /**
  * Handle upload routes
  */
-function handleUploadRoutes($segments, $method)
-{
+function handleUploadRoutes($segments, $method) {
     $auth = new AuthMiddleware();
     $user = $auth->authenticate();
-
+    
     if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
         return;
     }
-
+    
     $controller = new UploadController();
-
+    
     if ($method === 'POST' && isset($segments[1])) {
         switch ($segments[1]) {
             case 'property-image':
                 $result = $controller->uploadPropertyImage($_FILES['image'] ?? null);
                 echo json_encode($result);
                 break;
-
+            
             case 'video':
                 $result = $controller->uploadVideo($_FILES['video'] ?? null);
                 echo json_encode($result);
@@ -409,12 +401,12 @@ function handleUploadRoutes($segments, $method)
                 $result = $controller->uploadVideoImage($_FILES['image'] ?? null);
                 echo json_encode($result);
                 break;
-
+            
             case 'blog-image':
                 $result = $controller->uploadBlogImage($_FILES['image'] ?? null);
                 echo json_encode($result);
                 break;
-
+            
             case 'city-image':
                 $result = $controller->uploadCityImage($_FILES['image'] ?? null);
                 echo json_encode($result);
@@ -429,12 +421,7 @@ function handleUploadRoutes($segments, $method)
                 $result = $controller->uploadAttachment($_FILES['file'] ?? $_FILES['attachment'] ?? null);
                 echo json_encode($result);
                 break;
-
-            case 'editor-image':
-                $result = $controller->uploadEditorImage($_FILES['image'] ?? $_FILES['file'] ?? null);
-                echo json_encode($result);
-                break;
-
+            
             default:
                 http_response_code(404);
                 echo json_encode(['success' => false, 'error' => 'Upload endpoint not found']);
@@ -453,16 +440,15 @@ function handleUploadRoutes($segments, $method)
 /**
  * Handle home routes (public, no auth)
  */
-function handleHomeRoutes($segments, $method)
-{
+function handleHomeRoutes($segments, $method) {
     if ($method !== 'GET') {
         http_response_code(405);
         echo json_encode(['success' => false, 'error' => 'Method not allowed']);
         return;
     }
-
+    
     $controller = new HomeController();
-
+    
     if (empty($segments[1])) {
         // GET /api/home - Get all homepage data
         $result = $controller->getHomeData();
@@ -480,10 +466,9 @@ function handleHomeRoutes($segments, $method)
 /**
  * Handle blog routes
  */
-function handleBlogRoutes($segments, $method)
-{
+function handleBlogRoutes($segments, $method) {
     $controller = new BlogController();
-
+    
     // Public routes (no auth)
     if ($method === 'GET' && empty($segments[1])) {
         // GET /api/blogs - Get all blogs
@@ -492,7 +477,7 @@ function handleBlogRoutes($segments, $method)
         echo json_encode($result);
         return;
     }
-
+    
     if ($method === 'GET' && !empty($segments[1])) {
         // GET /api/blogs/slug/:slug or /api/blogs/:id
         if ($segments[1] === 'slug' && !empty($segments[2])) {
@@ -507,17 +492,17 @@ function handleBlogRoutes($segments, $method)
             return;
         }
     }
-
+    
     // Protected routes (require auth)
     $auth = new AuthMiddleware();
     $user = $auth->authenticate();
-
+    
     if (!$user) {
         http_response_code(401);
         echo json_encode(['success' => false, 'error' => 'Unauthorized']);
         return;
     }
-
+    
     switch ($method) {
         case 'POST':
             // POST /api/blogs/reorder - bulk reorder
@@ -543,7 +528,7 @@ function handleBlogRoutes($segments, $method)
             $result = $controller->update($segments[1], $data, $user['user_id']);
             echo json_encode($result);
             break;
-
+            
         case 'DELETE':
             // DELETE /api/blogs/:id - Delete blog
             if (empty($segments[1])) {
@@ -554,7 +539,7 @@ function handleBlogRoutes($segments, $method)
             $result = $controller->delete($segments[1], $user['user_id']);
             echo json_encode($result);
             break;
-
+            
         default:
             http_response_code(405);
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -564,8 +549,7 @@ function handleBlogRoutes($segments, $method)
 /**
  * Handle video routes
  */
-function handleVideoRoutes($segments, $method)
-{
+function handleVideoRoutes($segments, $method) {
     $controller = new VideoController();
 
     if ($method === 'GET' && empty($segments[1])) {
@@ -633,8 +617,7 @@ function handleVideoRoutes($segments, $method)
 /**
  * Handle testimonial routes
  */
-function handleTestimonialRoutes($segments, $method)
-{
+function handleTestimonialRoutes($segments, $method) {
     $controller = new TestimonialController();
 
     if ($method === 'GET') {
@@ -699,8 +682,7 @@ function handleTestimonialRoutes($segments, $method)
 /**
  * Handle city routes
  */
-function handleCityRoutes($segments, $method)
-{
+function handleCityRoutes($segments, $method) {
     $controller = new CityController();
     $auth = new AuthMiddleware();
 
@@ -760,8 +742,7 @@ function handleCityRoutes($segments, $method)
 /**
  * Handle area routes
  */
-function handleAreaRoutes($segments, $method)
-{
+function handleAreaRoutes($segments, $method) {
     $controller = new AreaController();
     $auth = new AuthMiddleware();
 
@@ -821,31 +802,30 @@ function handleAreaRoutes($segments, $method)
 /**
  * Handle redirect routes
  */
-function handleRedirectRoutes($segments, $method)
-{
+function handleRedirectRoutes($segments, $method) {
     $controller = new RedirectController();
-
-    // Public resolve: /redirects/resolve?urlOld=/path
-    if ($method === 'GET' && !empty($segments[1]) && $segments[1] === 'resolve') {
-        $urlOld = $_GET['urlOld'] ?? '';
-        $result = $controller->resolve($urlOld);
-        echo json_encode($result);
-        return;
-    }
-
-    // Protected routes require authentication
-    $auth = new AuthMiddleware();
-    $user = $auth->authenticate();
-    if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-        return;
-    }
 
     switch ($method) {
         case 'GET':
+            // Public resolve: /redirects/resolve?urlOld=/path
+            if (!empty($segments[1]) && $segments[1] === 'resolve') {
+                $urlOld = $_GET['urlOld'] ?? '';
+                $result = $controller->resolve($urlOld);
+                echo json_encode($result);
+                return;
+            }
+
+            // Protected routes
+            $auth = new AuthMiddleware();
+            $user = $auth->authenticate();
+            if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+                return;
+            }
+
             if (!empty($segments[1]) && is_numeric($segments[1])) {
-                $result = $controller->getById((int) $segments[1]);
+                $result = $controller->getById((int)$segments[1]);
                 echo json_encode($result);
                 return;
             }
@@ -866,7 +846,7 @@ function handleRedirectRoutes($segments, $method)
                 return;
             }
             $data = json_decode(file_get_contents('php://input'), true);
-            $result = $controller->update((int) $segments[1], $data, $user['user_id']);
+            $result = $controller->update((int)$segments[1], $data, $user['user_id']);
             echo json_encode($result);
             break;
 
@@ -876,7 +856,7 @@ function handleRedirectRoutes($segments, $method)
                 echo json_encode(['success' => false, 'error' => 'Redirect ID required']);
                 return;
             }
-            $result = $controller->delete((int) $segments[1], $user['user_id']);
+            $result = $controller->delete((int)$segments[1], $user['user_id']);
             echo json_encode($result);
             break;
 
@@ -889,10 +869,9 @@ function handleRedirectRoutes($segments, $method)
 /**
  * Handle photogallery routes
  */
-function handlePhotoGalleryRoutes($segments, $method)
-{
+function handlePhotoGalleryRoutes($segments, $method) {
     $controller = new PhotoGalleryController();
-
+    
     // Public route - get photos for a property
     if ($method === 'GET' && !empty($segments[1]) && $segments[1] === 'property' && !empty($segments[2])) {
         // GET /api/photogallery/property/:propertyId
@@ -900,17 +879,17 @@ function handlePhotoGalleryRoutes($segments, $method)
         echo json_encode($result);
         return;
     }
-
+    
     // Protected routes - require authentication
     $auth = new AuthMiddleware();
     $user = $auth->authenticate();
-
+    
     if (!$user) {
         http_response_code(401);
         echo json_encode(['success' => false, 'error' => 'Unauthorized']);
         return;
     }
-
+    
     switch ($method) {
         case 'GET':
             if (!empty($segments[1]) && is_numeric($segments[1])) {
@@ -922,7 +901,7 @@ function handlePhotoGalleryRoutes($segments, $method)
                 echo json_encode(['success' => false, 'error' => 'Invalid request']);
             }
             break;
-
+            
         case 'POST':
             if (!empty($segments[1]) && $segments[1] === 'reorder') {
                 // POST /api/photogallery/reorder - Update display order
@@ -936,7 +915,7 @@ function handlePhotoGalleryRoutes($segments, $method)
                 echo json_encode($result);
             }
             break;
-
+            
         case 'PUT':
             // PUT /api/photogallery/:id - Update photo
             if (empty($segments[1])) {
@@ -948,7 +927,7 @@ function handlePhotoGalleryRoutes($segments, $method)
             $result = $controller->update($segments[1], $data);
             echo json_encode($result);
             break;
-
+            
         case 'DELETE':
             // DELETE /api/photogallery/:id - Delete photo
             if (empty($segments[1])) {
@@ -959,7 +938,7 @@ function handlePhotoGalleryRoutes($segments, $method)
             $result = $controller->delete($segments[1]);
             echo json_encode($result);
             break;
-
+            
         default:
             http_response_code(405);
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -969,11 +948,10 @@ function handlePhotoGalleryRoutes($segments, $method)
 /**
  * Handle property photo routes
  */
-function handlePropertyPhotoRoutes($segments, $method)
-{
+function handlePropertyPhotoRoutes($segments, $method) {
     $controller = new PropertyPhotoController();
     $auth = new AuthMiddleware();
-
+    
     switch ($method) {
         case 'GET':
             // GET /api/property-photos/property/:propertyId - Get photos for a property
@@ -982,24 +960,24 @@ function handlePropertyPhotoRoutes($segments, $method)
                 echo json_encode($result);
                 break;
             }
-
+            
             // GET /api/property-photos/:id - Get single photo
             if (!empty($segments[1]) && is_numeric($segments[1])) {
                 $result = $controller->getById($segments[1]);
                 echo json_encode($result);
                 break;
             }
-
+            
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Invalid request']);
             break;
-
+        
         case 'POST':
             $user = $auth->authenticate();
             if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
                 break;
             }
-
+            
             // POST /api/property-photos/reorder - Reorder photos
             if (isset($segments[1]) && $segments[1] === 'reorder') {
                 $data = json_decode(file_get_contents('php://input'), true);
@@ -1008,55 +986,55 @@ function handlePropertyPhotoRoutes($segments, $method)
                 echo json_encode($result);
                 break;
             }
-
+            
             // POST /api/property-photos - Create new photo
             $data = json_decode(file_get_contents('php://input'), true);
             $result = $controller->create($data);
             echo json_encode($result);
             break;
-
+        
         case 'PUT':
             $user = $auth->authenticate();
             if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
                 break;
             }
-
+            
             // PUT /api/property-photos/:id/set-cover - Set as cover
             if (!empty($segments[1]) && isset($segments[2]) && $segments[2] === 'set-cover') {
                 $result = $controller->setCover($segments[1]);
                 echo json_encode($result);
                 break;
             }
-
+            
             // PUT /api/property-photos/:id - Update photo
             if (empty($segments[1])) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'error' => 'Photo ID required']);
                 break;
             }
-
+            
             $data = json_decode(file_get_contents('php://input'), true);
             $result = $controller->update($segments[1], $data);
             echo json_encode($result);
             break;
-
+        
         case 'DELETE':
             $user = $auth->authenticate();
             if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
                 break;
             }
-
+            
             // DELETE /api/property-photos/:id - Delete photo
             if (empty($segments[1])) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'error' => 'Photo ID required']);
                 break;
             }
-
+            
             $result = $controller->delete($segments[1]);
             echo json_encode($result);
             break;
-
+        
         default:
             http_response_code(405);
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -1066,11 +1044,10 @@ function handlePropertyPhotoRoutes($segments, $method)
 /**
  * Handle exchange rate routes
  */
-function handleExchangeRateRoutes($segments, $method)
-{
+function handleExchangeRateRoutes($segments, $method) {
     $controller = new ExchangeRateController();
     $auth = new AuthMiddleware();
-
+    
     switch ($method) {
         case 'GET':
             // GET /api/exchange-rate/current - Get current active rate (public)
@@ -1079,7 +1056,7 @@ function handleExchangeRateRoutes($segments, $method)
                 echo json_encode($result);
                 break;
             }
-
+            
             // GET /api/exchange-rate/history - Get rate history (admin only)
             if (isset($segments[1]) && $segments[1] === 'history') {
                 $user = $auth->authenticate();
@@ -1090,11 +1067,11 @@ function handleExchangeRateRoutes($segments, $method)
                 echo json_encode($result);
                 break;
             }
-
+            
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Invalid request']);
             break;
-
+        
         case 'POST':
             // POST /api/exchange-rate/refresh - Refresh rates from Frankfurter (admin only)
             if (isset($segments[1]) && $segments[1] === 'refresh') {
@@ -1112,12 +1089,12 @@ function handleExchangeRateRoutes($segments, $method)
             if (!$user || !$auth->checkRole($user, ['admin'])) {
                 break;
             }
-
+            
             $data = json_decode(file_get_contents('php://input'), true);
             $result = $controller->update($data);
             echo json_encode($result);
             break;
-
+        
         default:
             http_response_code(405);
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -1127,8 +1104,7 @@ function handleExchangeRateRoutes($segments, $method)
 /**
  * Handle off-market invite routes
  */
-function handleOffMarketInviteRoutes($segments, $method)
-{
+function handleOffMarketInviteRoutes($segments, $method) {
     $controller = new OffMarketInviteController();
     $auth = new AuthMiddleware();
 
@@ -1179,14 +1155,14 @@ function handleOffMarketInviteRoutes($segments, $method)
 
     // POST /off-market-invites/:id/regenerate
     if ($method === 'POST' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'regenerate') {
-        $result = $controller->regenerate((int) $segments[1]);
+        $result = $controller->regenerate((int)$segments[1]);
         echo json_encode($result);
         return;
     }
 
     // DELETE /off-market-invites/:id
     if ($method === 'DELETE' && isset($segments[1])) {
-        $result = $controller->delete((int) $segments[1]);
+        $result = $controller->delete((int)$segments[1]);
         echo json_encode($result);
         return;
     }
@@ -1198,8 +1174,7 @@ function handleOffMarketInviteRoutes($segments, $method)
 /**
  * Handle access request routes
  */
-function handleAccessRequestRoutes($segments, $method)
-{
+function handleAccessRequestRoutes($segments, $method) {
     $controller = new AccessRequestController();
     $auth = new AuthMiddleware();
 
@@ -1249,28 +1224,28 @@ function handleAccessRequestRoutes($segments, $method)
 
     // PATCH /access-requests/:id/view
     if (($method === 'PATCH' || $method === 'PUT') && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'view') {
-        $result = $controller->markViewed((int) $segments[1]);
+        $result = $controller->markViewed((int)$segments[1]);
         echo json_encode($result);
         return;
     }
 
     // POST /access-requests/:id/generate-code
     if ($method === 'POST' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'generate-code') {
-        $result = $controller->generateCode((int) $segments[1]);
+        $result = $controller->generateCode((int)$segments[1]);
         echo json_encode($result);
         return;
     }
 
     // POST /access-requests/:id/regenerate-code
     if ($method === 'POST' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'regenerate-code') {
-        $result = $controller->regenerateCode((int) $segments[1]);
+        $result = $controller->regenerateCode((int)$segments[1]);
         echo json_encode($result);
         return;
     }
 
     // DELETE /access-requests/:id
     if ($method === 'DELETE' && isset($segments[1])) {
-        $result = $controller->delete((int) $segments[1]);
+        $result = $controller->delete((int)$segments[1]);
         echo json_encode($result);
         return;
     }
@@ -1282,8 +1257,7 @@ function handleAccessRequestRoutes($segments, $method)
 /**
  * Handle todo routes (admin)
  */
-function handleTodoRoutes($segments, $method)
-{
+function handleTodoRoutes($segments, $method) {
     $controller = new TodoController();
     $auth = new AuthMiddleware();
     $user = $auth->authenticate();
@@ -1309,14 +1283,14 @@ function handleTodoRoutes($segments, $method)
     // PUT /todos/:id
     if ($method === 'PUT' && isset($segments[1]) && is_numeric($segments[1]) && count($segments) === 2) {
         $data = json_decode(file_get_contents('php://input'), true);
-        $result = $controller->update((int) $segments[1], $data);
+        $result = $controller->update((int)$segments[1], $data);
         echo json_encode($result);
         return;
     }
 
     // DELETE /todos/:id
     if ($method === 'DELETE' && isset($segments[1]) && is_numeric($segments[1])) {
-        $result = $controller->delete((int) $segments[1]);
+        $result = $controller->delete((int)$segments[1]);
         echo json_encode($result);
         return;
     }
@@ -1332,14 +1306,14 @@ function handleTodoRoutes($segments, $method)
     // POST /todos/:id/comments
     if ($method === 'POST' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'comments') {
         $data = json_decode(file_get_contents('php://input'), true);
-        $result = $controller->addComment((int) $segments[1], $data);
+        $result = $controller->addComment((int)$segments[1], $data);
         echo json_encode($result);
         return;
     }
 
     // DELETE /todos/:id/comments/:commentId
     if ($method === 'DELETE' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'comments' && isset($segments[3])) {
-        $result = $controller->deleteComment((int) $segments[1], (int) $segments[3]);
+        $result = $controller->deleteComment((int)$segments[1], (int)$segments[3]);
         echo json_encode($result);
         return;
     }
@@ -1347,14 +1321,14 @@ function handleTodoRoutes($segments, $method)
     // POST /todos/:id/attachments
     if ($method === 'POST' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'attachments') {
         $data = json_decode(file_get_contents('php://input'), true);
-        $result = $controller->addAttachment((int) $segments[1], $data);
+        $result = $controller->addAttachment((int)$segments[1], $data);
         echo json_encode($result);
         return;
     }
 
     // DELETE /todos/:id/attachments/:attachmentId
     if ($method === 'DELETE' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'attachments' && isset($segments[3])) {
-        $result = $controller->deleteAttachment((int) $segments[1], (int) $segments[3]);
+        $result = $controller->deleteAttachment((int)$segments[1], (int)$segments[3]);
         echo json_encode($result);
         return;
     }
@@ -1367,8 +1341,7 @@ function handleTodoRoutes($segments, $method)
 /**
  * Handle contact routes
  */
-function handleContactRoutes($segments, $method)
-{
+function handleContactRoutes($segments, $method) {
     $controller = new ContactController();
 
     if ($method === 'POST') {
@@ -1380,39 +1353,4 @@ function handleContactRoutes($segments, $method)
 
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
-}
-
-/**
- * Handle backup routes
- */
-function handleBackupsRoutes($segments, $method)
-{
-    $auth = new AuthMiddleware();
-    $user = $auth->authenticate();
-
-    if (!$user || !$auth->checkRole($user, ['admin'])) {
-        return;
-    }
-
-    $controller = new BackupController();
-
-    switch ($method) {
-        case 'GET':
-            if (isset($segments[1]) && $segments[1] === 'download' && isset($segments[2])) {
-                $controller->download($segments[2]);
-            } else {
-                $result = $controller->list();
-                echo json_encode($result);
-            }
-            break;
-
-        case 'POST':
-            $result = $controller->create();
-            echo json_encode($result);
-            break;
-
-        default:
-            http_response_code(405);
-            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
-    }
 }

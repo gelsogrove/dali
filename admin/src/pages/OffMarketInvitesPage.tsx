@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -38,6 +38,11 @@ interface Invite {
   property_image: string | null
 }
 
+interface OffMarketProperty {
+  id: number
+  title: string
+  slug: string
+}
 
 export default function OffMarketInvitesPage() {
   const queryClient = useQueryClient()
@@ -47,6 +52,7 @@ export default function OffMarketInvitesPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [createForm, setCreateForm] = useState({
+    property_id: '',
     client_name: '',
     client_email: '',
   })
@@ -61,6 +67,14 @@ export default function OffMarketInvitesPage() {
     },
   })
 
+  // Fetch off-market properties for dropdown
+  const { data: propertiesData } = useQuery({
+    queryKey: ['off-market-properties'],
+    queryFn: async () => {
+      const res = await api.get('/off-market-invites/properties')
+      return res.data
+    },
+  })
 
   // Create invite
   const createMutation = useMutation({
@@ -68,7 +82,7 @@ export default function OffMarketInvitesPage() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['off-market-invites'] })
       setNewInvite(response.data.data)
-      setCreateForm({ client_name: '', client_email: '' })
+      setCreateForm({ property_id: '', client_name: '', client_email: '' })
     },
   })
 
@@ -103,8 +117,10 @@ export default function OffMarketInvitesPage() {
   const getTimeRemaining = (expiresAt: string) => {
     const diff = new Date(expiresAt).getTime() - Date.now()
     if (diff <= 0) return null
-    const totalHours = Math.floor(diff / (1000 * 60 * 60))
-    return `${totalHours}h remaining`
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    if (days > 0) return `${days}d ${hours}h remaining`
+    return `${hours}h remaining`
   }
 
   const formatDate = (dateStr: string) =>
@@ -115,11 +131,13 @@ export default function OffMarketInvitesPage() {
 
   const invites = data?.data?.invites || []
   const pagination = data?.data?.pagination || { page: 1, total_pages: 1, total: 0 }
+  const offMarketProperties: OffMarketProperty[] = propertiesData?.data || []
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!createForm.property_id) return
     createMutation.mutate({
-      property_id: 0,
+      property_id: parseInt(createForm.property_id),
       client_name: createForm.client_name,
       client_email: createForm.client_email,
     })
@@ -150,8 +168,8 @@ export default function OffMarketInvitesPage() {
           <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-gray-600" />
+                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-violet-600" />
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900">
                   {newInvite ? 'Invite Created!' : 'Create New Invite'}
@@ -164,6 +182,23 @@ export default function OffMarketInvitesPage() {
 
             {!newInvite ? (
               <form onSubmit={handleCreate} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Property *</label>
+                  <select
+                    value={createForm.property_id}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, property_id: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
+                    required
+                  >
+                    <option value="">Select a property...</option>
+                    {offMarketProperties.map(p => (
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    ))}
+                  </select>
+                  {offMarketProperties.length ===  0 && (
+                    <p className="text-xs text-amber-600 mt-1">No off-market properties found. Create a property with type "Off Market" first.</p>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Client Name</label>
@@ -171,7 +206,7 @@ export default function OffMarketInvitesPage() {
                       type="text"
                       value={createForm.client_name}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, client_name: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
                       placeholder="Optional"
                     />
                   </div>
@@ -181,13 +216,13 @@ export default function OffMarketInvitesPage() {
                       type="email"
                       value={createForm.client_email}
                       onChange={(e) => setCreateForm(prev => ({ ...prev, client_email: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
                       placeholder="Optional"
                     />
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500">
-                  <p>An invite link and 6-character access code will be generated. The invite expires after <strong>72 hours</strong>.</p>
+                  <p>An invite link and 6-character access code will be generated. The invite expires after <strong>7 days</strong>.</p>
                 </div>
                 <div className="flex gap-3 pt-2">
                   <Button type="button" variant="outline" className="flex-1" onClick={() => setShowCreateForm(false)}>
@@ -195,8 +230,8 @@ export default function OffMarketInvitesPage() {
                   </Button>
                   <Button
                     type="submit"
-                    className="flex-1 bg-gray-900 hover:bg-gray-800 text-white"
-                    disabled={createMutation.isPending}
+                    className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
+                    disabled={createMutation.isPending || !createForm.property_id}
                   >
                     {createMutation.isPending ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <KeyRound className="h-4 w-4 mr-2" />}
                     Generate Invite
@@ -208,14 +243,14 @@ export default function OffMarketInvitesPage() {
               <div className="p-6 space-y-5">
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
                   <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-sm text-green-800 font-medium">Invite created for {newInvite.property_slug ? `"${newInvite.property_title}"` : 'Global Session'}</p>
+                  <p className="text-sm text-green-800 font-medium">Invite created for "{newInvite.property_title}"</p>
                 </div>
 
                 {/* Invite Link */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Invite Link</label>
                   <div className="flex items-center gap-2 bg-gray-50 rounded-lg border border-gray-200 p-3">
-                    <code className="flex-1 text-sm text-slate-700 break-all">{newInvite.invite_link}</code>
+                    <code className="flex-1 text-sm text-violet-700 break-all">{newInvite.invite_link}</code>
                     <button
                       onClick={() => copyToClipboard(newInvite.invite_link, 'new-link')}
                       className="flex-shrink-0 p-2 rounded-md hover:bg-gray-200 text-gray-500 transition-colors"
@@ -260,7 +295,7 @@ export default function OffMarketInvitesPage() {
       {/* Loading */}
       {isLoading && (
         <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-500 border-t-transparent" />
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-violet-500 border-t-transparent" />
         </div>
       )}
 
@@ -281,18 +316,20 @@ export default function OffMarketInvitesPage() {
           {invites.map((inv: Invite) => (
             <div
               key={inv.id}
-              className={`bg-white rounded-xl border overflow-hidden transition-all ${inv.is_expired ? 'border-gray-200 opacity-75' : 'border-slate-200 shadow-sm'
-                }`}
+              className={`bg-white rounded-xl border overflow-hidden transition-all ${
+                inv.is_expired ? 'border-gray-200 opacity-75' : 'border-violet-200 shadow-sm'
+              }`}
             >
               <div className="p-5">
                 <div className="flex flex-col lg:flex-row lg:items-start gap-5">
                   {/* Property & Client Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${inv.is_expired
-                        ? 'bg-red-50 text-red-600'
-                        : 'bg-green-50 text-green-600'
-                        }`}>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${
+                        inv.is_expired
+                          ? 'bg-red-50 text-red-600'
+                          : 'bg-green-50 text-green-600'
+                      }`}>
                         {inv.is_expired ? (
                           <><AlertCircle className="h-3 w-3" /> Expired</>
                         ) : (
@@ -310,14 +347,14 @@ export default function OffMarketInvitesPage() {
                       <div className="text-sm text-gray-500 mb-3">
                         {inv.client_name && <span className="font-medium text-gray-700">{inv.client_name}</span>}
                         {inv.client_name && inv.client_email && <span className="mx-1">·</span>}
-                        {inv.client_email && <a href={`mailto:${inv.client_email}`} className="hover:text-slate-600">{inv.client_email}</a>}
+                        {inv.client_email && <a href={`mailto:${inv.client_email}`} className="hover:text-violet-600">{inv.client_email}</a>}
                       </div>
                     )}
 
                     {/* Invite Link */}
                     <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 text-xs">
                       <Link2 className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-                      <code className="text-slate-600 truncate flex-1">{inv.invite_link}</code>
+                      <code className="text-violet-600 truncate flex-1">{inv.invite_link}</code>
                       <button
                         onClick={() => copyToClipboard(inv.invite_link, `link-${inv.id}`)}
                         className="p-1 rounded hover:bg-gray-200 text-gray-400 transition-colors flex-shrink-0"
@@ -364,12 +401,12 @@ export default function OffMarketInvitesPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="w-full border-slate-300 text-slate-700 hover:bg-slate-50"
+                            className="w-full border-violet-300 text-violet-700 hover:bg-violet-50"
                             onClick={() => regenerateMutation.mutate(inv.id)}
                             disabled={regenerateMutation.isPending}
                           >
                             <RefreshCw className={`h-3.5 w-3.5 mr-2 ${regenerateMutation.isPending ? 'animate-spin' : ''}`} />
-                            Regenerate (72 hours)
+                            Regenerate (7 days)
                           </Button>
                         </div>
                       ) : (

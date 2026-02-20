@@ -3,7 +3,7 @@ import { api } from '../config/api';
 import './PropertyAccessGate.css';
 
 /**
- * PropertyAccessGate - Locks attachments behind an access code system for Hot Deals.
+ * PropertyAccessGate - Locks attachments behind an access code system for New Developments and Active Properties.
  * 
  * Flow:
  * 1. Show lock icon over attachments
@@ -27,7 +27,7 @@ export default function PropertyAccessGate({
     const base = API_BASE.replace(/\/api\/?$/, '');
     return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
   };
-  const storageKey = 'hot_deal_access';
+  const storageKey = 'protected_docs_access';
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [showRequestForm, setShowRequestForm] = useState(false);

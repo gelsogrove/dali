@@ -230,10 +230,10 @@ export default function SearchPage() {
                     const formatPrice = () => {
                       if (property.price_on_demand) return 'Price on Request';
                       if (property.property_type === 'development' && property.price_from_usd && property.price_to_usd) {
-                        return `USD ${Number(property.price_from_usd).toLocaleString('en-US')} - ${Number(property.price_to_usd).toLocaleString('en-US')}`;
+                        return `USD ${Number(property.price_from_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })} - ${Number(property.price_to_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
                       }
                       if (property.price_usd) {
-                        return `USD ${Number(property.price_usd).toLocaleString('en-US')}`;
+                        return `USD ${Number(property.price_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
                       }
                       return 'Price on Request';
                     };

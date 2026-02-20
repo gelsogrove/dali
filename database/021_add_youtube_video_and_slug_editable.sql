@@ -1,13 +1,13 @@
 -- ============================================================================
--- Migration: Add YouTube Video URL field to properties
+-- Migration: Add Video URL field to properties
 -- Date: 2026-02-13
--- Purpose: Allow admins to add YouTube embed codes to property gallery
+-- Purpose: Allow admins to add YouTube, Vimeo, or Instagram video URLs to property gallery
 -- ============================================================================
 
 -- Add youtube_video_url field to properties table
 ALTER TABLE properties 
 ADD COLUMN youtube_video_url TEXT NULL 
-COMMENT 'YouTube embed URL for property video' 
+COMMENT 'Video URL (YouTube, Vimeo, or Instagram) for property showcase' 
 AFTER google_maps_url;
 
 -- Note: slug field already exists and is UNIQUE in properties table

@@ -640,10 +640,10 @@ export default function PropertiesPage() {
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full space-y-4">
             <h3 className="text-xl font-semibold">Delete property?</h3>
             <p className="text-muted-foreground">
-              Are you sure? This action cannot be undone. All photos and data will be permanently deleted.
+              If the property is older than 24h it will be archived (not removed) and a redirect placeholder will be created for SEO safety.
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setDeleteId(null)}>Close</Button>
               <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending}>
                 {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
               </Button>

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import ImageWithOverlay from '../components/ImageWithOverlay';
 import SafeImage from '../components/SafeImage';
+import PropertyAccessGate from '../components/PropertyAccessGate';
 import OffMarketGate from '../components/OffMarketGate';
 import TitleHeader from '../components/TitleHeader';
 import { api } from '../config/api';
@@ -12,7 +13,7 @@ import { listingContent } from '../data/listingContent';
 import { formatSize, formatBedrooms, formatBathrooms } from '../utils/propertyFormatters';
 import './ListingDetailPage.css';
 
-// Normalize YouTube or Vimeo URL into an embeddable src
+// Normalize YouTube, Vimeo, or Instagram URL into an embeddable src
 const getVideoEmbed = (url) => {
   if (!url) return null;
   let parsed;
@@ -48,6 +49,17 @@ const getVideoEmbed = (url) => {
     }
   }
 
+  // Instagram (Reels or Posts)
+  if (host.includes('instagram.com')) {
+    // Extract post/reel path: instagram.com/p/ID or instagram.com/reel/ID
+    const match = parsed.pathname.match(/\/(p|reel)\/([^/?]+)/);
+    if (match) {
+      const type = match[1]; // 'p' or 'reel'
+      const mediaId = match[2];
+      return { provider: 'instagram', src: `https://www.instagram.com/${type}/${mediaId}/embed` };
+    }
+  }
+
   return null;
 };
 
@@ -70,11 +82,11 @@ export default function ListingDetailPage() {
   const [scheduleStatus, setScheduleStatus] = useState({ type: '', message: '' });
   const [isScheduleSubmitting, setIsScheduleSubmitting] = useState(false);
   const [scheduleStartedAt, setScheduleStartedAt] = useState(() => Date.now());
-
+  
   // Related properties
   const [relatedProperties, setRelatedProperties] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
-
+  
   // Currency toggle: 'USD', 'MXN', 'EUR'
   const [selectedCurrency, setSelectedCurrency] = useState('USD');
   // Size unit toggle: 'sqm' or 'sqft'
@@ -96,7 +108,7 @@ export default function ListingDetailPage() {
   useEffect(() => {
     const fetchProperty = async () => {
       if (!slug) return;
-
+      
       try {
         setLoading(true);
         setNotFound(false);
@@ -125,7 +137,7 @@ export default function ListingDetailPage() {
   // Load related properties based on city/neighborhood
   useEffect(() => {
     if (!property) return;
-
+    
     const fetchRelated = async () => {
       setLoadingRelated(true);
       try {
@@ -134,12 +146,12 @@ export default function ListingDetailPage() {
         if (property.neighborhood) {
           response = await api.get(`/properties?is_active=1&per_page=6&neighborhood=${encodeURIComponent(property.neighborhood)}`);
         }
-
+        
         // If no results with neighborhood, try city
         if (!response?.data?.properties?.length && property.city) {
           response = await api.get(`/properties?is_active=1&per_page=6&city=${encodeURIComponent(property.city)}`);
         }
-
+        
         if (response?.success && response.data?.properties) {
           // Filter out current property
           const filtered = response.data.properties.filter(p => p.id !== property.id).slice(0, 4);
@@ -151,7 +163,7 @@ export default function ListingDetailPage() {
         setLoadingRelated(false);
       }
     };
-
+    
     fetchRelated();
   }, [property]);
 
@@ -171,13 +183,13 @@ export default function ListingDetailPage() {
 
   const detail = property
     ? {
-      title: property.title,
-      location: property.location || property.city || '',
-      priceLabel: property.price ? `$${Number(property.price).toLocaleString()}` : 'Contact for pricing',
-      heroImage: property.featured_image,
-      highlights: [],
-      content: property.content || property.description || listingContent[slug] || '<p>Contact us to learn more about this property.</p>',
-    }
+        title: property.title,
+        location: property.location || property.city || '',
+        priceLabel: property.price ? `$${Number(property.price).toLocaleString()}` : 'Contact for pricing',
+        heroImage: property.featured_image,
+        highlights: [],
+        content: property.content || property.description || listingContent[slug] || '<p>Contact us to learn more about this property.</p>',
+      }
     : listingDetails[slug];
 
   // Base URL for canonical and OG URLs
@@ -326,7 +338,7 @@ export default function ListingDetailPage() {
       setIsScheduleSubmitting(false);
     }
   };
-
+  
   // Build absolute image URL
   const getAbsoluteImageUrl = (url) => {
     if (!url) return null;
@@ -403,7 +415,7 @@ export default function ListingDetailPage() {
   if (notFound || !detail) {
     return (
       <>
-        <SEO
+        <SEO 
           title="Property Not Found"
           description="The property you are looking for is no longer available or has been moved."
           canonicalUrl={`https://buywithdali.com${pathname}`}
@@ -429,32 +441,32 @@ export default function ListingDetailPage() {
   }
 
   const galleryUrls = (property.galleryUrls && property.galleryUrls.length ? property.galleryUrls : []).filter(Boolean);
-
+  
   // Use photos array with alt_text if available, otherwise fallback to galleryUrls
-  const photos = property.photos && property.photos.length > 0
+  const photos = property.photos && property.photos.length > 0 
     ? property.photos.map(photo => ({
-      url: photo.url,
-      alt: photo.alt_text || `${property.title} - ${property.city || 'Riviera Maya'} property image`
-    }))
+        url: photo.url,
+        alt: photo.alt_text || `${property.title} - ${property.city || 'Riviera Maya'} property image`
+      }))
     : galleryUrls.map((url, idx) => ({
-      url,
-      alt: `${property.title} - Image ${idx + 1}`
-    }));
-
+        url,
+        alt: `${property.title} - Image ${idx + 1}`
+      }));
+  
   const heroImage = detail.heroImage || (photos[0]?.url) || property.image;
-  const heroGallery = photos.length > 0
-    ? photos
+  const heroGallery = photos.length > 0 
+    ? photos 
     : (heroImage ? [{ url: heroImage, alt: property.title }] : []);
-
+  
   const scheduleLink = 'https://calendar.app.google/QoV7AeK9d3B62hqm7';
-
+  
   // Format price with currency
   const getPriceForCurrency = () => {
     if (property.price_on_demand) return 'Price on Request';
-
+    
     let price = null;
     let symbol = '$';
-
+    
     if (selectedCurrency === 'USD' && property.price_usd) {
       price = property.price_usd;
       symbol = '$';
@@ -465,18 +477,18 @@ export default function ListingDetailPage() {
       price = property.price_eur;
       symbol = '€';
     }
-
+    
     if (!price) return 'Contact for Pricing';
-
-    return `${symbol}${Number(price).toLocaleString('en-US')} ${selectedCurrency}`;
+    
+    return `${symbol}${Number(price).toLocaleString('en-US', { maximumFractionDigits: 0 })} ${selectedCurrency}`;
   };
-
+  
   const priceLabel = getPriceForCurrency();
   const neighborhood = property.city || detail.location || property.location || '';
-
+  
   // Property Type: active or development
   const propertyType = sectionInfo.typeLabel;
-
+  
   // Status label
   const getStatusLabel = (status) => {
     if (status === 'for_sale') return 'For Sale';
@@ -485,7 +497,7 @@ export default function ListingDetailPage() {
     return 'For Sale';
   };
   const statusLabel = getStatusLabel(property.status);
-
+  
   // Property Categories (unified: always an array)
   const categoriesArr = property.property_categories?.length
     ? property.property_categories
@@ -495,11 +507,11 @@ export default function ListingDetailPage() {
   const propertyCategories = categoriesArr.length
     ? categoriesArr.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(', ')
     : null;
-
+  
   // Use formatters from utils with unit toggle
   const bedroomsLabel = formatBedrooms(property);
   const bathroomsLabel = formatBathrooms(property);
-
+  
   // Size with toggle
   const getSizeLabel = () => {
     if (selectedUnit === 'sqm' && property.sqm) {
@@ -514,16 +526,16 @@ export default function ListingDetailPage() {
     return null;
   };
   const sizeLabel = getSizeLabel();
-
+  
   const currentUrl = typeof window !== 'undefined' ? window.location.href : property.href || '';
   const amenities =
     detail.amenities && detail.amenities.length
       ? detail.amenities
       : (() => {
-        const html = detail.content || '';
-        const matches = [...html.matchAll(new RegExp('<li[^>]*>(.*?)</li>', 'gis'))];
-        return matches.slice(0, 12).map((m) => m[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean);
-      })();
+          const html = detail.content || '';
+          const matches = [...html.matchAll(new RegExp('<li[^>]*>(.*?)</li>', 'gis'))];
+          return matches.slice(0, 12).map((m) => m[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean);
+        })();
   const additionalInfo = detail.additionalInfo || [];
   const attachments = property.attachments || [];
 
@@ -564,7 +576,7 @@ export default function ListingDetailPage() {
 
   const handleCopyLink = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(currentUrl).catch(() => { });
+      navigator.clipboard.writeText(currentUrl).catch(() => {});
     } else if (typeof window !== 'undefined') {
       window.prompt('Copy this link', currentUrl);
     }
@@ -607,7 +619,7 @@ export default function ListingDetailPage() {
           robots={isOffMarket ? 'noindex, nofollow' : 'index, follow'}
         />
       )}
-
+      
       <section className="listing-hero-slider">
         <Splide
           ref={mainSliderRef}
@@ -626,8 +638,8 @@ export default function ListingDetailPage() {
             <SplideSlide key={`hero-${idx}`}>
               <div className="listing-hero-frame">
                 <SafeImage
-                  src={photo.url}
-                  alt={photo.alt || `${detail.title} - Image ${idx + 1}`}
+                  src={photo.url} 
+                  alt={photo.alt || `${detail.title} - Image ${idx + 1}`} 
                   loading={idx === 0 ? "eager" : "lazy"}
                   placeholder="gradient"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -661,9 +673,9 @@ export default function ListingDetailPage() {
             >
               {heroGallery.map((photo, idx) => (
                 <SplideSlide key={`thumb-${idx}`}>
-                  <div
+                  <div 
                     className={`listing-gallery-thumb ${activeSlide === idx ? 'active' : ''}`}
-                    onClick={() => handleThumbnailClick(idx)}
+                    onClick={() => handleThumbnailClick(idx)} 
                   >
                     {loadingImages[idx] !== false && (
                       <div className="thumb-loading">
@@ -671,8 +683,8 @@ export default function ListingDetailPage() {
                       </div>
                     )}
                     <SafeImage
-                      src={photo.url}
-                      alt={photo.alt || `${detail.title} - Thumbnail ${idx + 1}`}
+                      src={photo.url} 
+                      alt={photo.alt || `${detail.title} - Thumbnail ${idx + 1}`} 
                       loading="lazy"
                       placeholder="gradient"
                       onLoad={() => handleImageLoad(idx)}
@@ -700,43 +712,168 @@ export default function ListingDetailPage() {
           </span>
         </div>
       </div>
-
+      
       <section className="listing-detail-section">
         <div className="listing-detail-container">
-
+          
           {/* Title and Subtitle */}
-          <TitleHeader
+          <TitleHeader 
             kicker={propertyType}
             title={detail.title}
             subtitle={property.subtitle || ''}
           />
-
+          
           <div className="listing-content-grid">
-
-            {/* Main Content - Description, Video, Map ONLY */}
+            
+            {/* Main Content */}
             <div className="listing-main-content" data-aos="fade-up" data-aos-duration="900" data-aos-delay="100">
+              
+              {/* Action Buttons */}
+              <div className="listing-actions">
+                <button onClick={() => setShowRequestInfo(true)} className="default-button active">
+                  Request Info
+                </button>
+                <button onClick={() => setShowScheduleShowing(true)} className="default-button active">
+                  Schedule a Showing
+                </button>
+              </div>
 
               {/* Property Description */}
               <div className="listing-about">
                 <div className="listing-description" dangerouslySetInnerHTML={{ __html: detail.content }}></div>
               </div>
 
-              {/* Video (YouTube or Vimeo) */}
+              {/* Property Details */}
+              <div className="listing-details-card">
+                <h3>Property Details</h3>
+                
+                {/* Core Info — always visible */}
+                <div className="info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Property Type</span>
+                    <strong className="info-value">{propertyType}</strong>
+                  </div>
+
+                  {propertyCategories && (
+                    <div className="info-item">
+                      <span className="info-label">Category</span>
+                      <strong className="info-value">{propertyCategories}</strong>
+                    </div>
+                  )}
+
+                  <div className="info-item">
+                    <span className="info-label">Status</span>
+                    <strong className="info-value">{statusLabel}</strong>
+                  </div>
+
+                  {bedroomsLabel && (
+                    <div className="info-item">
+                      <span className="info-label">Bedrooms</span>
+                      <strong className="info-value">{bedroomsLabel}</strong>
+                    </div>
+                  )}
+
+                  {bathroomsLabel && (
+                    <div className="info-item">
+                      <span className="info-label">Bathrooms</span>
+                      <strong className="info-value">{bathroomsLabel}</strong>
+                    </div>
+                  )}
+
+                  {sizeLabel && (
+                    <div className="info-item">
+                      <span className="info-label">Living Area</span>
+                      <strong className="info-value">{sizeLabel}</strong>
+                    </div>
+                  )}
+
+                  {property.lot_size_sqm && (
+                    <div className="info-item">
+                      <span className="info-label">Lot Size</span>
+                      <strong className="info-value">{property.lot_size_sqm} m²</strong>
+                    </div>
+                  )}
+
+                  {property.year_built && (
+                    <div className="info-item">
+                      <span className="info-label">Year Built</span>
+                      <strong className="info-value">{property.year_built}</strong>
+                    </div>
+                  )}
+
+                  {property.furnishing_status && (
+                    <div className="info-item">
+                      <span className="info-label">Furnishing</span>
+                      <strong className="info-value">{property.furnishing_status.charAt(0).toUpperCase() + property.furnishing_status.slice(1)}</strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* Amenities */}
+                {amenities.length > 0 && (
+                  <div className="listing-amenities-section">
+                    <h4>Amenities &amp; Features</h4>
+                    <ul className="amenities-list">
+                      {amenities.map((item, idx) => (
+                        <li key={`amenity-${idx}`}>
+                          <svg className="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M13.3334 4L6.00002 11.3333L2.66669 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Attachments */}
+                {attachments.length > 0 && (
+                  ['development', 'active'].includes(property.property_type) ? (
+                    <PropertyAccessGate
+                      property={property}
+                      attachments={attachments}
+                      attachmentIcon={attachmentIcon}
+                      formatBytes={formatBytes}
+                    />
+                  ) : (
+                  <div className="listing-attachments">
+                    <h4>Downloads</h4>
+                    <ul className="attachments-list">
+                      {attachments.map((file) => (
+                        <li key={file.id} className="attachment-item">
+                          <span className="attachment-icon" aria-hidden="true">{attachmentIcon(file.filename, file.mime_type)}</span>
+                          <div className="attachment-meta">
+                            <a href={file.url} target="_blank" rel="noopener noreferrer">
+                              {file.title || file.filename}
+                            </a>
+                            <span className="attachment-info">
+                              {file.filename} {file.size_bytes ? `· ${formatBytes(file.size_bytes)}` : ''}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  )
+                )}
+              </div>
+
+              {/* Video (YouTube, Vimeo, or Instagram) */}
               {property.youtube_video_url && getVideoEmbed(property.youtube_video_url) && (
-                <div className="listing-video">
+                <div className="listing-video" style={{ marginTop: '40px' }}>
                   <h4>Property Video</h4>
-                  <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '2px' }}>
+                  <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '4px' }}>
                     {(() => {
                       const embed = getVideoEmbed(property.youtube_video_url);
                       if (!embed) return null;
                       return (
-                        <iframe
-                          title="Property video"
-                          src={embed.src}
-                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        ></iframe>
+                    <iframe
+                      title="Property video"
+                      src={embed.src}
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
                       );
                     })()}
                   </div>
@@ -747,9 +884,9 @@ export default function ListingDetailPage() {
               <div className="listing-map">
                 <iframe
                   title="Property map"
-                  src={property.google_maps_url
-                    ? property.google_maps_url.replace('/maps/place/', '/maps/embed/v1/place?key=&q=').includes('embed')
-                      ? property.google_maps_url
+                  src={property.google_maps_url 
+                    ? property.google_maps_url.replace('/maps/place/', '/maps/embed/v1/place?key=&q=').includes('embed') 
+                      ? property.google_maps_url 
                       : `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3000!2d${property.longitude || '-87.0896'}!3d${property.latitude || '20.6127'}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s!2s${encodeURIComponent(property.city || 'Playa del Carmen')}!5e0!3m2!1sen!2smx`
                     : (property.latitude && property.longitude)
                       ? `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3000!2d${property.longitude}!3d${property.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s!2s${encodeURIComponent(property.city || 'Property Location')}!5e0!3m2!1sen!2smx`
@@ -757,23 +894,23 @@ export default function ListingDetailPage() {
                   }
                   width="100%"
                   height="450"
-                  style={{ border: 0, borderRadius: '2px' }}
+                  style={{ border: 0, borderRadius: '4px' }}
                   allowFullScreen=""
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 ></iframe>
               </div>
             </div>
-
-            {/* Sidebar - ALL property details, amenities, attachments, contact form */}
+            
+            {/* Sidebar */}
             <aside className="listing-sidebar" data-aos="fade-up" data-aos-duration="900" data-aos-delay="200">
-
+              
               {/* Price Card */}
               <div className="price-card">
                 <div className="price-display">
                   <div className="price-value">{priceLabel}</div>
-
-                  {/* Currency and Unit Toggles */}
+                  
+                  {/* Currency and Unit Toggles Together */}
                   <div className="price-controls">
                     {/* Currency Toggle */}
                     {!property.price_on_demand && (
@@ -793,7 +930,7 @@ export default function ListingDetailPage() {
                         })}
                       </div>
                     )}
-
+                    
                     {/* Unit Toggle */}
                     {(property.sqm || property.sqft) && (
                       <div className="unit-toggle">
@@ -813,12 +950,18 @@ export default function ListingDetailPage() {
                     )}
                   </div>
                 </div>
-
+                
                 <ul className="property-facts">
                   {neighborhood && (
                     <li>
                       <span>Neighborhood</span>
                       <strong>{neighborhood}</strong>
+                    </li>
+                  )}
+                  {sizeLabel && (
+                    <li>
+                      <span>Size</span>
+                      <strong>{sizeLabel}</strong>
                     </li>
                   )}
                   {bedroomsLabel && (
@@ -833,110 +976,37 @@ export default function ListingDetailPage() {
                       <strong>{bathroomsLabel}</strong>
                     </li>
                   )}
-                  {sizeLabel && (
-                    <li>
-                      <span>{selectedUnit === 'sqm' ? 'Mq2' : 'Sq Ft'}</span>
-                      <strong>{sizeLabel}</strong>
-                    </li>
-                  )}
-                  <li>
-                    <span>Status</span>
-                    <strong>{statusLabel}</strong>
-                  </li>
-                  {property.furnishing_status && (
-                    <li>
-                      <span>Furnishing</span>
-                      <strong>{property.furnishing_status.charAt(0).toUpperCase() + property.furnishing_status.slice(1)}</strong>
-                    </li>
-                  )}
-                  {propertyCategories && (
-                    <li>
-                      <span>Category</span>
-                      <strong>{propertyCategories}</strong>
-                    </li>
-                  )}
-                  {property.lot_size_sqm && (
-                    <li>
-                      <span>Lot Size</span>
-                      <strong>{property.lot_size_sqm} m²</strong>
-                    </li>
-                  )}
-                  {property.year_built && (
-                    <li>
-                      <span>Year Built</span>
-                      <strong>{property.year_built}</strong>
-                    </li>
-                  )}
                 </ul>
-
-                {/* Amenities */}
-                {amenities.length > 0 && (
-                  <div className="listing-amenities-section" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #eee' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Amenities & Features
-                    </h4>
-                    <ul className="amenities-list">
-                      {amenities.map((item, idx) => (
-                        <li key={`amenity-${idx}`}>
-                          <svg className="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M13.3334 4L6.00002 11.3333L2.66669 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Attachments */}
-                {attachments.length > 0 && (
-                  <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #eee' }}>
-                    {property.property_type === 'hot_deal' ? (
-                      <PropertyAccessGate
-                        property={property}
-                        attachments={attachments}
-                        attachmentIcon={attachmentIcon}
-                        formatBytes={formatBytes}
-                      />
-                    ) : (
-                      <div className="listing-attachments">
-                        <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          Downloads
-                        </h4>
-                        <ul className="attachments-list">
-                          {attachments.map((file) => (
-                            <li key={file.id} className="attachment-item">
-                              <span className="attachment-icon" aria-hidden="true">{attachmentIcon(file.filename, file.mime_type)}</span>
-                              <div className="attachment-meta">
-                                <a href={file.url} target="_blank" rel="noopener noreferrer">
-                                  {file.title || file.filename}
-                                </a>
-                                <span className="attachment-info">
-                                  {file.filename} {file.size_bytes ? `· ${formatBytes(file.size_bytes)}` : ''}
-                                </span>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
-
-              {/* Action Buttons */}
-              <div className="listing-actions">
-                <button onClick={() => setShowRequestInfo(true)} className="default-button active">
-                  Request Info
-                </button>
-                <button onClick={() => setShowScheduleShowing(true)} className="default-button active">
-                  Schedule a Showing
-                </button>
-              </div>
-
+              
               {/* Contact Form */}
+              <div className="contact-form-card">
+                <div className="form-header">
+                  <h4>Interested in</h4>
+                  <p>{detail.title}</p>
+                </div>
+                <form className="property-form" onSubmit={handlePropertyContact}>
+                  <div className="form-honeypot" aria-hidden="true">
+                    <label htmlFor="listing-company">Company</label>
+                    <input id="listing-company" name="company" type="text" tabIndex="-1" autoComplete="off" />
+                  </div>
+                  <input id="listing-first-name" name="first-name" type="text" placeholder="First Name" autoComplete="given-name" minLength={2} maxLength={100} required />
+                  <input id="listing-last-name" name="last-name" type="text" placeholder="Last Name" autoComplete="family-name" minLength={2} maxLength={100} required />
+                  <input id="listing-phone" name="phone" type="tel" placeholder="Phone" autoComplete="tel" inputMode="tel" pattern="[0-9+()\\-\\s]*" maxLength={40} />
+                  <input id="listing-email" name="email" type="email" placeholder="Email" autoComplete="email" maxLength={254} required />
+                  <textarea id="listing-message" name="message" placeholder="Message" rows="4" autoComplete="off" maxLength={2000}></textarea>
+                  <button type="submit" className="default-button active" disabled={isContactSubmitting} aria-busy={isContactSubmitting}>
+                    {isContactSubmitting ? 'Sending...' : 'Send Message'}
+                  </button>
+                  {contactStatus.message && (
+                    <div className={`property-form-status property-form-status--${contactStatus.type}`} role="status" aria-live="polite">
+                      {contactStatus.message}
+                    </div>
+                  )}
+                </form>
+              </div>
 
-              {/* Share Section */}
+              {/* Share Section - at bottom */}
               <div className="share-card">
                 <h4>Share Property</h4>
                 <div className="share-buttons">
@@ -952,22 +1022,22 @@ export default function ListingDetailPage() {
                     >
                       {link.label === 'Facebook' && (
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                          <path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 0 1 1-1h3v-4h-3a5 5 0 0 0-5 5v2.01h-2l-.396 3.98h2.396v8.01Z" />
+                          <path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 0 1 1-1h3v-4h-3a5 5 0 0 0-5 5v2.01h-2l-.396 3.98h2.396v8.01Z"/>
                         </svg>
                       )}
                       {link.label === 'LinkedIn' && (
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                          <path d="M6.94 5a2 2 0 1 1-4-.002 2 2 0 0 1 4 .002ZM7 8.48H3V21h4V8.48Zm6.32 0H9.34V21h3.94v-6.57c0-3.66 4.77-4 4.77 0V21H22v-7.93c0-6.17-7.06-5.94-8.72-2.91l.04-1.68Z" />
+                          <path d="M6.94 5a2 2 0 1 1-4-.002 2 2 0 0 1 4 .002ZM7 8.48H3V21h4V8.48Zm6.32 0H9.34V21h3.94v-6.57c0-3.66 4.77-4 4.77 0V21H22v-7.93c0-6.17-7.06-5.94-8.72-2.91l.04-1.68Z"/>
                         </svg>
                       )}
                       {link.label === 'X' && (
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                         </svg>
                       )}
                       {link.label === 'Email' && (
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+                          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                         </svg>
                       )}
                     </a>
@@ -980,191 +1050,185 @@ export default function ListingDetailPage() {
       </section>
 
       {/* Related Properties Section */}
-      {
-        relatedProperties.length > 0 && (
-          <section className="related-properties" style={{ padding: '80px 5%', backgroundColor: '#f9f9f9' }}>
-            <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-              <h2 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '40px', textAlign: 'center' }}>
-                Vedi anche
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '30px' }}>
-                {relatedProperties.map((prop) => {
-                  const priceLabel = prop.price_on_demand
-                    ? 'Price on Request'
-                    : prop.price_usd
-                      ? `USD ${Number(prop.price_usd).toLocaleString('en-US')}`
-                      : 'Contact for pricing';
-
-                  return (
-                    <div key={prop.id} className="property-card">
-                      <Link to={`/listings/${prop.slug}/`}>
-                        <div className="property-thumb">
-                          <ImageWithOverlay
-                            src={prop.cover_image_url}
-                            alt={prop.title}
-                            beds={prop.bedrooms}
-                            baths={prop.bathrooms}
-                            size={prop.sqm ? `${prop.sqm} m²` : null}
-                            status={prop.status === 'sold' ? 'SOLD' : prop.status === 'reserved' ? 'RESERVED' : 'FOR SALE'}
-                            location={prop.neighborhood || prop.city}
-                          >
-                            <div className="property-price">
-                              <h3>{priceLabel}</h3>
-                            </div>
-                            <div className="property-title">
-                              <h4>{prop.title}</h4>
-                            </div>
-                          </ImageWithOverlay>
-                        </div>
-                      </Link>
-                    </div>
-                  );
-                })}
-              </div>
+      {relatedProperties.length > 0 && (
+        <section className="related-properties" style={{ padding: '80px 5%', backgroundColor: '#f9f9f9' }}>
+          <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+            <h2 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '40px', textAlign: 'center' }}>
+              Vedi anche
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '30px' }}>
+              {relatedProperties.map((prop) => {
+                const priceLabel = prop.price_on_demand 
+                  ? 'Price on Request'
+                  : prop.price_usd 
+                    ? `USD ${Number(prop.price_usd).toLocaleString('en-US')}`
+                    : 'Contact for pricing';
+                
+                return (
+                  <div key={prop.id} className="property-card">
+                    <Link to={`/listings/${prop.slug}/`}>
+                      <div className="property-thumb">
+                        <ImageWithOverlay
+                          src={prop.cover_image_url}
+                          alt={prop.title}
+                          beds={prop.bedrooms}
+                          baths={prop.bathrooms}
+                          size={prop.sqm ? `${prop.sqm} m²` : null}
+                          status={prop.status === 'sold' ? 'SOLD' : prop.status === 'reserved' ? 'RESERVED' : 'FOR SALE'}
+                          location={prop.neighborhood || prop.city}
+                        >
+                          <div className="property-price">
+                            <h3>{priceLabel}</h3>
+                          </div>
+                          <div className="property-title">
+                            <h4>{prop.title}</h4>
+                          </div>
+                        </ImageWithOverlay>
+                      </div>
+                    </Link>
+                  </div>
+                );
+              })}
             </div>
-          </section>
-        )
-      }
+          </div>
+        </section>
+      )}
 
       {/* Request Info Popup */}
-      {
-        showRequestInfo && (
-          <div className="listing-popup-overlay" onClick={() => setShowRequestInfo(false)}>
-            <div className="listing-popup" onClick={(e) => e.stopPropagation()}>
-              <button className="listing-popup-close" onClick={() => setShowRequestInfo(false)}>×</button>
-              <h2>REQUEST INFO</h2>
-              <p className="listing-popup-subtitle">Tell us how to reach you and we'll get back in touch.</p>
-              <form className="listing-popup-form" onSubmit={handleRequestInfoSubmit}>
-                <div className="form-honeypot" aria-hidden="true">
-                  <label htmlFor="req-company">Company</label>
-                  <input id="req-company" name="company" type="text" tabIndex="-1" autoComplete="off" />
+      {showRequestInfo && (
+        <div className="listing-popup-overlay" onClick={() => setShowRequestInfo(false)}>
+          <div className="listing-popup" onClick={(e) => e.stopPropagation()}>
+            <button className="listing-popup-close" onClick={() => setShowRequestInfo(false)}>×</button>
+            <h2>REQUEST INFO</h2>
+            <p className="listing-popup-subtitle">Tell us how to reach you and we'll get back in touch.</p>
+            <form className="listing-popup-form" onSubmit={handleRequestInfoSubmit}>
+              <div className="form-honeypot" aria-hidden="true">
+                <label htmlFor="req-company">Company</label>
+                <input id="req-company" name="company" type="text" tabIndex="-1" autoComplete="off" />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="req-first-name">First Name*</label>
+                  <input id="req-first-name" name="first-name" type="text" autoComplete="given-name" minLength={2} maxLength={100} required />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="req-first-name">First Name*</label>
-                    <input id="req-first-name" name="first-name" type="text" autoComplete="given-name" minLength={2} maxLength={100} required />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="req-last-name">Last Name*</label>
-                    <input id="req-last-name" name="last-name" type="text" autoComplete="family-name" minLength={2} maxLength={100} required />
-                  </div>
+                <div className="form-group">
+                  <label htmlFor="req-last-name">Last Name*</label>
+                  <input id="req-last-name" name="last-name" type="text" autoComplete="family-name" minLength={2} maxLength={100} required />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="req-email">Email Address*</label>
-                    <input id="req-email" name="email" type="email" autoComplete="email" maxLength={254} required />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="req-phone">Phone Number</label>
-                    <input id="req-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" pattern="[0-9+()\\-\\s]*" maxLength={40} />
-                  </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="req-email">Email Address*</label>
+                  <input id="req-email" name="email" type="email" autoComplete="email" maxLength={254} required />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="req-purpose">What's the purpose of your investment?</label>
-                    <input id="req-purpose" name="purpose" type="text" maxLength={200} required />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="req-contact">Best way to reach you?</label>
-                    <select id="req-contact" name="preferred-contact">
-                      <option>Email and Phone</option>
-                      <option>Email</option>
-                      <option>Phone</option>
-                    </select>
-                  </div>
+                <div className="form-group">
+                  <label htmlFor="req-phone">Phone Number</label>
+                  <input id="req-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" pattern="[0-9+()\\-\\s]*" maxLength={40} />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="req-know">Do you already know Riviera Maya?</label>
-                    <input id="req-know" name="knows-riviera" type="text" maxLength={80} />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="req-budget">What budget range do you want to be in?</label>
-                    <input id="req-budget" name="budget-range" type="text" maxLength={120} />
-                  </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="req-purpose">What's the purpose of your investment?</label>
+                  <input id="req-purpose" name="purpose" type="text" maxLength={200} required />
                 </div>
-                <div className="form-row">
-                  <div className="form-group full-width">
-                    <label htmlFor="req-message">Your Message</label>
-                    <textarea id="req-message" name="message" rows="4" maxLength={2000}></textarea>
-                  </div>
+                <div className="form-group">
+                  <label htmlFor="req-contact">Best way to reach you?</label>
+                  <select id="req-contact" name="preferred-contact">
+                    <option>Email and Phone</option>
+                    <option>Email</option>
+                    <option>Phone</option>
+                  </select>
                 </div>
-                <button type="submit" className="popup-submit-btn" disabled={isRequestSubmitting} aria-busy={isRequestSubmitting}>
-                  {isRequestSubmitting ? 'Sending...' : 'Send'}
-                </button>
-                {requestStatus.message && (
-                  <div className={`popup-form-status popup-form-status--${requestStatus.type}`} role="status" aria-live="polite">
-                    {requestStatus.message}
-                  </div>
-                )}
-              </form>
-            </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="req-know">Do you already know Riviera Maya?</label>
+                  <input id="req-know" name="knows-riviera" type="text" maxLength={80} />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="req-budget">What budget range do you want to be in?</label>
+                  <input id="req-budget" name="budget-range" type="text" maxLength={120} />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group full-width">
+                  <label htmlFor="req-message">Your Message</label>
+                  <textarea id="req-message" name="message" rows="4" maxLength={2000}></textarea>
+                </div>
+              </div>
+              <button type="submit" className="popup-submit-btn" disabled={isRequestSubmitting} aria-busy={isRequestSubmitting}>
+                {isRequestSubmitting ? 'Sending...' : 'Send'}
+              </button>
+              {requestStatus.message && (
+                <div className={`popup-form-status popup-form-status--${requestStatus.type}`} role="status" aria-live="polite">
+                  {requestStatus.message}
+                </div>
+              )}
+            </form>
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* Schedule Showing Popup */}
-      {
-        showScheduleShowing && (
-          <div className="listing-popup-overlay" onClick={() => setShowScheduleShowing(false)}>
-            <div className="listing-popup" onClick={(e) => e.stopPropagation()}>
-              <button className="listing-popup-close" onClick={() => setShowScheduleShowing(false)}>×</button>
-              <h2>SCHEDULE A SHOWING</h2>
-              <p className="listing-popup-subtitle">Tell us how to reach you and we'll get back in touch.</p>
-              <form className="listing-popup-form" onSubmit={handleScheduleShowingSubmit}>
-                <div className="form-honeypot" aria-hidden="true">
-                  <label htmlFor="sch-company">Company</label>
-                  <input id="sch-company" name="company" type="text" tabIndex="-1" autoComplete="off" />
+      {showScheduleShowing && (
+        <div className="listing-popup-overlay" onClick={() => setShowScheduleShowing(false)}>
+          <div className="listing-popup" onClick={(e) => e.stopPropagation()}>
+            <button className="listing-popup-close" onClick={() => setShowScheduleShowing(false)}>×</button>
+            <h2>SCHEDULE A SHOWING</h2>
+            <p className="listing-popup-subtitle">Tell us how to reach you and we'll get back in touch.</p>
+            <form className="listing-popup-form" onSubmit={handleScheduleShowingSubmit}>
+              <div className="form-honeypot" aria-hidden="true">
+                <label htmlFor="sch-company">Company</label>
+                <input id="sch-company" name="company" type="text" tabIndex="-1" autoComplete="off" />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="sch-first-name">First Name*</label>
+                  <input id="sch-first-name" name="first-name" type="text" autoComplete="given-name" minLength={2} maxLength={100} required />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="sch-first-name">First Name*</label>
-                    <input id="sch-first-name" name="first-name" type="text" autoComplete="given-name" minLength={2} maxLength={100} required />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="sch-last-name">Last Name*</label>
-                    <input id="sch-last-name" name="last-name" type="text" autoComplete="family-name" minLength={2} maxLength={100} required />
-                  </div>
+                <div className="form-group">
+                  <label htmlFor="sch-last-name">Last Name*</label>
+                  <input id="sch-last-name" name="last-name" type="text" autoComplete="family-name" minLength={2} maxLength={100} required />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="sch-email">Email Address*</label>
-                    <input id="sch-email" name="email" type="email" autoComplete="email" maxLength={254} required />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="sch-phone">Phone Number</label>
-                    <input id="sch-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" pattern="[0-9+()\\-\\s]*" maxLength={40} />
-                  </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="sch-email">Email Address*</label>
+                  <input id="sch-email" name="email" type="email" autoComplete="email" maxLength={254} required />
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="sch-date1">When are you available?</label>
-                    <input id="sch-date1" name="availability-1" type="date" />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="sch-date2">Are you available at another time?</label>
-                    <input id="sch-date2" name="availability-2" type="date" />
-                  </div>
+                <div className="form-group">
+                  <label htmlFor="sch-phone">Phone Number</label>
+                  <input id="sch-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" pattern="[0-9+()\\-\\s]*" maxLength={40} />
                 </div>
-                <div className="form-row">
-                  <div className="form-group full-width">
-                    <label htmlFor="sch-message">Your Message</label>
-                    <textarea id="sch-message" name="message" rows="4" maxLength={2000}></textarea>
-                  </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="sch-date1">When are you available?</label>
+                  <input id="sch-date1" name="availability-1" type="date" />
                 </div>
-                <button type="submit" className="popup-submit-btn" disabled={isScheduleSubmitting} aria-busy={isScheduleSubmitting}>
-                  {isScheduleSubmitting ? 'Sending...' : 'Send'}
-                </button>
-                {scheduleStatus.message && (
-                  <div className={`popup-form-status popup-form-status--${scheduleStatus.type}`} role="status" aria-live="polite">
-                    {scheduleStatus.message}
-                  </div>
-                )}
-              </form>
-            </div>
+                <div className="form-group">
+                  <label htmlFor="sch-date2">Are you available at another time?</label>
+                  <input id="sch-date2" name="availability-2" type="date" />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group full-width">
+                  <label htmlFor="sch-message">Your Message</label>
+                  <textarea id="sch-message" name="message" rows="4" maxLength={2000}></textarea>
+                </div>
+              </div>
+              <button type="submit" className="popup-submit-btn" disabled={isScheduleSubmitting} aria-busy={isScheduleSubmitting}>
+                {isScheduleSubmitting ? 'Sending...' : 'Send'}
+              </button>
+              {scheduleStatus.message && (
+                <div className={`popup-form-status popup-form-status--${scheduleStatus.type}`} role="status" aria-live="polite">
+                  {scheduleStatus.message}
+                </div>
+              )}
+            </form>
           </div>
-        )
-      }
+        </div>
+      )}
     </>
   );
 

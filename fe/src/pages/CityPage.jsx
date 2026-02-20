@@ -6,6 +6,7 @@ import SEO from '../components/SEO';
 import ImageWithOverlay from '../components/ImageWithOverlay';
 import SafeImage from '../components/SafeImage';
 import { api, endpoints } from '../config/api';
+import { formatPrice } from '../utils/propertyFormatters';
 
 export default function CityPage() {
   const { citySlug } = useParams();
@@ -49,7 +50,7 @@ export default function CityPage() {
   // Carica properties associate alla city
   useEffect(() => {
     if (!city) return;
-    
+
     const loadProperties = async () => {
       setLoadingProperties(true);
       try {
@@ -64,7 +65,7 @@ export default function CityPage() {
         setLoadingProperties(false);
       }
     };
-    
+
     loadProperties();
   }, [city]);
 
@@ -79,10 +80,10 @@ export default function CityPage() {
       city.ogImage
         ? toAbsoluteUrl(city.ogImage)
         : city.content_image
-        ? toAbsoluteUrl(city.content_image)
-        : city.cover_image
-        ? toAbsoluteUrl(city.cover_image)
-        : undefined;
+          ? toAbsoluteUrl(city.content_image)
+          : city.cover_image
+            ? toAbsoluteUrl(city.cover_image)
+            : undefined;
     return {
       title,
       description,
@@ -121,7 +122,7 @@ export default function CityPage() {
           ogType="article"
         />
       )}
-      <PageHero 
+      <PageHero
         breadcrumb={
           <>
             <span>»</span>{' '}
@@ -129,7 +130,7 @@ export default function CityPage() {
             {' '}<span>»</span>{' '}
             <span>{city.title}</span>
           </>
-        } 
+        }
       />
 
       <section className="community-detail">
@@ -138,7 +139,7 @@ export default function CityPage() {
             <h1 className="community-page-title">{city.title}</h1>
             {city.subtitle && <p className="community-page-subtitle">{city.subtitle}</p>}
           </div>
-          
+
           <div className="community-hero">
             {city.cover_image ? (
               <SafeImage
@@ -177,7 +178,7 @@ export default function CityPage() {
       <section className="community-properties">
         <div className="community-detail-wrapper">
           <h2 className="community-props-title">Featured Properties in {city.title}</h2>
-          
+
           {loadingProperties ? (
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
               <p>Loading properties...</p>
@@ -191,12 +192,8 @@ export default function CityPage() {
               {properties.map((property) => {
                 const link = `/listings/${property.slug}/`;
                 const coverImage = property.cover_image_url; // SafeImage gestisce fallback
-                const priceLabel = property.price_on_demand 
-                  ? 'Price on Request'
-                  : property.price_usd 
-                    ? `USD ${Number(property.price_usd).toLocaleString('en-US')}`
-                    : 'Contact for pricing';
-                
+                const priceLabel = formatPrice(property);
+
                 return (
                   <div key={property.id} className="property-card">
                     <Link to={link}>

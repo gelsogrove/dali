@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
-  background: linear-gradient(135deg, #f8f7ff 0%, #f0eef9 50%, #ebe8f4 100%);
+  background: linear-gradient(135deg, var(--color-bg-lighter) 0%, var(--color-bg-light) 50%, var(--color-bg-accent) 100%);
 }
 
 .off-market-gate-container {
@@ -16,7 +16,7 @@
   background: #fff;
   border-radius: 16px;
   padding: 2.5rem 2rem;
-  box-shadow: 0 4px 24px rgba(100, 80, 160, 0.10), 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 24px var(--color-shadow-primary-medium), 0 1px 4px rgba(0,0,0,0.04);
   text-align: center;
 }
 
@@ -28,8 +28,8 @@
 .off-market-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e8e5f0;
-  border-top-color: #7c3aed;
+  border: 3px solid var(--color-primary-light);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   margin: 0 auto 1rem;
   animation: offMarketSpin 0.7s linear infinite;
@@ -40,7 +40,7 @@
 }
 
 .off-market-gate-loading p {
-  color: #6b7280;
+  color: var(--color-text-muted);
   font-size: 0.95rem;
 }
 
@@ -49,12 +49,12 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+  background: linear-gradient(135deg, var(--color-primary-lighter), var(--color-primary-light));
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
-  color: #7c3aed;
+  color: var(--color-primary);
 }
 
 .gate-icon-expired {
@@ -65,20 +65,20 @@
 .off-market-gate-card h2 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--color-text-primary);
   margin: 0 0 0.5rem;
 }
 
 .gate-property-title {
   font-size: 1rem;
-  color: #7c3aed;
+  color: var(--color-primary);
   font-weight: 600;
   margin: 0 0 0.75rem;
 }
 
 .gate-description {
   font-size: 0.95rem;
-  color: #6b7280;
+  color: var(--color-text-muted);
   margin: 0 0 1.5rem;
   line-height: 1.5;
 }
@@ -96,17 +96,17 @@
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
   letter-spacing: 0.35em;
   text-align: center;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--color-border-light);
   border-radius: 12px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
   text-transform: uppercase;
-  background: #faf9ff;
+  background: var(--color-primary-lighter);
 }
 
 .gate-code-input:focus {
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-shadow-primary);
 }
 
 .gate-code-input::placeholder {
@@ -116,7 +116,7 @@
 
 /* Error */
 .gate-error {
-  color: #dc2626;
+  color: var(--color-error);
   font-size: 0.85rem;
   margin: -0.25rem 0 0.75rem;
 }
@@ -137,14 +137,14 @@
 }
 
 .gate-btn-primary {
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   color: #fff;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+  box-shadow: 0 2px 8px var(--color-shadow-primary-strong);
 }
 
 .gate-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #6d28d9, #5b21b6);
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary-darker));
+  box-shadow: 0 4px 12px var(--color-shadow-primary-strong);
   transform: translateY(-1px);
 }
 
@@ -157,11 +157,11 @@
 .gate-footer {
   margin-top: 1.5rem;
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 .gate-footer a {
-  color: #7c3aed;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
 }

@@ -34,23 +34,24 @@ export default function DashboardLayout() {
     { name: 'Videos', href: '/videos', icon: Video },
     { name: 'Testimonials', href: '/testimonials', icon: MessageSquare },
     { name: 'Landing Page', href: '/landing-pages', icon: MapPin },
+    { name: 'Cities', href: '/cities', icon: MapPin, nested: true },
   ]
 
   const utilityNav = [
+    { name: 'TODO', href: '/todo', icon: ListChecks },
     { name: 'Access Requests', href: '/access-requests', icon: Mail, badge: unviewedCount },
     { name: 'Off Market Invites', href: '/off-market-invites', icon: Shield },
     { name: 'Redirects', href: '/redirects', icon: Repeat },
     { name: 'Exchange Rates', href: '/', icon: DollarSign },
-    { name: 'Backups', href: '/backups', icon: Shield },
-    { name: 'TODO', href: '/todo', icon: ListChecks },
   ]
 
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? 'w-64' : 'w-20'
-          } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}
+        className={`${
+          sidebarOpen ? 'w-64' : 'w-20'
+        } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}
       >
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {sidebarOpen && <h1 className="text-xl font-bold text-primary">Dalila Admin</h1>}
@@ -69,7 +70,7 @@ export default function DashboardLayout() {
               key={item.name}
               type="button"
               onClick={() => navigate(item.href)}
-              className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg text-gray-900 hover:bg-gray-100 transition-colors"
+              className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg text-gray-900 hover:bg-gray-100 transition-colors ${item.nested ? 'pl-8 text-sm' : ''}`}
             >
               <item.icon className="h-5 w-5" />
               {sidebarOpen && <span>{item.name}</span>}

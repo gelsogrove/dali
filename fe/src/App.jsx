@@ -27,7 +27,6 @@ import CityPage from './pages/CityPage';
 import AreaPage from './pages/AreaPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ListingDetailPage from './pages/ListingDetailPage';
-import OffMarketPage from './pages/OffMarketPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Redirect component for old /properties/:slug URLs
@@ -70,7 +69,7 @@ function AppLayout() {
             <Route path="/active-properties" element={<ActivePropertiesPage />} />
             <Route path="/new-developments" element={<NewDevelopmentsPage />} />
             <Route path="/hot-deals" element={<HotDealsPage />} />
-            <Route path="/off-market" element={<OffMarketPage />} />
+            <Route path="/off-market" element={<Navigate to="/contact-us" replace />} />
             <Route path="/land" element={<LandPage />} />
             <Route path="/communities" element={<CommunitiesPage />} />
             <Route path="/list-with-dali" element={<ListWithDaliPage />} />

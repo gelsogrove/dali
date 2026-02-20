@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Copy,
   Check,
+  ExternalLink,
 } from 'lucide-react'
 
 interface AccessRequest {
@@ -143,7 +144,7 @@ export default function AccessRequestsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Access Requests</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Manage document access requests for Hot Deals properties
+            Manage document access requests for New Developments and Active Properties
           </p>
         </div>
         <div className="flex items-center gap-2 bg-amber-50 text-amber-800 px-4 py-2 rounded-lg border border-amber-200">
@@ -226,7 +227,15 @@ export default function AccessRequestsPage() {
                     <div className="flex items-center gap-2 text-sm bg-gray-50 rounded-lg px-3 py-2">
                       <Home className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
                       <span className="text-gray-500">Property:</span>
-                      <span className="font-medium text-gray-900 truncate">{req.property_title}</span>
+                      <a
+                        href={`https://new.buywithdali.com/properties/${req.property_slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline truncate flex items-center gap-1"
+                      >
+                        {req.property_title}
+                        <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                      </a>
                     </div>
 
                     {/* Message */}

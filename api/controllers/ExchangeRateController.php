@@ -106,12 +106,16 @@ class ExchangeRateController
                 // Commit transaction
                 $this->conn->commit();
 
+                // Recalculate all property prices with new rates
+                $propertiesUpdated = $this->recalculateAllPropertyPrices();
+
                 return $this->successResponse([
                     'message' => 'Exchange rate updated successfully',
                     'rate' => $rate,
                     'date' => $date,
                     'currency_from' => $currencyFrom,
-                    'currency_to' => $currencyTo
+                    'currency_to' => $currencyTo,
+                    'properties_updated' => $propertiesUpdated
                 ]);
 
             } catch (Exception $e) {
@@ -224,13 +228,17 @@ class ExchangeRateController
                 throw $e;
             }
 
+            // Recalculate all property prices with new rates
+            $propertiesUpdated = $this->recalculateAllPropertyPrices();
+
             return $this->successResponse([
                 'message' => 'Exchange rates refreshed successfully',
                 'date' => $date,
                 'rates' => [
                     'USD_MXN' => (float) $rates['MXN'],
                     'USD_EUR' => (float) $rates['EUR'],
-                ]
+                ],
+                'properties_updated' => $propertiesUpdated
             ]);
         } catch (Exception $e) {
             error_log("Error refreshing exchange rates: " . $e->getMessage());
@@ -259,5 +267,100 @@ class ExchangeRateController
         $stmt->bind_param('ssds', $currencyFrom, $currencyTo, $rate, $date);
         $stmt->execute();
         $stmt->close();
+    }
+
+    /**
+     * Recalculate all property prices based on current active exchange rates.
+     * Updates exchange_rate, price_mxn, price_eur, and development from/to ranges.
+     * @return int Number of properties updated
+     */
+    private function recalculateAllPropertyPrices()
+    {
+        try {
+            // Get current active USD->MXN rate
+            $mxnRate = null;
+            $stmt = $this->conn->prepare(
+                "SELECT rate FROM exchange_rates 
+                 WHERE currency_from = 'USD' AND currency_to = 'MXN' AND is_active = 1 
+                 ORDER BY date DESC LIMIT 1"
+            );
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result && $result->num_rows > 0) {
+                $mxnRate = (float) $result->fetch_assoc()['rate'];
+            }
+            $stmt->close();
+
+            // Get current active USD->EUR rate
+            $eurRate = null;
+            $stmt = $this->conn->prepare(
+                "SELECT rate FROM exchange_rates 
+                 WHERE currency_from = 'USD' AND currency_to = 'EUR' AND is_active = 1 
+                 ORDER BY date DESC LIMIT 1"
+            );
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result && $result->num_rows > 0) {
+                $eurRate = (float) $result->fetch_assoc()['rate'];
+            }
+            $stmt->close();
+
+            if ($mxnRate === null && $eurRate === null) {
+                error_log("recalculateAllPropertyPrices: No active rates found, skipping.");
+                return 0;
+            }
+
+            // Build dynamic UPDATE query
+            $setClauses = [];
+            $params = [];
+            $types = '';
+
+            if ($mxnRate !== null) {
+                $setClauses[] = 'exchange_rate = ?';
+                $params[] = $mxnRate;
+                $types .= 'd';
+
+                $setClauses[] = 'price_mxn = CASE WHEN price_usd IS NOT NULL THEN price_usd * ? ELSE NULL END';
+                $params[] = $mxnRate;
+                $types .= 'd';
+
+                $setClauses[] = 'price_from_mxn = CASE WHEN price_from_usd IS NOT NULL THEN price_from_usd * ? ELSE NULL END';
+                $params[] = $mxnRate;
+                $types .= 'd';
+
+                $setClauses[] = 'price_to_mxn = CASE WHEN price_to_usd IS NOT NULL THEN price_to_usd * ? ELSE NULL END';
+                $params[] = $mxnRate;
+                $types .= 'd';
+            }
+
+            if ($eurRate !== null) {
+                $setClauses[] = 'price_eur = CASE WHEN price_usd IS NOT NULL THEN price_usd * ? ELSE NULL END';
+                $params[] = $eurRate;
+                $types .= 'd';
+
+                $setClauses[] = 'price_from_eur = CASE WHEN price_from_usd IS NOT NULL THEN price_from_usd * ? ELSE NULL END';
+                $params[] = $eurRate;
+                $types .= 'd';
+
+                $setClauses[] = 'price_to_eur = CASE WHEN price_to_usd IS NOT NULL THEN price_to_usd * ? ELSE NULL END';
+                $params[] = $eurRate;
+                $types .= 'd';
+            }
+
+            $sql = "UPDATE properties SET " . implode(', ', $setClauses);
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $affected = $stmt->affected_rows;
+            $stmt->close();
+
+            error_log("recalculateAllPropertyPrices: Updated $affected properties (MXN=" . ($mxnRate ?? 'N/A') . ", EUR=" . ($eurRate ?? 'N/A') . ")");
+
+            return $affected;
+
+        } catch (Exception $e) {
+            error_log("Error recalculating property prices: " . $e->getMessage());
+            return 0;
+        }
     }
 }

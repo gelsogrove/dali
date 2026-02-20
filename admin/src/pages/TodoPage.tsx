@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, MessageSquare, Trash2, Loader2, Search, GripVertical, Sparkles, Clock3, Check, Wand2, Paperclip, FileIcon, X, Download } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, MessageSquare, Trash2, Loader2, Search, GripVertical, Sparkles, Clock3, Check, Wand2 } from 'lucide-react';
 import TrixEditor from '@/components/TrixEditor';
 
 type TodoItem = {
@@ -50,7 +51,6 @@ const statusColumns = [
 
 export default function TodoPage() {
   const queryClient = useQueryClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState('');
   const [newTask, setNewTask] = useState({ title: '', author: '', description: '' });
   const [activeEditor, setActiveEditor] = useState('');
@@ -120,44 +120,12 @@ export default function TodoPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => api.delete(`/todos/${id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['todos'] });
-      setSelectedItem(null);
-      // Explicitly requested page refresh to ensure sync
-      window.location.reload();
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
   });
 
   const addCommentMutation = useMutation({
     mutationFn: async ({ id, content, author }: { id: number; content: string; author: string }) =>
       api.post(`/todos/${id}/comments`, { content, author }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
-  });
-
-  const uploadAttachmentMutation = useMutation({
-    mutationFn: async ({ id, file }: { id: number; file: File }) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await api.post('/upload/attachment', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      if (res.data.success) {
-        const { original, filename, url, mime_type, size } = res.data.data;
-        await api.post(`/todos/${id}/attachments`, {
-          title: original,
-          filename,
-          url,
-          mime_type,
-          size_bytes: size,
-        });
-      }
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
-  });
-
-  const deleteAttachmentMutation = useMutation({
-    mutationFn: async ({ todoId, attachmentId }: { todoId: number; attachmentId: number }) =>
-      api.delete(`/todos/${todoId}/attachments/${attachmentId}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
   });
 
@@ -295,19 +263,6 @@ export default function TodoPage() {
     setSelectedItem(null);
   };
 
-  const handlePaste = async (e: React.ClipboardEvent) => {
-    if (!selectedItem) return;
-    const items = e.clipboardData.items;
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf('image') !== -1) {
-        const file = items[i].getAsFile();
-        if (file) {
-          uploadAttachmentMutation.mutate({ id: selectedItem.id, file });
-        }
-      }
-    }
-  };
-
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -407,7 +362,7 @@ export default function TodoPage() {
       </div>
 
       <Dialog open={!!selectedItem} onOpenChange={(v) => !v && setSelectedItem(null)}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto" onPaste={handlePaste}>
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
           {editDraft && (
             <div className="space-y-5">
               <div className="flex items-start gap-3">
@@ -432,6 +387,22 @@ export default function TodoPage() {
                     value={editDraft.author}
                     onChange={(e) => setEditDraft((p) => (p ? { ...p, author: e.target.value } : p))}
                   />
+                </div>
+                <div className="space-y-1">
+                  <Label>Status</Label>
+                  <Select
+                    value={editDraft.status}
+                    onValueChange={(val) => setEditDraft((p) => (p ? { ...p, status: val as TodoItem['status'] } : p))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusColumns.map((s) => (
+                        <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -462,94 +433,7 @@ export default function TodoPage() {
                 <CommentForm onSubmit={(content, author) => selectedItem && addCommentMutation.mutate({ id: selectedItem.id, content, author })} />
               </div>
 
-              <div className="space-y-4 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Paperclip className="h-4 w-4" />
-                    Attachments
-                  </div>
-                  <input
-                    type="file"
-                    className="hidden"
-                    ref={fileInputRef}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file && selectedItem) {
-                        uploadAttachmentMutation.mutate({ id: selectedItem.id, file });
-                        e.target.value = ''; // Reset to allow same file selection
-                      }
-                    }}
-                    disabled={uploadAttachmentMutation.isPending}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs bg-slate-100"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadAttachmentMutation.isPending}
-                  >
-                    {uploadAttachmentMutation.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                    ) : (
-                      <Plus className="h-3 w-3 mr-1" />
-                    )}
-                    {uploadAttachmentMutation.isPending ? 'Uploading...' : 'Add File'}
-                  </Button>
-                </div>
-
-                {uploadAttachmentMutation.isPending && (
-                  <div className="flex items-center gap-2 px-3 py-2 border border-blue-100 bg-blue-50/50 rounded-lg animate-pulse">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                    <span className="text-xs text-blue-600 font-medium">Uploading file... please wait</span>
-                  </div>
-                )}
-
-                <div className="text-[10px] text-slate-400 mt-1 italic flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" /> Tips: You can paste screenshots directly (Cmd+V)
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {editDraft.attachments.map((a) => (
-                    <div key={a.id} className="group relative flex items-center gap-3 p-2 rounded-lg border border-slate-200 bg-slate-50/50 hover:bg-white transition-colors">
-                      <div className="h-10 w-10 shrink-0 rounded bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
-                        {a.mime_type?.startsWith('image/') ? (
-                          <img src={a.url} alt={a.title} className="h-full w-full object-cover" />
-                        ) : (
-                          <FileIcon className="h-5 w-5 text-slate-400" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 pr-6">
-                        <div className="text-xs font-medium truncate">{a.title}</div>
-                        <div className="text-[10px] text-slate-400">
-                          {a.size_bytes ? `${(a.size_bytes / 1024).toFixed(1)} KB` : 'Unknown size'}
-                        </div>
-                      </div>
-                      <div className="absolute right-2 top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a href={a.url} target="_blank" rel="noopener noreferrer" title="View/Download">
-                          <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <Download className="h-3 w-3" />
-                          </Button>
-                        </a>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => selectedItem && deleteAttachmentMutation.mutate({ todoId: selectedItem.id, attachmentId: a.id })}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {editDraft.attachments.length === 0 && (
-                    <div className="col-span-full py-4 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-lg bg-slate-50/30">
-                      No attachments yet. Drag & drop or paste screenshots.
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between pt-2">
                 <Button variant="destructive" onClick={() => selectedItem && deleteMutation.mutate(selectedItem.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Delete
                 </Button>

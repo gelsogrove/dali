@@ -1,5 +1,5 @@
--- Migration 022: Property Access Requests for Hot Deals
--- Allows clients to request access codes to download attachments on hot deal properties.
+-- Migration 022: Property Access Requests for New Developments and Active Properties
+-- Allows clients to request access codes to download attachments on protected properties.
 -- Access codes expire after 72 hours and can be regenerated.
 
 CREATE TABLE IF NOT EXISTS property_access_requests (

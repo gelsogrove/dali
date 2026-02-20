@@ -144,3 +144,28 @@ export function getShortSize(property) {
 
   return property.sqm ? parseFloat(property.sqm).toFixed(0) : '';
 }
+
+/**
+ * Format price based on property type
+ * For developments: show range (price_from_usd - price_to_usd)
+ * For other types: show single price (price_usd)
+ * 
+ * @param {Object} property - Property object
+ * @returns {string} Formatted price string
+ */
+export function formatPrice(property) {
+  if (!property) return 'Contact for pricing';
+  if (property.price_on_demand) return 'Price on Request';
+
+  // Development: show from/to range
+  if (property.property_type === 'development' && property.price_from_usd && property.price_to_usd) {
+    return `USD ${Number(property.price_from_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })} - ${Number(property.price_to_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  }
+
+  // Non-development: show single price
+  if (property.price_usd) {
+    return `USD ${Number(property.price_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  }
+
+  return 'Contact for pricing';
+}

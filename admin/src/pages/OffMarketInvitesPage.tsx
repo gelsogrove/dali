@@ -24,7 +24,7 @@ import {
 
 interface Invite {
   id: number
-  property_id: number
+  property_id: number | null
   token: string
   access_code: string
   client_name: string | null
@@ -33,15 +33,9 @@ interface Invite {
   is_expired: boolean
   created_at: string
   invite_link: string
-  property_title: string
-  property_slug: string
+  property_title: string | null
+  property_slug: string | null
   property_image: string | null
-}
-
-interface OffMarketProperty {
-  id: number
-  title: string
-  slug: string
 }
 
 export default function OffMarketInvitesPage() {
@@ -52,7 +46,6 @@ export default function OffMarketInvitesPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [createForm, setCreateForm] = useState({
-    property_id: '',
     client_name: '',
     client_email: '',
   })
@@ -67,22 +60,13 @@ export default function OffMarketInvitesPage() {
     },
   })
 
-  // Fetch off-market properties for dropdown
-  const { data: propertiesData } = useQuery({
-    queryKey: ['off-market-properties'],
-    queryFn: async () => {
-      const res = await api.get('/off-market-invites/properties')
-      return res.data
-    },
-  })
-
   // Create invite
   const createMutation = useMutation({
     mutationFn: (data: any) => api.post('/off-market-invites', data),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['off-market-invites'] })
       setNewInvite(response.data.data)
-      setCreateForm({ property_id: '', client_name: '', client_email: '' })
+      setCreateForm({ client_name: '', client_email: '' })
     },
   })
 
@@ -131,13 +115,10 @@ export default function OffMarketInvitesPage() {
 
   const invites = data?.data?.invites || []
   const pagination = data?.data?.pagination || { page: 1, total_pages: 1, total: 0 }
-  const offMarketProperties: OffMarketProperty[] = propertiesData?.data || []
-
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!createForm.property_id) return
     createMutation.mutate({
-      property_id: parseInt(createForm.property_id),
+      property_id: null,
       client_name: createForm.client_name,
       client_email: createForm.client_email,
     })
@@ -182,22 +163,9 @@ export default function OffMarketInvitesPage() {
 
             {!newInvite ? (
               <form onSubmit={handleCreate} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Property *</label>
-                  <select
-                    value={createForm.property_id}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, property_id: e.target.value }))}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
-                    required
-                  >
-                    <option value="">Select a property...</option>
-                    {offMarketProperties.map(p => (
-                      <option key={p.id} value={p.id}>{p.title}</option>
-                    ))}
-                  </select>
-                  {offMarketProperties.length ===  0 && (
-                    <p className="text-xs text-amber-600 mt-1">No off-market properties found. Create a property with type "Off Market" first.</p>
-                  )}
+                <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700 border border-gray-100">
+                  <p className="font-semibold text-gray-900">Scope: Entire Off-Market Collection</p>
+                  <p className="text-xs text-gray-500 mt-1">This invite unlocks all off-market listings (no property selection needed).</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -231,7 +199,7 @@ export default function OffMarketInvitesPage() {
                   <Button
                     type="submit"
                     className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white"
-                    disabled={createMutation.isPending || !createForm.property_id}
+                    disabled={createMutation.isPending}
                   >
                     {createMutation.isPending ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <KeyRound className="h-4 w-4 mr-2" />}
                     Generate Invite
@@ -241,10 +209,14 @@ export default function OffMarketInvitesPage() {
             ) : (
               /* Success: Show generated invite details */
               <div className="p-6 space-y-5">
-                <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                {(() => {
+                  const createdTitle = newInvite.property_title || 'Off-Market Collection'
+                  return (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
                   <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-sm text-green-800 font-medium">Invite created for "{newInvite.property_title}"</p>
+                  <p className="text-sm text-green-800 font-medium">Invite created for "{createdTitle}"</p>
                 </div>
+                )})()}
 
                 {/* Invite Link */}
                 <div>
@@ -305,7 +277,7 @@ export default function OffMarketInvitesPage() {
           <Shield className="h-12 w-12 mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-medium text-gray-600">No invites yet</h3>
           <p className="text-sm text-gray-400 mt-1">
-            Create an invite to share a private off-market property with a client
+            Create an invite to share the private off-market collection with a client
           </p>
         </div>
       )}
@@ -313,7 +285,9 @@ export default function OffMarketInvitesPage() {
       {/* Invites list */}
       {!isLoading && invites.length > 0 && (
         <div className="space-y-4">
-          {invites.map((inv: Invite) => (
+          {invites.map((inv: Invite) => {
+            const displayTitle = inv.property_title || 'Off-Market Collection'
+            return (
             <div
               key={inv.id}
               className={`bg-white rounded-xl border overflow-hidden transition-all ${
@@ -339,8 +313,8 @@ export default function OffMarketInvitesPage() {
                       <span className="text-xs text-gray-400">{formatDate(inv.created_at)}</span>
                     </div>
 
-                    {/* Property */}
-                    <h3 className="font-semibold text-gray-900 mb-2 truncate">{inv.property_title}</h3>
+                    {/* Property / Scope */}
+                    <h3 className="font-semibold text-gray-900 mb-2 truncate">{displayTitle}</h3>
 
                     {/* Client */}
                     {(inv.client_name || inv.client_email) && (
@@ -445,7 +419,7 @@ export default function OffMarketInvitesPage() {
                 </div>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
 

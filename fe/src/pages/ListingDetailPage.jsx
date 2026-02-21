@@ -129,8 +129,22 @@ export default function ListingDetailPage() {
   const [relatedProperties, setRelatedProperties] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
   
-  // Currency toggle: 'USD', 'MXN', 'EUR'
-  const [selectedCurrency, setSelectedCurrency] = useState('USD');
+  // Currency toggle: 'USD', 'MXN', 'EUR' - get from localStorage or default to USD
+  const [selectedCurrency, setSelectedCurrency] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('preferredCurrency') || 'USD';
+    }
+    return 'USD';
+  });
+  
+  // Save currency preference to localStorage when changed
+  const handleCurrencyChange = (currency) => {
+    setSelectedCurrency(currency);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('preferredCurrency', currency);
+    }
+  };
+  
   // Size unit toggle: 'sqm' or 'sqft'
   const [selectedUnit, setSelectedUnit] = useState('sqm');
 
@@ -158,9 +172,11 @@ export default function ListingDetailPage() {
         const response = await api.get(`/properties/${slug}${tokenParam}`);
         if (response.success && response.data) {
           setProperty(response.data);
-          // Set default currency based on property
-          if (response.data.price_base_currency) {
+          // Don't override user's saved currency preference
+          // Only set if no preference exists
+          if (!localStorage.getItem('preferredCurrency') && response.data.price_base_currency) {
             setSelectedCurrency(response.data.price_base_currency);
+            localStorage.setItem('preferredCurrency', response.data.price_base_currency);
           }
         } else {
           setNotFound(true);
@@ -406,7 +422,7 @@ export default function ListingDetailPage() {
       if (property.bathrooms) parts.push(`${property.bathrooms} bathrooms`);
       if (property.sqm) parts.push(`${property.sqm} sqm`);
       if (property.price_usd && !property.price_on_demand) {
-        parts.push(`USD ${Number(property.price_usd).toLocaleString('en-US')}`);
+        parts.push(`USD ${Number(property.price_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}`);
       }
       return parts.join(' • ') + '. Contact Buy With Dali for more information.';
     })(),
@@ -988,7 +1004,7 @@ export default function ListingDetailPage() {
                             <button
                               key={curr}
                               className={`currency-btn ${selectedCurrency === curr ? 'active' : ''}`}
-                              onClick={() => setSelectedCurrency(curr)}
+                              onClick={() => handleCurrencyChange(curr)}
                             >
                               {curr}
                             </button>

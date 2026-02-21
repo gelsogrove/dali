@@ -98,7 +98,7 @@ class OffMarketInviteController
         $stmt->close();
 
         // Build invite link
-        $baseUrl = getenv('FRONTEND_URL') ?: 'https://buywithdali.com';
+        $baseUrl = getenv('FRONTEND_URL') ?: 'https://new.buywithdali.com';
         if ($property) {
             $inviteLink = "{$baseUrl}/listings/{$property['slug']}?token={$token}";
         } else {
@@ -135,7 +135,7 @@ class OffMarketInviteController
                        p.slug as property_slug,
                        p.cover_image_url as property_image
                 FROM off_market_invites omi
-                JOIN properties p ON omi.property_id = p.id
+                LEFT JOIN properties p ON omi.property_id = p.id
                 ORDER BY omi.created_at DESC
                 LIMIT ? OFFSET ?";
 
@@ -147,13 +147,13 @@ class OffMarketInviteController
         $invites = [];
         while ($row = $result->fetch_assoc()) {
             $row['is_expired'] = strtotime($row['expires_at']) < time();
-            $baseUrl = getenv('FRONTEND_URL') ?: 'https://buywithdali.com';
+            $baseUrl = getenv('FRONTEND_URL') ?: 'https://new.buywithdali.com';
 
-            if ($row['property_slug']) {
+            if (!empty($row['property_slug'])) {
                 $row['invite_link'] = "{$baseUrl}/listings/{$row['property_slug']}?token={$row['token']}";
             } else {
                 $row['invite_link'] = "{$baseUrl}/off-market?token={$row['token']}";
-                $row['property_title'] = 'Global Session';
+                $row['property_title'] = $row['property_title'] ?: 'Off-Market Collection';
             }
 
             $invites[] = $row;

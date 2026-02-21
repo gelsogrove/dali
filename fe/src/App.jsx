@@ -36,7 +36,8 @@ function PropertyRedirect() {
   return <Navigate to={`/listings/${slug}`} replace />;
 }
 
-function AppLayout() {
+// Layout with header/footer for normal pages
+function MainLayout({ children }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -55,42 +56,13 @@ function AppLayout() {
   }, [menuOpen]);
 
   return (
-    <RedirectChecker>
-      <div id="main-wrapper">
-        <Header onToggleMenu={() => setMenuOpen(true)} forceFixed={forceFixedHeader} />
-        <MobileHeader onToggleMenu={() => setMenuOpen(true)} />
-        <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-        <main>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact-us" element={<ContactPage />} />
-            <Route path="/testimonials" element={<TestimonialsPage />} />
-            <Route path="/properties" element={<PropertiesPage />} />
-            <Route path="/active-properties" element={<ActivePropertiesPage />} />
-            <Route path="/new-developments" element={<NewDevelopmentsPage />} />
-            <Route path="/hot-deals" element={<HotDealsPage />} />
-            <Route path="/off-market" element={<OffMarketPage />} />
-            <Route path="/land" element={<LandPage />} />
-            <Route path="/communities" element={<CommunitiesPage />} />
-            <Route path="/list-with-dali" element={<ListWithDaliPage />} />
-            <Route path="/videos" element={<VideosPage />} />
-            <Route path="/community/:citySlug/:areaSlug" element={<AreaPage />} />
-            <Route path="/community/:citySlug" element={<CityPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-            <Route path="/category/blog" element={<BlogsPage />} />
-            <Route path="/blogs" element={<BlogsPage />} />
-            <Route path="/blog/:slug" element={<BlogDetailPage />} />
-            <Route path="/listings/*" element={<ListingDetailPage />} />
-            {/* Redirect old /properties/:slug to /listings/:slug */}
-            <Route path="/properties/:slug" element={<PropertyRedirect />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </RedirectChecker>
+    <div id="main-wrapper">
+      <Header onToggleMenu={() => setMenuOpen(true)} forceFixed={forceFixedHeader} />
+      <MobileHeader onToggleMenu={() => setMenuOpen(true)} />
+      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <main>{children}</main>
+      <Footer />
+    </div>
   );
 }
 
@@ -105,7 +77,33 @@ export default function App() {
   return (
     <HelmetProvider>
       <Router>
-        <AppLayout />
+        <RedirectChecker>
+          <Routes>
+            <Route path="/" element={<MainLayout><HomePage /></MainLayout>} />
+            <Route path="/about" element={<MainLayout><AboutPage /></MainLayout>} />
+            <Route path="/contact-us" element={<MainLayout><ContactPage /></MainLayout>} />
+            <Route path="/testimonials" element={<MainLayout><TestimonialsPage /></MainLayout>} />
+            <Route path="/properties" element={<MainLayout><PropertiesPage /></MainLayout>} />
+            <Route path="/active-properties" element={<MainLayout><ActivePropertiesPage /></MainLayout>} />
+            <Route path="/new-developments" element={<MainLayout><NewDevelopmentsPage /></MainLayout>} />
+            <Route path="/hot-deals" element={<MainLayout><HotDealsPage /></MainLayout>} />
+            <Route path="/off-market" element={<MainLayout><OffMarketPage /></MainLayout>} />
+            <Route path="/land" element={<MainLayout><LandPage /></MainLayout>} />
+            <Route path="/communities" element={<MainLayout><CommunitiesPage /></MainLayout>} />
+            <Route path="/list-with-dali" element={<MainLayout><ListWithDaliPage /></MainLayout>} />
+            <Route path="/videos" element={<MainLayout><VideosPage /></MainLayout>} />
+            <Route path="/community/:citySlug/:areaSlug" element={<MainLayout><AreaPage /></MainLayout>} />
+            <Route path="/community/:citySlug" element={<MainLayout><CityPage /></MainLayout>} />
+            <Route path="/search" element={<MainLayout><SearchPage /></MainLayout>} />
+            <Route path="/privacy-policy" element={<MainLayout><PrivacyPolicyPage /></MainLayout>} />
+            <Route path="/category/blog" element={<MainLayout><BlogsPage /></MainLayout>} />
+            <Route path="/blogs" element={<MainLayout><BlogsPage /></MainLayout>} />
+            <Route path="/blog/:slug" element={<MainLayout><BlogDetailPage /></MainLayout>} />
+            <Route path="/listings/*" element={<MainLayout><ListingDetailPage /></MainLayout>} />
+            <Route path="/properties/:slug" element={<PropertyRedirect />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </RedirectChecker>
       </Router>
     </HelmetProvider>
   );

@@ -133,9 +133,10 @@ class OffMarketInviteController
         $sql = "SELECT omi.*, 
                        p.title as property_title, 
                        p.slug as property_slug,
-                       p.cover_image_url as property_image
+                       pp.url as property_image
                 FROM off_market_invites omi
                 LEFT JOIN properties p ON omi.property_id = p.id
+                LEFT JOIN property_photos pp ON p.id = pp.property_id AND pp.is_cover = 1
                 ORDER BY omi.created_at DESC
                 LIMIT ? OFFSET ?";
 

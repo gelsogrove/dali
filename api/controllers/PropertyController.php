@@ -2073,12 +2073,19 @@ class PropertyController
                 return $this->errorResponse('Filename is required for file attachments', 400);
             }
 
+            // If it's a link attachment and filename is missing, use an empty string so we don't hit NOT NULL constraints
+            // on environments where the migration to allow NULL filename hasn't run yet.
+            $filename = $data['filename'] ?? null;
+            if (($data['mime_type'] ?? null) === 'link' && ($filename === null || $filename === '')) {
+                $filename = '';
+            }
+
             $fields = ['property_id', 'title', 'filename', 'url', 'mime_type', 'size_bytes', 'display_order'];
             $placeholders = '?,?,?,?,?,?,?';
             $params = [
                 $propertyId,
                 $data['title'],
-                $data['filename'] ?? null,
+                $filename,
                 $data['url'],
                 $data['mime_type'] ?? null,
                 isset($data['size_bytes']) ? (int) $data['size_bytes'] : null,
@@ -2089,7 +2096,9 @@ class PropertyController
             $insert = "INSERT INTO property_attachments (" . implode(',', $fields) . ") VALUES ($placeholders)";
             $result = $this->db->executePrepared($insert, $params, $types);
             if (!$result) {
-                return $this->errorResponse('Failed to add attachment');
+                // Bubble up DB error so the admin UI can show a meaningful message
+                $dbErr = $this->conn->error ?: 'Failed to add attachment';
+                return $this->errorResponse('Failed to add attachment: ' . $dbErr);
             }
 
             $attachmentId = $this->db->getLastInsertId();

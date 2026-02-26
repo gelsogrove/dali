@@ -864,7 +864,106 @@
     padding: 24px 16px;
   }
   
-  .listing-popup h2 {
-    font-size: 24px;
-  }
+.listing-popup h2 {
+  font-size: 24px;
+}
+}
+
+/* Instagram modal styles */
+.insta-launcher {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.insta-hint {
+  color: #475467;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.insta-button {
+  background: linear-gradient(120deg, #ff7a18, #af002d 85%, #319197);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(175, 0, 45, 0.28);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.insta-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 36px rgba(175, 0, 45, 0.34);
+  filter: brightness(1.02);
+}
+
+.insta-button:active {
+  transform: translateY(0);
+  box-shadow: 0 10px 24px rgba(175, 0, 45, 0.28);
+}
+
+.insta-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.insta-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.insta-dialog {
+  position: relative;
+  width: min(90vw, 520px);
+  height: min(90vh, 720px);
+  background: #0f172a;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.insta-dialog iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.insta-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  line-height: 32px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.insta-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.03);
+}
+
+.insta-close:active {
+  transform: scale(0.99);
 }

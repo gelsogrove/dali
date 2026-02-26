@@ -19,7 +19,7 @@ export default function LandPage() {
         ]}
       />
       <PageHero breadcrumb="» Land" />
-      <FeaturedProperties activeTab="land" paginate pageSize={12} showTitle={true} disableAnimations={true} titleKicker="Land" titleText="Tierra" />
+      <FeaturedProperties activeTab="land" paginate pageSize={12} showTitle={true} disableAnimations={true} titleKicker="Land" titleText="Land" />
       <ContactWithCta />
     </>
   );

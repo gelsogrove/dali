@@ -128,6 +128,7 @@ export default function ListingDetailPage() {
   const [scheduleStatus, setScheduleStatus] = useState({ type: '', message: '' });
   const [isScheduleSubmitting, setIsScheduleSubmitting] = useState(false);
   const [scheduleStartedAt, setScheduleStartedAt] = useState(() => Date.now());
+  const [showInstagramModal, setShowInstagramModal] = useState(false);
 
   // Related properties
   const [relatedProperties, setRelatedProperties] = useState([]);
@@ -715,14 +716,29 @@ export default function ListingDetailPage() {
       <div className="listing-video" style={{ marginTop: '40px', marginBottom: '40px' }}>
         <h4>Property Video</h4>
         {isInstagram ? (
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <iframe
-              title="Property video"
-              src={embed.src}
-              style={{ width: '100%', maxWidth: '400px', height: '600px', border: 0, borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-              allowTransparency="true"
-              allow="encrypted-media"
-            ></iframe>
+          <div className="insta-launcher">
+            <p className="insta-hint">Instagram doesn’t allow a lightweight player here—open it in a dedicated popup.</p>
+            <button className="insta-button" type="button" onClick={() => setShowInstagramModal(true)}>
+              Watch on Instagram
+            </button>
+
+            {showInstagramModal && (
+              <div className="insta-modal">
+                <div className="insta-backdrop" onClick={() => setShowInstagramModal(false)} />
+                <div className="insta-dialog">
+                  <button className="insta-close" onClick={() => setShowInstagramModal(false)} aria-label="Close">
+                    ×
+                  </button>
+                  <iframe
+                    title="Instagram video"
+                    src={embed.src}
+                    style={{ width: '100%', height: '100%', border: 0, borderRadius: '8px' }}
+                    allowTransparency="true"
+                    allow="encrypted-media"
+                  ></iframe>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '4px' }}>

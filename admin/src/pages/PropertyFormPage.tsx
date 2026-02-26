@@ -1772,16 +1772,16 @@ export default function PropertyFormPage() {
       <TabsContent value="gallery" className="space-y-4">
         {/* Video URL */}
         <div>
-          <Label>Video URL (YouTube, Vimeo, o Instagram, opzionale)</Label>
+          <Label>Video URL (YouTube, Vimeo, or Instagram, optional)</Label>
           <Textarea 
             name="youtube_video_url" 
             value={formData.youtube_video_url} 
             onChange={handleChange} 
             rows={3}
-            placeholder="Incolla il link YouTube, Vimeo o Instagram (es. https://youtu.be/VIDEO_ID, https://vimeo.com/VIDEO_ID, https://instagram.com/reel/...)"
+            placeholder="Paste a YouTube, Vimeo, or Instagram link (e.g. https://youtu.be/VIDEO_ID, https://vimeo.com/VIDEO_ID, https://instagram.com/reel/...)"
           />
           <p className="text-xs text-muted-foreground mt-1">
-            🎥 Accettiamo YouTube, Vimeo o Instagram; il video sarà mostrato nella pagina del listing.
+            🎥 Supports YouTube, Vimeo, or Instagram; the video will appear on the listing page.
           </p>
         </div>
 

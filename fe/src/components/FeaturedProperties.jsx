@@ -19,8 +19,8 @@ const SECTION_LINKS = [
  * 
  * Props:
  * - activeTab: 'properties' | 'active' | 'new' | 'hot' | 'off' | 'land' - Tab attivo
- * - paginate: boolean - Mostra paginazione
- * - pageSize: number - Elementi per pagina
+ * - paginate: boolean - Show pagination
+ * - pageSize: number - Items per page
  * - showTitle: boolean - Mostra header "Properties"
  * - disableAnimations: boolean - Disabilita animazioni AOS
  */
@@ -106,7 +106,7 @@ export default function FeaturedProperties({
       return `USD ${Number(property.price_from_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })} - ${Number(property.price_to_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
     }
     
-    // Prezzo singolo
+    // Single price
     const price = property.price_usd;
     if (price) {
       return `USD ${Number(price).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;

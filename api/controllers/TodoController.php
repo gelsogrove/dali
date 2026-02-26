@@ -102,8 +102,32 @@ class TodoController {
                 $p = (int)$item['priority'];
                 $s = $item['status'] ?? 'todo';
                 $id = (int)$item['id'];
+                $allowedStatuses = ['todo','nicetohave','in_progress','test','done'];
+                if (!in_array($s, $allowedStatuses, true)) {
+                    $stmt->close();
+                    $this->conn->rollback();
+                    return $this->errorResponse('Invalid status: ' . $s, 400);
+                }
+
                 $stmt->bind_param('isi', $p, $s, $id);
-                $stmt->execute();
+
+                if (!$stmt->execute()) {
+                    // Explicitly fail fast so the UI can surface the DB error (e.g. enum missing new status)
+                    $err = $stmt->error ?: 'Unknown database error';
+                    $stmt->close();
+                    $this->conn->rollback();
+                    return $this->errorResponse('Failed to reorder: ' . $err, 500);
+                }
+
+                // Detect silent enum truncation (when sql_mode not strict)
+                if ($this->conn->warning_count > 0) {
+                    $warnRes = $this->conn->query("SHOW WARNINGS");
+                    $warnMsg = $warnRes && $warnRes->num_rows ? $warnRes->fetch_row()[2] : 'SQL warning';
+                    if ($warnRes) $warnRes->close();
+                    $stmt->close();
+                    $this->conn->rollback();
+                    return $this->errorResponse('Failed to reorder: ' . $warnMsg, 500);
+                }
             }
             $stmt->close();
             $this->conn->commit();

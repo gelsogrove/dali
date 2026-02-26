@@ -1,6 +1,6 @@
 /**
- * Converte URL di video da YouTube, Instagram, Vimeo in formato embed
- * @param {string} url - URL del video
+ * Convert YouTube / Instagram / Vimeo URLs into embeddable src
+ * @param {string} url - Video URL
  * @returns {string} - URL embed per iframe
  */
 export function getEmbedUrl(url) {
@@ -56,7 +56,7 @@ export function getEmbedUrl(url) {
 }
 
 /**
- * Determina il tipo di video dall'URL
+ * Detect provider type from URL
  * @param {string} url 
  * @returns {'youtube'|'instagram'|'vimeo'|'unknown'}
  */

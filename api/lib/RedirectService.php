@@ -73,7 +73,7 @@ class RedirectService {
 
         $this->assertValid($normalizedOld, $normalizedNew, null);
 
-        $stmt = $this->conn->prepare("INSERT INTO redirects (url_old, url_new, redirect_type) VALUES (?, ?, ?)");
+        $stmt = $this->conn->prepare("INSERT INTO redirects (url_old, url_new, redirect_type, is_active) VALUES (?, ?, ?, 1)");
         $stmt->bind_param('ssi', $normalizedOld, $normalizedNew, $redirectType);
         $stmt->execute();
         $id = $this->conn->insert_id;

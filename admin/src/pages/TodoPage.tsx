@@ -268,7 +268,7 @@ export default function TodoPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-[1400px] mx-auto space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="p-6 flex items-start justify-between gap-4 flex-wrap">
           <div className="space-y-2">

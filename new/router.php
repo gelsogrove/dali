@@ -13,10 +13,22 @@ require_once $__baseDir . '/api/lib/RedirectService.php';
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Remove common prefixes
+// Normalize trailing slash to simplify matching (leave root as '/')
+if ($path !== '/' && substr($path, -1) === '/') {
+    $path = rtrim($path, '/');
+}
+
+// Remove common prefixes but keep leading slash
 $path = preg_replace('#^/new/#', '/', $path);
 $path = preg_replace('#^/api/#', '/', $path);
 $path = preg_replace('#^/admin/#', '/', $path);
+
+// Special-case: legacy /properties should now go to /videos
+if ($path === '/properties') {
+    header('HTTP/1.1 301 Moved Permanently');
+    header('Location: /videos');
+    exit;
+}
 
 // Only check DB if it's a non-api, non-admin route (e.g. /properties)
 if (strpos($path, '.') === false) {

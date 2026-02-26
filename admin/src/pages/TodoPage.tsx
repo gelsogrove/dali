@@ -122,6 +122,10 @@ export default function TodoPage() {
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => api.delete(`/todos/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
+    onSettled: () => {
+      // Force a refetch so the card disappears immediately after delete
+      queryClient.invalidateQueries({ queryKey: ['todos'] });
+    },
   });
 
   const addCommentMutation = useMutation({

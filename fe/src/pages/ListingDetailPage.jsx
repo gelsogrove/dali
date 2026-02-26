@@ -616,16 +616,22 @@ export default function ListingDetailPage() {
   const bedroomsLabel = formatBedrooms(property);
   const bathroomsLabel = formatBathrooms(property);
 
+  const formatSizeValue = (value) => {
+    const num = parseFloat(value);
+    if (Number.isNaN(num)) return value;
+    return num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  };
+
   // Size with toggle
   const getSizeLabel = () => {
     if (selectedUnit === 'sqm' && property.sqm) {
-      return `${property.sqm} m²`;
+      return `${formatSizeValue(property.sqm)} m²`;
     } else if (selectedUnit === 'sqft' && property.sqft) {
-      return `${property.sqft} sq ft`;
+      return `${formatSizeValue(property.sqft)} sq ft`;
     } else if (property.sqm) {
-      return `${property.sqm} m²`;
+      return `${formatSizeValue(property.sqm)} m²`;
     } else if (property.sqft) {
-      return `${property.sqft} sq ft`;
+      return `${formatSizeValue(property.sqft)} sq ft`;
     }
     return null;
   };

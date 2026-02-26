@@ -9,6 +9,26 @@ class TodoController {
     public function __construct() {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
+        $this->ensureStatusEnum();
+    }
+
+    /**
+     * Make sure the 'status' enum column includes 'test'.
+     * This auto-heals environments where migrations didn't run.
+     */
+    private function ensureStatusEnum() {
+        try {
+            $res = $this->conn->query("SHOW COLUMNS FROM todo_items LIKE 'status'");
+            if ($res && ($col = $res->fetch_assoc())) {
+                $type = $col['Type'] ?? '';
+                if (stripos($type, "'test'") === false) {
+                    $this->conn->query("ALTER TABLE `todo_items` MODIFY COLUMN `status` ENUM('todo','nicetohave','in_progress','test','done') NOT NULL DEFAULT 'todo'");
+                }
+            }
+            if ($res) $res->close();
+        } catch (Exception $e) {
+            // silent: do not break API; errors will surface on reorder/create anyway
+        }
     }
 
     public function list($filters = []) {

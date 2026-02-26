@@ -7,6 +7,9 @@ RewriteRule ^ - [L]
 RewriteCond %{REQUEST_URI} ^/api [NC]
 RewriteRule ^ - [L]
 
+# Force /properties to router.php so DB redirects can run even if a folder/file exists
+RewriteRule ^properties/?$ router.php [L]
+
 # Per tutto il resto: se file/directory esiste, servilo
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d

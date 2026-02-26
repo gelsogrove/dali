@@ -130,29 +130,36 @@ export default function PropertyAccessGate({
     return (
       <div className="listing-attachments">
         <div className="attachments-header-unlocked">
-          <h4>Downloads</h4>
+          <h4>Downloads &amp; Links</h4>
           <span className="unlocked-badge">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 9.9-1" />
             </svg>
             Access Granted
           </span>
         </div>
         <ul className="attachments-list">
-          {attachments.map((file) => (
-            <li key={file.id} className="attachment-item">
-              <span className="attachment-icon" aria-hidden="true">{attachmentIcon(file.filename, file.mime_type)}</span>
-              <div className="attachment-meta">
-                <a href={fileUrl(file.url)} target="_blank" rel="noopener noreferrer">
-                  {file.title || file.filename}
-                </a>
-                <span className="attachment-info">
-                  {file.filename} {file.size_bytes ? `· ${formatBytes(file.size_bytes)}` : ''}
-                </span>
-              </div>
-            </li>
-          ))}
+          {attachments.map((file) => {
+            const isLink = file.mime_type === 'link' || !file.filename;
+            return (
+              <li key={file.id} className="attachment-item">
+                <span className="attachment-icon" aria-hidden="true">{attachmentIcon(file.filename, file.mime_type)}</span>
+                <div className="attachment-meta">
+                  <a href={isLink ? file.url : fileUrl(file.url)} target="_blank" rel="noopener noreferrer">
+                    {file.title || (isLink ? 'External Link' : file.filename)}
+                  </a>
+                  {isLink ? (
+                    <span className="attachment-info" style={{ color: 'var(--primary-color, #c19a5b)' }}>Visit Link</span>
+                  ) : (
+                    <span className="attachment-info">
+                      {file.filename} {file.size_bytes ? `· ${formatBytes(file.size_bytes)}` : ''}
+                    </span>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
     );
@@ -167,8 +174,8 @@ export default function PropertyAccessGate({
           <div className="locked-content">
             <div className="lock-icon-wrapper">
               <svg className="lock-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </div>
             <p className="locked-title">Protected Documents</p>
@@ -204,8 +211,8 @@ export default function PropertyAccessGate({
               <div className="access-popup-content">
                 <div className="popup-icon-wrapper">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                 </div>
                 <h3>Enter Access Code</h3>
@@ -258,8 +265,8 @@ export default function PropertyAccessGate({
               <div className="access-popup-content">
                 <div className="popup-icon-wrapper popup-icon-form">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
                   </svg>
                 </div>
                 <h3>Request Access Code</h3>
@@ -342,8 +349,8 @@ export default function PropertyAccessGate({
               <div className="access-popup-content access-popup-thankyou">
                 <div className="popup-icon-wrapper popup-icon-success">
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
                   </svg>
                 </div>
                 <h3>Request Submitted!</h3>

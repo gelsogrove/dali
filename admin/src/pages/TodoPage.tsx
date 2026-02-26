@@ -20,7 +20,7 @@ type TodoItem = {
   title: string;
   description: string;
   author: string;
-  status: 'todo' | 'nicetohave' | 'in_progress' | 'done';
+  status: 'todo' | 'nicetohave' | 'in_progress' | 'test' | 'done';
   priority: number;
   attachments: Attachment[];
   comments: Comment[];
@@ -45,6 +45,7 @@ type Comment = {
 const statusColumns = [
   { key: 'todo', label: 'Backlog', color: 'bg-amber-50', accent: 'border-amber-200', dot: 'bg-amber-500' },
   { key: 'in_progress', label: 'In Progress', color: 'bg-sky-50', accent: 'border-sky-200', dot: 'bg-sky-500' },
+  { key: 'test', label: 'Test', color: 'bg-indigo-50', accent: 'border-indigo-200', dot: 'bg-indigo-600' },
   { key: 'done', label: 'Complete', color: 'bg-emerald-50', accent: 'border-emerald-200', dot: 'bg-emerald-600' },
   { key: 'nicetohave', label: 'Nice to Have', color: 'bg-fuchsia-50', accent: 'border-fuchsia-200', dot: 'bg-fuchsia-600' },
 ] as const;
@@ -134,6 +135,7 @@ export default function TodoPage() {
       todo: [],
       nicetohave: [],
       in_progress: [],
+      test: [],
       done: [],
     };
     localItems.forEach((i) => {
@@ -146,7 +148,7 @@ export default function TodoPage() {
 
   const findContainer = (id: number | string | null | undefined) => {
     if (!id && id !== 0) return undefined;
-    if (typeof id === 'string' && ['todo', 'nicetohave', 'in_progress', 'done'].includes(id)) return id;
+    if (typeof id === 'string' && ['todo', 'nicetohave', 'in_progress', 'test', 'done'].includes(id)) return id;
     return Object.keys(grouped).find((k) => grouped[k].some((i) => i.id === id));
   };
 
@@ -170,6 +172,7 @@ export default function TodoPage() {
         todo: [],
         nicetohave: [],
         in_progress: [],
+        test: [],
         done: [],
       };
       prev.forEach((item) => {
@@ -213,6 +216,7 @@ export default function TodoPage() {
         todo: [],
         nicetohave: [],
         in_progress: [],
+        test: [],
         done: [],
       };
       prev.forEach((item) => {

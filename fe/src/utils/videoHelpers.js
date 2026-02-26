@@ -9,7 +9,7 @@ export function getEmbedUrl(url) {
   // YouTube
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
     let videoId = '';
-    
+
     if (url.includes('youtube.com/watch')) {
       try {
         const urlParams = new URLSearchParams(new URL(url).search);
@@ -22,7 +22,7 @@ export function getEmbedUrl(url) {
     } else if (url.includes('youtu.be/')) {
       videoId = url.split('youtu.be/')[1].split('?')[0].split('/')[0];
     }
-    
+
     return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
   }
 
@@ -33,7 +33,7 @@ export function getEmbedUrl(url) {
     if (match) {
       const type = match[1]; // 'p' o 'reel'
       const mediaId = match[2];
-      return `https://www.instagram.com/${type}/${mediaId}/embed`;
+      return `https://www.instagram.com/${type}/${mediaId}/embed/`;
     }
     return url;
   }
@@ -43,7 +43,7 @@ export function getEmbedUrl(url) {
     if (url.includes('player.vimeo.com')) {
       return url; // Già formato embed
     }
-    
+
     // Converti vimeo.com/123456 in player.vimeo.com/video/123456
     const match = url.match(/vimeo\.com\/(\d+)/);
     if (match) {
@@ -62,10 +62,10 @@ export function getEmbedUrl(url) {
  */
 export function getVideoType(url) {
   if (!url) return 'unknown';
-  
+
   if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
   if (url.includes('instagram.com')) return 'instagram';
   if (url.includes('vimeo.com')) return 'vimeo';
-  
+
   return 'unknown';
 }

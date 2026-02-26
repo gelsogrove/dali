@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowDown, ArrowUp, Download, GripVertical, Trash, Loader2 } from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ArrowDown, ArrowUp, Download, GripVertical, Trash, Loader2, ExternalLink } from 'lucide-react'
 import api from '@/lib/api'
 
 type Attachment = {
@@ -33,6 +34,8 @@ export default function PropertyAttachments({ propertyId }: Props) {
   const [localItems, setLocalItems] = useState<Attachment[]>([])
   const [uploading, setUploading] = useState(false)
   const [savingId, setSavingId] = useState<number | null>(null)
+  const [linkTitle, setLinkTitle] = useState('')
+  const [linkUrl, setLinkUrl] = useState('')
 
   const { data = [], isLoading } = useQuery({
     queryKey: ['property-attachments', propertyId],
@@ -75,6 +78,30 @@ export default function PropertyAttachments({ propertyId }: Props) {
     onSettled: () => setUploading(false),
   })
 
+  const linkMutation = useMutation({
+    mutationFn: async () => {
+      let finalUrl = linkUrl.trim()
+      if (!/^https?:\/\//i.test(finalUrl)) {
+        finalUrl = 'https://' + finalUrl
+      }
+
+      await api.post(`/properties/${propertyId}/attachments`, {
+        title: linkTitle.trim(),
+        filename: null,
+        url: finalUrl,
+        mime_type: 'link',
+        size_bytes: null,
+        display_order: localItems.length,
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['property-attachments', propertyId] })
+      setLinkTitle('')
+      setLinkUrl('')
+    },
+    onSettled: () => setUploading(false),
+  })
+
   const saveMutation = useMutation({
     mutationFn: async ({ id, title }: { id: number; title: string }) => {
       setSavingId(id)
@@ -111,6 +138,14 @@ export default function PropertyAttachments({ propertyId }: Props) {
     uploadMutation.mutate(file)
   }
 
+  const handleAddLink = () => {
+    if (!linkTitle.trim() || !linkUrl.trim()) {
+      return
+    }
+    setUploading(true)
+    linkMutation.mutate()
+  }
+
   const moveItem = (index: number, direction: 'up' | 'down') => {
     const next = [...localItems]
     const target = direction === 'up' ? index - 1 : index + 1
@@ -134,9 +169,10 @@ export default function PropertyAttachments({ propertyId }: Props) {
     deleteMutation.mutate(id)
   }
 
-  const iconFor = (mime?: string, filename?: string) => {
-    const ext = (filename || '').split('.').pop()?.toLowerCase() || ''
-    if ((mime && mime.includes('pdf')) || ext === 'pdf') return 'PDF'
+  const iconFor = (item: Attachment) => {
+    if (item.mime_type === 'link' || !item.filename) return 'LINK'
+    const ext = (item.filename || '').split('.').pop()?.toLowerCase() || ''
+    if ((item.mime_type && item.mime_type.includes('pdf')) || ext === 'pdf') return 'PDF'
     if (['doc', 'docx'].includes(ext)) return 'DOC'
     if (['xls', 'xlsx'].includes(ext)) return 'XLS'
     if (['ppt', 'pptx'].includes(ext)) return 'PPT'
@@ -154,19 +190,48 @@ export default function PropertyAttachments({ propertyId }: Props) {
     <div className="space-y-4">
       <Card>
         <CardContent className="pt-6 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
+          <div className="flex items-start justify-between gap-6 flex-col md:flex-row">
+            <div className="flex-1">
               <h3 className="text-base font-medium">Attachments</h3>
-              <p className="text-sm text-muted-foreground">
-                Upload PDFs, Word, Excel, PowerPoint or TXT files (max 20MB). Visible on the property page for download.
+              <p className="text-sm text-muted-foreground mt-1">
+                Upload PDFs, Word, Excel, PowerPoint, TXT files (max 20MB) or add external links. Visible on the property page.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Input type="file" accept={ACCEPT} onChange={handleUpload} disabled={uploading} className="w-[300px]" />
+            <div className="flex flex-col gap-4 min-w-[300px] w-full max-w-md">
+              <Tabs defaultValue="file" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="file">Upload File</TabsTrigger>
+                  <TabsTrigger value="link">Add Link</TabsTrigger>
+                </TabsList>
+                <TabsContent value="file" className="mt-2">
+                  <div className="flex items-center gap-2">
+                    <Input type="file" accept={ACCEPT} onChange={handleUpload} disabled={uploading} className="flex-1" />
+                  </div>
+                </TabsContent>
+                <TabsContent value="link" className="mt-2 space-y-2">
+                  <Input
+                    placeholder="Link Title (e.g. Masterplan)"
+                    value={linkTitle}
+                    onChange={(e) => setLinkTitle(e.target.value)}
+                    disabled={uploading}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="https://..."
+                      value={linkUrl}
+                      onChange={(e) => setLinkUrl(e.target.value)}
+                      disabled={uploading}
+                    />
+                    <Button type="button" onClick={handleAddLink} disabled={uploading || !linkTitle.trim() || !linkUrl.trim()}>
+                      Add
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
               {uploading && (
-                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-md border border-blue-100 animate-pulse">
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-md border border-blue-100 animate-pulse w-fit">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm font-medium">Uploading...</span>
+                  <span className="text-sm font-medium">Processing...</span>
                 </div>
               )}
             </div>
@@ -190,10 +255,10 @@ export default function PropertyAttachments({ propertyId }: Props) {
                   <div className="flex items-center gap-3 flex-1">
                     <GripVertical className="h-5 w-5 text-muted-foreground" />
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">{iconFor(item.mime_type, item.filename)}</Badge>
+                      <Badge variant="outline">{iconFor(item)}</Badge>
                       <Button variant="ghost" size="icon" asChild>
-                        <a href={item.url} target="_blank" rel="noopener noreferrer" title="Download">
-                          <Download className="h-4 w-4" />
+                        <a href={item.url} target="_blank" rel="noopener noreferrer" title={item.mime_type === 'link' || !item.filename ? "Visit Link" : "Download"}>
+                          {item.mime_type === 'link' || !item.filename ? <ExternalLink className="h-4 w-4" /> : <Download className="h-4 w-4" />}
                         </a>
                       </Button>
                     </div>
@@ -206,7 +271,7 @@ export default function PropertyAttachments({ propertyId }: Props) {
                         disabled={savingId === item.id}
                       />
                       <div className="text-xs text-muted-foreground mt-1 space-x-2">
-                        <span>{item.filename}</span>
+                        {item.filename ? <span>{item.filename}</span> : <span className="text-blue-500 underline truncate max-w-[200px] inline-block align-bottom">{item.url}</span>}
                         {item.size_bytes ? <span>• {formatSize(item.size_bytes)}</span> : null}
                       </div>
                     </div>

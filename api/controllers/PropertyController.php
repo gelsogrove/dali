@@ -4,13 +4,15 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../lib/SitemapService.php';
 require_once __DIR__ . '/../lib/RedirectService.php';
 
-class PropertyController {
+class PropertyController
+{
     private $db;
     private $conn;
     private $sitemapService;
     private $redirectService;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
         $this->sitemapService = new SitemapService($this->conn);
@@ -22,7 +24,8 @@ class PropertyController {
      * @param array $filters Filter parameters
      * @return array
      */
-    public function getAll($filters = []) {
+    public function getAll($filters = [])
+    {
         try {
             $where = [];
             $params = [];
@@ -117,13 +120,13 @@ class PropertyController {
             // SQM range filters
             if (!empty($filters['min_sqm'])) {
                 $where[] = "sqm >= ?";
-                $params[] = (float)$filters['min_sqm'];
+                $params[] = (float) $filters['min_sqm'];
                 $types .= 'd';
             }
 
             if (!empty($filters['max_sqm'])) {
                 $where[] = "sqm <= ?";
-                $params[] = (float)$filters['max_sqm'];
+                $params[] = (float) $filters['max_sqm'];
                 $types .= 'd';
             }
 
@@ -171,39 +174,39 @@ class PropertyController {
 
             // Build query
             $whereClause = empty($where) ? '1=1' : implode(' AND ', $where);
-            
+
             // Order by (sortable)
             $allowedSortFields = ['price_usd', 'created_at', 'sqm', 'bedrooms', 'title', 'order'];
             $sortField = 'created_at';
             $sortDir = 'DESC';
-            
+
             if (!empty($filters['sort_by']) && in_array($filters['sort_by'], $allowedSortFields)) {
                 $sortField = $filters['sort_by'];
             }
             if (!empty($filters['sort_dir']) && in_array(strtoupper($filters['sort_dir']), ['ASC', 'DESC'])) {
                 $sortDir = strtoupper($filters['sort_dir']);
             }
-            
+
             // Default order: featured first, then by order field, then by sort field
             $orderBy = "ORDER BY featured DESC, `order` ASC, `$sortField` $sortDir";
-            
+
             $query = "SELECT id, property_id_reference, slug, title, subtitle, property_type, status, 
                      property_category, description, price_usd, price_mxn, price_eur, price_on_demand, 
                      price_base_currency, exchange_rate, price_from_usd, price_to_usd, 
                      price_from_mxn, price_to_mxn, price_from_eur, price_to_eur, bedrooms, bedrooms_min, bedrooms_max,
                      bathrooms, bathrooms_min, bathrooms_max, sqm, sqft, sqm_min, sqm_max, sqft_min, sqft_max, furnishing_status, 
                      neighborhood, city, country, latitude, longitude, tags, is_active, featured, show_in_home, `order`, views_count,
-                     created_at, updated_at
+                     created_at, updated_at, youtube_video_url
                      FROM properties 
                      WHERE $whereClause 
                      $orderBy
                      LIMIT ? OFFSET ?";
 
             // Add pagination
-            $page = isset($filters['page']) ? (int)$filters['page'] : 1;
-            $perPage = isset($filters['per_page']) ? (int)$filters['per_page'] : 20;
+            $page = isset($filters['page']) ? (int) $filters['page'] : 1;
+            $perPage = isset($filters['per_page']) ? (int) $filters['per_page'] : 20;
             $offset = ($page - 1) * $perPage;
-            
+
             $params[] = $perPage;
             $params[] = $offset;
             $types .= 'ii';
@@ -217,14 +220,14 @@ class PropertyController {
             $properties = [];
             while ($row = $result->fetch_assoc()) {
                 $property = $this->formatProperty($row);
-                
+
                 // Always load property_categories from table
                 $property['property_categories'] = $this->loadPropertyCategories($property['id']);
                 // Fallback: if table is empty but column has value (legacy), synthesize array
                 if (empty($property['property_categories']) && !empty($property['property_category'])) {
                     $property['property_categories'] = [$property['property_category']];
                 }
-                
+
                 $properties[] = $property;
             }
 
@@ -235,13 +238,45 @@ class PropertyController {
             $countResult = empty($countParams)
                 ? $this->conn->query($countQuery)
                 : $this->db->executePrepared($countQuery, $countParams, $countTypes);
-            
+
             $total = $countResult->fetch_assoc()['total'];
+
+            // Redact hot_deal sensitive info for public guests
+            $isAuthenticatedAdmin = false;
+            if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+                require_once __DIR__ . '/../middleware/AuthMiddleware.php';
+                $auth = new AuthMiddleware();
+                $user = $auth->authenticate();
+                if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                    $isAuthenticatedAdmin = true;
+                }
+            }
+
+            if (!$isAuthenticatedAdmin) {
+                foreach ($properties as &$p) {
+                    if ($p['property_type'] === 'hot_deal') {
+                        $p['price_usd'] = null;
+                        $p['price_mxn'] = null;
+                        $p['price_eur'] = null;
+                        $p['price_from_usd'] = null;
+                        $p['price_to_usd'] = null;
+                        $p['price_from_mxn'] = null;
+                        $p['price_to_mxn'] = null;
+                        $p['price_from_eur'] = null;
+                        $p['price_to_eur'] = null;
+                        $p['latitude'] = null;
+                        $p['longitude'] = null;
+                        $p['description'] = 'Access restricted. Please use an access code to view full details.';
+                        $p['content'] = 'Access restricted.';
+                    }
+                }
+                unset($p);
+            }
 
             return $this->successResponse([
                 'properties' => $properties,
                 'pagination' => [
-                    'total' => (int)$total,
+                    'total' => (int) $total,
                     'page' => $page,
                     'per_page' => $perPage,
                     'total_pages' => ceil($total / $perPage)
@@ -259,16 +294,17 @@ class PropertyController {
      * @param mixed $identifier Property ID or slug
      * @return array
      */
-    public function getById($identifier, $offMarketToken = null) {
+    public function getById($identifier, $offMarketToken = null)
+    {
         try {
             // Determine if identifier is ID or slug
             $isId = is_numeric($identifier);
             $field = $isId ? 'id' : 'slug';
-            
+
             // For slug-based access (public): only show active properties
             // For ID-based access (admin): show all properties
             $activeFilter = $isId ? '' : ' AND is_active = 1';
-            
+
             $query = "SELECT * FROM properties WHERE $field = ?$activeFilter LIMIT 1";
             $result = $this->db->executePrepared($query, [$identifier], $isId ? 'i' : 's');
 
@@ -301,6 +337,60 @@ class PropertyController {
                 $tokenStmt->close();
                 if (strtotime($invite['expires_at']) < time()) {
                     return $this->errorResponse('Property not found', 404);
+                }
+            }
+
+            // Handle hot_deal security
+            if (!$isId && $property['property_type'] === 'hot_deal') {
+                $isAuthenticatedAdmin = false;
+                if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+                    require_once __DIR__ . '/../middleware/AuthMiddleware.php';
+                    $auth = new AuthMiddleware();
+                    $user = $auth->authenticate();
+                    if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                        $isAuthenticatedAdmin = true;
+                    }
+                }
+
+                $hasValidCode = false;
+                $hotDealCode = $_GET['hotDealCode'] ?? null;
+                if ($hotDealCode) {
+                    $hotDealCode = strtoupper(trim($hotDealCode));
+                    $db = new Database();
+                    $conn = $db->getConnection();
+                    $codeStmt = $conn->prepare(
+                        "SELECT id, code_expires_at 
+                         FROM property_access_requests 
+                         WHERE access_code = ? AND status = 'approved'
+                         ORDER BY code_generated_at DESC 
+                         LIMIT 1"
+                    );
+                    $codeStmt->bind_param('s', $hotDealCode);
+                    $codeStmt->execute();
+                    $codeResult = $codeStmt->get_result();
+                    if ($codeResult->num_rows > 0) {
+                        $row = $codeResult->fetch_assoc();
+                        if (!$row['code_expires_at'] || strtotime($row['code_expires_at']) > time()) {
+                            $hasValidCode = true;
+                        }
+                    }
+                    $codeStmt->close();
+                }
+
+                if (!$isAuthenticatedAdmin && !$hasValidCode) {
+                    $property['price_usd'] = null;
+                    $property['price_mxn'] = null;
+                    $property['price_eur'] = null;
+                    $property['price_from_usd'] = null;
+                    $property['price_to_usd'] = null;
+                    $property['price_from_mxn'] = null;
+                    $property['price_to_mxn'] = null;
+                    $property['price_from_eur'] = null;
+                    $property['price_to_eur'] = null;
+                    $property['latitude'] = null;
+                    $property['longitude'] = null;
+                    $property['description'] = 'Access restricted. Please use an access code to view full details.';
+                    $property['content'] = 'Access restricted.';
                 }
             }
 
@@ -358,7 +448,8 @@ class PropertyController {
      * @param int $userId User ID
      * @return array
      */
-    public function create($data, $userId) {
+    public function create($data, $userId)
+    {
         try {
             // Validate required fields
             $validation = $this->validatePropertyData($data, false);
@@ -426,61 +517,61 @@ class PropertyController {
 
             if (isset($data['price_usd']) && $data['price_usd'] !== null && $data['price_usd'] !== '') {
                 $fields[] = 'price_usd';
-                $params[] = (float)$data['price_usd'];
+                $params[] = (float) $data['price_usd'];
                 $types .= 'd';
             }
 
             if (isset($data['price_mxn']) && $data['price_mxn'] !== null && $data['price_mxn'] !== '') {
                 $fields[] = 'price_mxn';
-                $params[] = (float)$data['price_mxn'];
+                $params[] = (float) $data['price_mxn'];
                 $types .= 'd';
             }
 
             if (isset($data['price_eur']) && $data['price_eur'] !== null && $data['price_eur'] !== '') {
                 $fields[] = 'price_eur';
-                $params[] = (float)$data['price_eur'];
+                $params[] = (float) $data['price_eur'];
                 $types .= 'd';
             }
 
             if (isset($data['exchange_rate']) && $data['exchange_rate'] !== null) {
                 $fields[] = 'exchange_rate';
-                $params[] = (float)$data['exchange_rate'];
+                $params[] = (float) $data['exchange_rate'];
                 $types .= 'd';
             }
 
             if (isset($data['price_from_usd']) && $data['price_from_usd'] !== null) {
                 $fields[] = 'price_from_usd';
-                $params[] = (float)$data['price_from_usd'];
+                $params[] = (float) $data['price_from_usd'];
                 $types .= 'd';
             }
 
             if (isset($data['price_to_usd']) && $data['price_to_usd'] !== null) {
                 $fields[] = 'price_to_usd';
-                $params[] = (float)$data['price_to_usd'];
+                $params[] = (float) $data['price_to_usd'];
                 $types .= 'd';
             }
 
             if (isset($data['price_from_mxn']) && $data['price_from_mxn'] !== null) {
                 $fields[] = 'price_from_mxn';
-                $params[] = (float)$data['price_from_mxn'];
+                $params[] = (float) $data['price_from_mxn'];
                 $types .= 'd';
             }
 
             if (isset($data['price_to_mxn']) && $data['price_to_mxn'] !== null) {
                 $fields[] = 'price_to_mxn';
-                $params[] = (float)$data['price_to_mxn'];
+                $params[] = (float) $data['price_to_mxn'];
                 $types .= 'd';
             }
 
             if (isset($data['price_from_eur']) && $data['price_from_eur'] !== null) {
                 $fields[] = 'price_from_eur';
-                $params[] = (float)$data['price_from_eur'];
+                $params[] = (float) $data['price_from_eur'];
                 $types .= 'd';
             }
 
             if (isset($data['price_to_eur']) && $data['price_to_eur'] !== null) {
                 $fields[] = 'price_to_eur';
-                $params[] = (float)$data['price_to_eur'];
+                $params[] = (float) $data['price_to_eur'];
                 $types .= 'd';
             }
 
@@ -523,49 +614,49 @@ class PropertyController {
 
             if (isset($data['sqm']) && $data['sqm'] !== null) {
                 $fields[] = 'sqm';
-                $params[] = (float)$data['sqm'];
+                $params[] = (float) $data['sqm'];
                 $types .= 'd';
             }
 
             if (isset($data['sqft']) && $data['sqft'] !== null) {
                 $fields[] = 'sqft';
-                $params[] = (float)$data['sqft'];
+                $params[] = (float) $data['sqft'];
                 $types .= 'd';
             }
 
             if (isset($data['sqm_min']) && $data['sqm_min'] !== null) {
                 $fields[] = 'sqm_min';
-                $params[] = (float)$data['sqm_min'];
+                $params[] = (float) $data['sqm_min'];
                 $types .= 'd';
             }
 
             if (isset($data['sqm_max']) && $data['sqm_max'] !== null) {
                 $fields[] = 'sqm_max';
-                $params[] = (float)$data['sqm_max'];
+                $params[] = (float) $data['sqm_max'];
                 $types .= 'd';
             }
 
             if (isset($data['sqft_min']) && $data['sqft_min'] !== null) {
                 $fields[] = 'sqft_min';
-                $params[] = (float)$data['sqft_min'];
+                $params[] = (float) $data['sqft_min'];
                 $types .= 'd';
             }
 
             if (isset($data['sqft_max']) && $data['sqft_max'] !== null) {
                 $fields[] = 'sqft_max';
-                $params[] = (float)$data['sqft_max'];
+                $params[] = (float) $data['sqft_max'];
                 $types .= 'd';
             }
 
             if (isset($data['lot_size_sqm']) && $data['lot_size_sqm'] !== null) {
                 $fields[] = 'lot_size_sqm';
-                $params[] = (float)$data['lot_size_sqm'];
+                $params[] = (float) $data['lot_size_sqm'];
                 $types .= 'd';
             }
 
             if (isset($data['year_built']) && $data['year_built'] !== null) {
                 $fields[] = 'year_built';
-                $params[] = (int)$data['year_built'];
+                $params[] = (int) $data['year_built'];
                 $types .= 'i';
             }
 
@@ -606,19 +697,25 @@ class PropertyController {
 
             if (isset($data['latitude']) && $data['latitude'] !== null) {
                 $fields[] = 'latitude';
-                $params[] = (float)$data['latitude'];
+                $params[] = (float) $data['latitude'];
                 $types .= 'd';
             }
 
             if (isset($data['longitude']) && $data['longitude'] !== null) {
                 $fields[] = 'longitude';
-                $params[] = (float)$data['longitude'];
+                $params[] = (float) $data['longitude'];
                 $types .= 'd';
             }
 
             if (isset($data['google_maps_url']) && $data['google_maps_url'] !== '') {
                 $fields[] = 'google_maps_url';
                 $params[] = $data['google_maps_url'];
+                $types .= 's';
+            }
+
+            if (isset($data['youtube_video_url']) && $data['youtube_video_url'] !== '') {
+                $fields[] = 'youtube_video_url';
+                $params[] = $data['youtube_video_url'];
                 $types .= 's';
             }
 
@@ -666,7 +763,7 @@ class PropertyController {
             $types .= 'i';
 
             $fields[] = '`order`';
-            $params[] = isset($data['order']) ? (int)$data['order'] : 0;
+            $params[] = isset($data['order']) ? (int) $data['order'] : 0;
             $types .= 'i';
 
             if (isset($data['internal_notes']) && $data['internal_notes'] !== '') {
@@ -728,7 +825,8 @@ class PropertyController {
      * @param int $userId User ID
      * @return array
      */
-    public function update($id, $data, $userId) {
+    public function update($id, $data, $userId)
+    {
         try {
             // Check if property exists and get current state
             $checkQuery = "SELECT id, slug, is_active, show_in_home FROM properties WHERE id = ? LIMIT 1";
@@ -742,17 +840,17 @@ class PropertyController {
 
             // Detect partial update (only is_active, featured, show_in_home, or order fields)
             $partialUpdateFields = ['is_active', 'featured', 'show_in_home', 'order'];
-            $isPartialUpdate = count($data) <= 2 && 
-                               count(array_diff(array_keys($data), $partialUpdateFields)) === 0;
+            $isPartialUpdate = count($data) <= 2 &&
+                count(array_diff(array_keys($data), $partialUpdateFields)) === 0;
 
             // Validazione logica: non si può avere show_in_home=true se is_active=false
             $currentIsActive = isset($data['is_active']) ? !empty($data['is_active']) : !empty($existing['is_active']);
             $newShowInHome = isset($data['show_in_home']) ? !empty($data['show_in_home']) : !empty($existing['show_in_home']);
-            
+
             if ($newShowInHome && !$currentIsActive) {
                 return $this->errorResponse('Cannot show in home: property must be published (is_active) first', 400);
             }
-            
+
             // Se si disattiva is_active, disattivare anche show_in_home automaticamente
             if (isset($data['is_active']) && empty($data['is_active']) && !empty($existing['show_in_home'])) {
                 $data['show_in_home'] = 0;
@@ -770,31 +868,92 @@ class PropertyController {
             $types = '';
 
             $allowedFields = [
-                'title', 'subtitle', 'property_type', 'status', 'property_category',
-                'description', 'content', 'price_usd', 'price_mxn', 'price_eur', 'exchange_rate', 
-                'price_base_currency', 'price_on_demand', 'price_negotiable', 
-                'price_from_usd', 'price_to_usd', 'price_from_mxn', 'price_to_mxn', 'price_from_eur', 'price_to_eur',
-                'bedrooms', 'bedrooms_min', 'bedrooms_max', 
-                'bathrooms', 'bathrooms_min', 'bathrooms_max',
-                'sqm', 'sqft', 'sqm_min', 'sqm_max', 'sqft_min', 'sqft_max', 'lot_size_sqm', 'year_built', 
-                'furnishing_status', 'neighborhood', 'city', 'state', 'country',
-                'address', 'latitude', 'longitude', 'google_maps_url',
-                'seo_title', 'seo_description', 'og_title', 'og_description',
-                'is_active', 'featured', 'show_in_home', 'order', 'internal_notes'
+                'title',
+                'subtitle',
+                'property_type',
+                'status',
+                'property_category',
+                'description',
+                'content',
+                'price_usd',
+                'price_mxn',
+                'price_eur',
+                'exchange_rate',
+                'price_base_currency',
+                'price_on_demand',
+                'price_negotiable',
+                'price_from_usd',
+                'price_to_usd',
+                'price_from_mxn',
+                'price_to_mxn',
+                'price_from_eur',
+                'price_to_eur',
+                'bedrooms',
+                'bedrooms_min',
+                'bedrooms_max',
+                'bathrooms',
+                'bathrooms_min',
+                'bathrooms_max',
+                'sqm',
+                'sqft',
+                'sqm_min',
+                'sqm_max',
+                'sqft_min',
+                'sqft_max',
+                'lot_size_sqm',
+                'year_built',
+                'furnishing_status',
+                'neighborhood',
+                'city',
+                'state',
+                'country',
+                'address',
+                'latitude',
+                'longitude',
+                'google_maps_url',
+                'seo_title',
+                'seo_description',
+                'og_title',
+                'og_description',
+                'is_active',
+                'featured',
+                'show_in_home',
+                'order',
+                'internal_notes',
+                'youtube_video_url'
             ];
 
             // Fields that should be NULL if empty/zero
             $nullableFields = [
-                'bedrooms', 'bathrooms', 'furnishing_status', 'year_built',
-                'sqm', 'sqft', 'sqm_min', 'sqm_max', 'sqft_min', 'sqft_max', 'lot_size_sqm', 
-                'price_usd', 'price_mxn', 'price_eur', 'price_from_usd', 'price_to_usd',
-                'price_from_mxn', 'price_to_mxn', 'price_from_eur', 'price_to_eur', 'latitude', 'longitude', 'exchange_rate'
+                'bedrooms',
+                'bathrooms',
+                'furnishing_status',
+                'year_built',
+                'sqm',
+                'sqft',
+                'sqm_min',
+                'sqm_max',
+                'sqft_min',
+                'sqft_max',
+                'lot_size_sqm',
+                'price_usd',
+                'price_mxn',
+                'price_eur',
+                'price_from_usd',
+                'price_to_usd',
+                'price_from_mxn',
+                'price_to_mxn',
+                'price_from_eur',
+                'price_to_eur',
+                'latitude',
+                'longitude',
+                'exchange_rate'
             ];
 
             foreach ($allowedFields as $field) {
                 if (array_key_exists($field, $data)) {
                     $updates[] = "`$field` = ?";
-                    
+
                     if ($field === 'is_active' || $field === 'featured' || $field === 'show_in_home' || $field === 'price_on_demand' || $field === 'price_negotiable') {
                         $params[] = !empty($data[$field]) ? 1 : 0;
                         $types .= 'i';
@@ -870,7 +1029,8 @@ class PropertyController {
      * @param int $userId User ID
      * @return array
      */
-    public function delete($id, $userId) {
+    public function delete($id, $userId)
+    {
         try {
             // Fetch property details
             $fetch = $this->db->executePrepared(
@@ -898,16 +1058,16 @@ class PropertyController {
                 }
 
                 $this->logActivity($userId, 'delete', 'property', $id, "Deleted property ID: $id (created < 24h)");
-                
+
                 // Regenerate sitemap
                 $this->sitemapService->generateSitemap();
-                
+
                 return $this->successResponse(['message' => 'Property deleted permanently (created < 24h)']);
             }
 
             // If created > 24 hours ago, require redirect
             $urlOld = '/properties/' . $property['slug'];
-            
+
             // Check if redirect already exists
             $existingRedirect = $this->redirectService->findByUrlOld($urlOld);
             if (!$existingRedirect) {
@@ -949,7 +1109,8 @@ class PropertyController {
      * @param bool $validateOnly Only validate without saving
      * @return array
      */
-    public function importFromJson($jsonData, $userId, $validateOnly = false) {
+    public function importFromJson($jsonData, $userId, $validateOnly = false)
+    {
         try {
             $jsonData = $this->normalizePropertyData($jsonData);
 
@@ -996,16 +1157,17 @@ class PropertyController {
      * @param int $id Property ID
      * @return array
      */
-    public function exportAsJson($id) {
+    public function exportAsJson($id)
+    {
         try {
             $result = $this->getById($id);
-            
+
             if (!$result['success']) {
                 return $result;
             }
 
             $property = $result['data'];
-            
+
             // Remove internal fields
             unset($property['id'], $property['views_count'], $property['created_at'], $property['updated_at']);
 
@@ -1024,7 +1186,8 @@ class PropertyController {
      * Get predefined tags list
      * @return array
      */
-    public function getPredefinedTags() {
+    public function getPredefinedTags()
+    {
         $tags = [
             'Essential' => ['Furnished', 'Unfurnished', 'Semi-Furnished', 'Air Conditioning', 'Heating', 'Smart Home'],
             'Outdoor' => ['Garden', 'Balcony', 'Terrace', 'Rooftop Terrace', 'Private Patio', 'BBQ Area'],
@@ -1047,16 +1210,32 @@ class PropertyController {
      * @param int $limit Number of tags to return
      * @return array
      */
-    public function getPopularTags($limit = 20) {
+    public function getPopularTags($limit = 20)
+    {
         try {
             // This would require a more complex query to extract and count tags from JSON
             // For now, return the most common predefined tags
             $popularTags = [
-                'Pool', 'Security 24/7', 'Ocean View', 'Gym', 'Parking', 
-                'Beach Access', 'Air Conditioning', 'Gated Community',
-                'Rooftop Terrace', 'Smart Home', 'Garden', 'Pet Friendly',
-                'Balcony', 'Furnished', 'Fiber Optic Internet', 'Terrace',
-                'BBQ Area', 'Coworking Space', 'CCTV', 'Private Pool'
+                'Pool',
+                'Security 24/7',
+                'Ocean View',
+                'Gym',
+                'Parking',
+                'Beach Access',
+                'Air Conditioning',
+                'Gated Community',
+                'Rooftop Terrace',
+                'Smart Home',
+                'Garden',
+                'Pet Friendly',
+                'Balcony',
+                'Furnished',
+                'Fiber Optic Internet',
+                'Terrace',
+                'BBQ Area',
+                'Coworking Space',
+                'CCTV',
+                'Private Pool'
             ];
 
             return $this->successResponse(array_slice($popularTags, 0, $limit));
@@ -1073,7 +1252,8 @@ class PropertyController {
      * @param bool $isUpdate Is this an update operation
      * @return mixed True if valid, error message string if invalid
      */
-    private function normalizePropertyData($data) {
+    private function normalizePropertyData($data)
+    {
         if (!is_array($data)) {
             return $data;
         }
@@ -1107,18 +1287,84 @@ class PropertyController {
         ];
 
         $standardTags = [
-            'Central Air Conditioning', 'Elevator', 'Laundry Area', 'Fireplace', 'Storage', 'Basement', 'Lobby',
-            'Terrace', 'Balcony', 'Rooftop', 'Solarium', 'Garden', 'Zen Area', 'Hammock Area', 'Jungle Bar',
-            'Parking', 'Garage', 'Underground Parking', 'Bike Parking', 'Motor Lobby', 'Electric Bicycles', 'Free Beach Shuttle',
-            '24/7 Security', 'Controlled Access', 'CCTV', 'Perimeter Fence', 'Concierge 24/7',
-            'Pool', 'Rooftop Pool', 'Beach-like Pool', 'Private Beach Club', 'Waterfront Access', 'Beach Access',
-            'Spa', 'Sauna', 'Steam Room', 'Lockers', 'Temazcal', 'Yoga Studio', 'Meditation Room',
-            'Gym', 'Jogging Track', 'Paddle Court', 'Pickleball Court', 'Tennis Court', 'Mini-golf', 'Pet Park',
-            'Club House', 'Lounge', 'Cinema', 'Bar', 'Pub', 'Kids Playroom', 'Playground', 'Restaurant', 'Coffee Shop', 'Organic Market', 'Food Pavilion',
-            'Co-working Space', 'Business Lounge',
-            'Solar Panels', 'Rainwater Collection', 'Water Treatment', 'Eco-Friendly',
-            'Golf View', 'Ocean View', 'City View', 'Mountain View', 'Lake View', 'Jungle View',
-            'Pet Friendly', 'Furnished', 'Smart Home', 'Newly Renovated', 'Investment Opportunity', 'Beachfront', 'Gated Community', 'Walk to Beach',
+            'Central Air Conditioning',
+            'Elevator',
+            'Laundry Area',
+            'Fireplace',
+            'Storage',
+            'Basement',
+            'Lobby',
+            'Terrace',
+            'Balcony',
+            'Rooftop',
+            'Solarium',
+            'Garden',
+            'Zen Area',
+            'Hammock Area',
+            'Jungle Bar',
+            'Parking',
+            'Garage',
+            'Underground Parking',
+            'Bike Parking',
+            'Motor Lobby',
+            'Electric Bicycles',
+            'Free Beach Shuttle',
+            '24/7 Security',
+            'Controlled Access',
+            'CCTV',
+            'Perimeter Fence',
+            'Concierge 24/7',
+            'Pool',
+            'Rooftop Pool',
+            'Beach-like Pool',
+            'Private Beach Club',
+            'Waterfront Access',
+            'Beach Access',
+            'Spa',
+            'Sauna',
+            'Steam Room',
+            'Lockers',
+            'Temazcal',
+            'Yoga Studio',
+            'Meditation Room',
+            'Gym',
+            'Jogging Track',
+            'Paddle Court',
+            'Pickleball Court',
+            'Tennis Court',
+            'Mini-golf',
+            'Pet Park',
+            'Club House',
+            'Lounge',
+            'Cinema',
+            'Bar',
+            'Pub',
+            'Kids Playroom',
+            'Playground',
+            'Restaurant',
+            'Coffee Shop',
+            'Organic Market',
+            'Food Pavilion',
+            'Co-working Space',
+            'Business Lounge',
+            'Solar Panels',
+            'Rainwater Collection',
+            'Water Treatment',
+            'Eco-Friendly',
+            'Golf View',
+            'Ocean View',
+            'City View',
+            'Mountain View',
+            'Lake View',
+            'Jungle View',
+            'Pet Friendly',
+            'Furnished',
+            'Smart Home',
+            'Newly Renovated',
+            'Investment Opportunity',
+            'Beachfront',
+            'Gated Community',
+            'Walk to Beach',
         ];
 
         $tagMap = [];
@@ -1126,66 +1372,87 @@ class PropertyController {
             $tagMap[strtolower($tag)] = $tag;
         }
 
-        $normalizeCategory = function($value) use ($categoryMap) {
-            if (!is_string($value)) return $value;
+        $normalizeCategory = function ($value) use ($categoryMap) {
+            if (!is_string($value))
+                return $value;
             $key = strtolower(trim($value));
             return $categoryMap[$key] ?? $key;
         };
 
-        $normalizeStatus = function($value) {
-            if (!is_string($value)) return $value;
+        $normalizeStatus = function ($value) {
+            if (!is_string($value))
+                return $value;
             $v = strtolower(trim($value));
             $v = str_replace([' ', '-'], '_', $v);
-            if ($v === 'forsale') $v = 'for_sale';
+            if ($v === 'forsale')
+                $v = 'for_sale';
             return $v;
         };
 
-        $normalizePropertyType = function($value) {
-            if (!is_string($value)) return $value;
+        $normalizePropertyType = function ($value) {
+            if (!is_string($value))
+                return $value;
             $v = strtolower(trim($value));
             // Remove content in parentheses (e.g., "Hot Deals (Oportunidades)" -> "Hot Deals")
             $v = preg_replace('/\s*\([^)]*\)/', '', $v);
             $v = str_replace([' ', '-'], '_', $v);
-            if (in_array($v, ['active_property', 'active_properties', 'activeproperty'])) return 'active';
-            if (in_array($v, ['new_development', 'new_developments', 'development'])) return 'development';
-            if (in_array($v, ['hot_deal', 'hot_deals', 'hotdeal', 'hotdeals', 'opportunity', 'opportunities', 'oportunidad', 'oportunidades'])) return 'hot_deal';
-            if (in_array($v, ['off_market', 'offmarket'])) return 'off_market';
-            if (in_array($v, ['land', 'lands', 'tierra'])) return 'land';
+            if (in_array($v, ['active_property', 'active_properties', 'activeproperty']))
+                return 'active';
+            if (in_array($v, ['new_development', 'new_developments', 'development']))
+                return 'development';
+            if (in_array($v, ['hot_deal', 'hot_deals', 'hotdeal', 'hotdeals', 'opportunity', 'opportunities', 'oportunidad', 'oportunidades']))
+                return 'hot_deal';
+            if (in_array($v, ['off_market', 'offmarket']))
+                return 'off_market';
+            if (in_array($v, ['land', 'lands', 'tierra']))
+                return 'land';
             return $v;
         };
 
-        $normalizeBedrooms = function($value) use (&$normalizeBedrooms) {
-            if ($value === null) return $value;
+        $normalizeBedrooms = function ($value) use (&$normalizeBedrooms) {
+            if ($value === null)
+                return $value;
             if (is_string($value)) {
                 $raw = strtolower(trim($value));
-                if ($raw === 'studio' || $raw === '0') return 'studio';
-                if (substr($raw, -1) === '+') return '5+';
-                if (is_numeric($raw)) return $normalizeBedrooms((float)$raw);
+                if ($raw === 'studio' || $raw === '0')
+                    return 'studio';
+                if (substr($raw, -1) === '+')
+                    return '5+';
+                if (is_numeric($raw))
+                    return $normalizeBedrooms((float) $raw);
                 return $value;
             }
             if (is_numeric($value)) {
-                $num = (float)$value;
-                if ($num <= 0) return 'studio';
-                if ($num >= 5) return '5+';
-                $int = (int)$num;
-                if ($int == $num && in_array($int, [1, 2, 3, 4], true)) return (string)$int;
+                $num = (float) $value;
+                if ($num <= 0)
+                    return 'studio';
+                if ($num >= 5)
+                    return '5+';
+                $int = (int) $num;
+                if ($int == $num && in_array($int, [1, 2, 3, 4], true))
+                    return (string) $int;
             }
             return $value;
         };
 
-        $normalizeBathrooms = function($value) use (&$normalizeBathrooms) {
-            if ($value === null) return $value;
+        $normalizeBathrooms = function ($value) use (&$normalizeBathrooms) {
+            if ($value === null)
+                return $value;
             if (is_string($value)) {
                 $raw = trim($value);
-                if (substr($raw, -1) === '+') return '5+';
-                if (is_numeric($raw)) return $normalizeBathrooms((float)$raw);
+                if (substr($raw, -1) === '+')
+                    return '5+';
+                if (is_numeric($raw))
+                    return $normalizeBathrooms((float) $raw);
                 return $value;
             }
             if (is_numeric($value)) {
-                $num = (float)$value;
-                if ($num >= 5) return '5+';
+                $num = (float) $value;
+                if ($num >= 5)
+                    return '5+';
                 $allowed = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
-                if (in_array($num, $allowed)) return (string)$num;
+                if (in_array($num, $allowed))
+                    return (string) $num;
             }
             return $value;
         };
@@ -1250,54 +1517,64 @@ class PropertyController {
         // Normalize booleans
         $boolFields = ['price_on_demand', 'price_negotiable', 'is_active', 'featured', 'show_in_home'];
         foreach ($boolFields as $field) {
-            if (!isset($data[$field])) continue;
+            if (!isset($data[$field]))
+                continue;
             $value = $data[$field];
             if (is_bool($value)) {
                 $data[$field] = $value;
             } else if (is_numeric($value)) {
-                $data[$field] = ((int)$value) !== 0;
+                $data[$field] = ((int) $value) !== 0;
             } else if (is_string($value)) {
                 $v = strtolower(trim($value));
-                if (in_array($v, ['true', '1', 'yes'], true)) $data[$field] = true;
-                if (in_array($v, ['false', '0', 'no'], true)) $data[$field] = false;
+                if (in_array($v, ['true', '1', 'yes'], true))
+                    $data[$field] = true;
+                if (in_array($v, ['false', '0', 'no'], true))
+                    $data[$field] = false;
             }
         }
 
         // Normalize bedrooms/bathrooms
-        if (isset($data['bedrooms'])) $data['bedrooms'] = $normalizeBedrooms($data['bedrooms']);
-        if (isset($data['bedrooms_min'])) $data['bedrooms_min'] = $normalizeBedrooms($data['bedrooms_min']);
-        if (isset($data['bedrooms_max'])) $data['bedrooms_max'] = $normalizeBedrooms($data['bedrooms_max']);
-        if (isset($data['bathrooms'])) $data['bathrooms'] = $normalizeBathrooms($data['bathrooms']);
-        if (isset($data['bathrooms_min'])) $data['bathrooms_min'] = $normalizeBathrooms($data['bathrooms_min']);
-        if (isset($data['bathrooms_max'])) $data['bathrooms_max'] = $normalizeBathrooms($data['bathrooms_max']);
+        if (isset($data['bedrooms']))
+            $data['bedrooms'] = $normalizeBedrooms($data['bedrooms']);
+        if (isset($data['bedrooms_min']))
+            $data['bedrooms_min'] = $normalizeBedrooms($data['bedrooms_min']);
+        if (isset($data['bedrooms_max']))
+            $data['bedrooms_max'] = $normalizeBedrooms($data['bedrooms_max']);
+        if (isset($data['bathrooms']))
+            $data['bathrooms'] = $normalizeBathrooms($data['bathrooms']);
+        if (isset($data['bathrooms_min']))
+            $data['bathrooms_min'] = $normalizeBathrooms($data['bathrooms_min']);
+        if (isset($data['bathrooms_max']))
+            $data['bathrooms_max'] = $normalizeBathrooms($data['bathrooms_max']);
 
         return $data;
     }
 
-    private function validatePropertyData($data, $isUpdate = false, $isPartialUpdate = false) {
+    private function validatePropertyData($data, $isUpdate = false, $isPartialUpdate = false)
+    {
         // Required fields for INSERT (minimal)
         if (!$isUpdate) {
             $required = ['title', 'property_type', 'city'];
-            
+
             foreach ($required as $field) {
                 if (empty($data[$field])) {
                     return "$field is required";
                 }
             }
         }
-        
+
         // Required fields for UPDATE (complete) - skip for partial updates like toggle is_active
         if ($isUpdate && !$isPartialUpdate) {
             // Per active properties: property_category obbligatorio
             // Per developments: property_categories array obbligatorio
             $required = ['title', 'property_type', 'city'];
-            
+
             foreach ($required as $field) {
                 if (array_key_exists($field, $data) && empty($data[$field])) {
                     return "$field is required";
                 }
             }
-            
+
             // Validazione category: property_categories è sempre un array
             if (isset($data['property_type'])) {
                 $activeLikeTypes = ['active', 'hot_deal', 'off_market', 'land'];
@@ -1333,27 +1610,35 @@ class PropertyController {
             return "Invalid status. Must be: for_sale, sold, reserved";
         }
 
-        if (isset($data['property_category']) && !in_array($data['property_category'], 
-            ['apartment', 'house', 'villa', 'condo', 'penthouse', 'land', 'commercial'])) {
+        if (
+            isset($data['property_category']) && !in_array(
+                $data['property_category'],
+                ['apartment', 'house', 'villa', 'condo', 'penthouse', 'land', 'commercial']
+            )
+        ) {
             return "Invalid property_category";
         }
 
-        if (isset($data['furnishing_status']) && !in_array($data['furnishing_status'], 
-            ['furnished', 'semi-furnished', 'unfurnished'])) {
+        if (
+            isset($data['furnishing_status']) && !in_array(
+                $data['furnishing_status'],
+                ['furnished', 'semi-furnished', 'unfurnished']
+            )
+        ) {
             return "Invalid furnishing_status";
         }
-        
+
         // Validate price_base_currency
         if (isset($data['price_base_currency']) && !in_array($data['price_base_currency'], ['USD', 'MXN'])) {
             return "Invalid price_base_currency. Must be: USD, MXN";
         }
-        
+
         // Validate property_categories array for developments
         if (isset($data['property_categories'])) {
             if (!is_array($data['property_categories'])) {
                 return "property_categories must be an array";
             }
-            
+
             $validCategories = ['apartment', 'house', 'villa', 'condo', 'penthouse', 'land', 'commercial'];
             foreach ($data['property_categories'] as $cat) {
                 if (!in_array($cat, $validCategories)) {
@@ -1361,7 +1646,7 @@ class PropertyController {
                 }
             }
         }
-        
+
         // Validate bedrooms/bathrooms (singoli e range)
         $validBedrooms = ['studio', '1', '2', '3', '4', '5+'];
         if (isset($data['bedrooms']) && !in_array($data['bedrooms'], $validBedrooms)) {
@@ -1373,7 +1658,7 @@ class PropertyController {
         if (isset($data['bedrooms_max']) && !in_array($data['bedrooms_max'], $validBedrooms)) {
             return "Invalid bedrooms_max value";
         }
-        
+
         $validBathrooms = ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5+'];
         if (isset($data['bathrooms']) && !in_array($data['bathrooms'], $validBathrooms)) {
             return "Invalid bathrooms value";
@@ -1384,7 +1669,7 @@ class PropertyController {
         if (isset($data['bathrooms_max']) && !in_array($data['bathrooms_max'], $validBathrooms)) {
             return "Invalid bathrooms_max value";
         }
-        
+
         // Range validation - bedrooms_min should be <= bedrooms_max
         if (isset($data['bedrooms_min']) && isset($data['bedrooms_max'])) {
             $bedroomOrder = array_flip($validBedrooms);
@@ -1394,7 +1679,7 @@ class PropertyController {
                 }
             }
         }
-        
+
         // Range validation - bathrooms_min should be <= bathrooms_max
         if (isset($data['bathrooms_min']) && isset($data['bathrooms_max'])) {
             $bathroomOrder = array_flip($validBathrooms);
@@ -1404,14 +1689,14 @@ class PropertyController {
                 }
             }
         }
-        
+
         // Range validation - price_from should be <= price_to
         if (isset($data['price_from_usd']) && isset($data['price_to_usd'])) {
             if ($data['price_from_usd'] > $data['price_to_usd']) {
                 return "price_from_usd cannot be greater than price_to_usd";
             }
         }
-        
+
         if (isset($data['price_from_mxn']) && isset($data['price_to_mxn'])) {
             if ($data['price_from_mxn'] > $data['price_to_mxn']) {
                 return "price_from_mxn cannot be greater than price_to_mxn";
@@ -1484,12 +1769,13 @@ class PropertyController {
      * @param array $categories Array of category strings
      * @return bool
      */
-    private function savePropertyCategories($propertyId, $categories) {
+    private function savePropertyCategories($propertyId, $categories)
+    {
         try {
             // Delete existing categories
             $deleteQuery = "DELETE FROM property_categories WHERE property_id = ?";
             $this->db->executePrepared($deleteQuery, [$propertyId], 'i');
-            
+
             // Insert new categories
             if (!empty($categories) && is_array($categories)) {
                 $insertQuery = "INSERT INTO property_categories (property_id, category) VALUES (?, ?)";
@@ -1497,7 +1783,7 @@ class PropertyController {
                     $this->db->executePrepared($insertQuery, [$propertyId, $category], 'is');
                 }
             }
-            
+
             return true;
         } catch (Exception $e) {
             error_log("Error saving property categories: " . $e->getMessage());
@@ -1510,18 +1796,19 @@ class PropertyController {
      * @param int $propertyId Property ID
      * @return array
      */
-    private function loadPropertyCategories($propertyId) {
+    private function loadPropertyCategories($propertyId)
+    {
         try {
             $query = "SELECT category FROM property_categories WHERE property_id = ? ORDER BY category ASC";
             $result = $this->db->executePrepared($query, [$propertyId], 'i');
-            
+
             $categories = [];
             if ($result) {
                 while ($row = $result->fetch_assoc()) {
                     $categories[] = $row['category'];
                 }
             }
-            
+
             return $categories;
         } catch (Exception $e) {
             error_log("Error loading property categories: " . $e->getMessage());
@@ -1535,13 +1822,14 @@ class PropertyController {
      * @param int $excludeId Property ID to exclude
      * @return string
      */
-    private function generateSlug($title, $excludeId = null) {
+    private function generateSlug($title, $excludeId = null)
+    {
         $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $title), '-'));
-        
+
         $query = "SELECT id FROM properties WHERE slug = ?" . ($excludeId ? " AND id != ?" : "");
         $params = $excludeId ? [$slug, $excludeId] : [$slug];
         $types = $excludeId ? 'si' : 's';
-        
+
         $result = $this->db->executePrepared($query, $params, $types);
 
         if ($result && $result->num_rows > 0) {
@@ -1555,7 +1843,8 @@ class PropertyController {
      * Increment property views
      * @param int $id Property ID
      */
-    private function incrementViews($id) {
+    private function incrementViews($id)
+    {
         $query = "UPDATE properties SET views_count = views_count + 1 WHERE id = ?";
         $this->db->executePrepared($query, [$id], 'i');
     }
@@ -1566,7 +1855,8 @@ class PropertyController {
      * @param bool $includeContent Include full content
      * @return array
      */
-    private function formatProperty($property, $includeContent = false) {
+    private function formatProperty($property, $includeContent = false)
+    {
         // Parse JSON tags
         if (isset($property['tags'])) {
             $property['tags'] = json_decode($property['tags'], true) ?? [];
@@ -1576,35 +1866,35 @@ class PropertyController {
         if (!isset($property['cover_image_url'])) {
             $photoQuery = "SELECT url FROM property_photos WHERE property_id = ? AND is_cover = 1 LIMIT 1";
             $photoResult = $this->db->executePrepared($photoQuery, [$property['id']], 'i');
-            $property['cover_image_url'] = ($photoResult && $photoResult->num_rows > 0) 
-                ? $photoResult->fetch_assoc()['url'] 
+            $property['cover_image_url'] = ($photoResult && $photoResult->num_rows > 0)
+                ? $photoResult->fetch_assoc()['url']
                 : null;
         }
 
         // Type casting
-        $property['price_usd'] = isset($property['price_usd']) ? (float)$property['price_usd'] : null;
-        $property['price_mxn'] = isset($property['price_mxn']) ? (float)$property['price_mxn'] : null;
-        $property['price_eur'] = isset($property['price_eur']) ? (float)$property['price_eur'] : null;
-        $property['exchange_rate'] = isset($property['exchange_rate']) ? (float)$property['exchange_rate'] : null;
+        $property['price_usd'] = isset($property['price_usd']) ? (float) $property['price_usd'] : null;
+        $property['price_mxn'] = isset($property['price_mxn']) ? (float) $property['price_mxn'] : null;
+        $property['price_eur'] = isset($property['price_eur']) ? (float) $property['price_eur'] : null;
+        $property['exchange_rate'] = isset($property['exchange_rate']) ? (float) $property['exchange_rate'] : null;
         $property['price_base_currency'] = $property['price_base_currency'] ?? 'USD';
-        $property['price_from_usd'] = isset($property['price_from_usd']) ? (float)$property['price_from_usd'] : null;
-        $property['price_to_usd'] = isset($property['price_to_usd']) ? (float)$property['price_to_usd'] : null;
-        $property['price_from_mxn'] = isset($property['price_from_mxn']) ? (float)$property['price_from_mxn'] : null;
-        $property['price_to_mxn'] = isset($property['price_to_mxn']) ? (float)$property['price_to_mxn'] : null;
-        $property['price_from_eur'] = isset($property['price_from_eur']) ? (float)$property['price_from_eur'] : null;
-        $property['price_to_eur'] = isset($property['price_to_eur']) ? (float)$property['price_to_eur'] : null;
-        $property['sqm'] = isset($property['sqm']) ? (float)$property['sqm'] : null;
-        $property['sqft'] = isset($property['sqft']) ? (float)$property['sqft'] : null;
-        $property['lot_size_sqm'] = isset($property['lot_size_sqm']) ? (float)$property['lot_size_sqm'] : null;
-        $property['latitude'] = isset($property['latitude']) ? (float)$property['latitude'] : null;
-        $property['longitude'] = isset($property['longitude']) ? (float)$property['longitude'] : null;
-        $property['is_active'] = (bool)($property['is_active'] ?? false);
-        $property['featured'] = (bool)($property['featured'] ?? false);
-        $property['show_in_home'] = (bool)($property['show_in_home'] ?? false);
-        $property['price_on_demand'] = (bool)($property['price_on_demand'] ?? false);
-        $property['price_negotiable'] = (bool)($property['price_negotiable'] ?? false);
-        $property['order'] = (int)($property['order'] ?? 0);
-        $property['views_count'] = (int)($property['views_count'] ?? 0);
+        $property['price_from_usd'] = isset($property['price_from_usd']) ? (float) $property['price_from_usd'] : null;
+        $property['price_to_usd'] = isset($property['price_to_usd']) ? (float) $property['price_to_usd'] : null;
+        $property['price_from_mxn'] = isset($property['price_from_mxn']) ? (float) $property['price_from_mxn'] : null;
+        $property['price_to_mxn'] = isset($property['price_to_mxn']) ? (float) $property['price_to_mxn'] : null;
+        $property['price_from_eur'] = isset($property['price_from_eur']) ? (float) $property['price_from_eur'] : null;
+        $property['price_to_eur'] = isset($property['price_to_eur']) ? (float) $property['price_to_eur'] : null;
+        $property['sqm'] = isset($property['sqm']) ? (float) $property['sqm'] : null;
+        $property['sqft'] = isset($property['sqft']) ? (float) $property['sqft'] : null;
+        $property['lot_size_sqm'] = isset($property['lot_size_sqm']) ? (float) $property['lot_size_sqm'] : null;
+        $property['latitude'] = isset($property['latitude']) ? (float) $property['latitude'] : null;
+        $property['longitude'] = isset($property['longitude']) ? (float) $property['longitude'] : null;
+        $property['is_active'] = (bool) ($property['is_active'] ?? false);
+        $property['featured'] = (bool) ($property['featured'] ?? false);
+        $property['show_in_home'] = (bool) ($property['show_in_home'] ?? false);
+        $property['price_on_demand'] = (bool) ($property['price_on_demand'] ?? false);
+        $property['price_negotiable'] = (bool) ($property['price_negotiable'] ?? false);
+        $property['order'] = (int) ($property['order'] ?? 0);
+        $property['views_count'] = (int) ($property['views_count'] ?? 0);
 
         // Remove content for list view
         if (!$includeContent) {
@@ -1619,13 +1909,14 @@ class PropertyController {
      * @param array $photo Photo data
      * @return array
      */
-    private function formatPhoto($photo) {
-        $photo['is_cover'] = (bool)$photo['is_cover'];
-        $photo['order'] = (int)$photo['order'];
-        $photo['filesize'] = isset($photo['filesize']) ? (int)$photo['filesize'] : null;
-        $photo['width'] = isset($photo['width']) ? (int)$photo['width'] : null;
-        $photo['height'] = isset($photo['height']) ? (int)$photo['height'] : null;
-        
+    private function formatPhoto($photo)
+    {
+        $photo['is_cover'] = (bool) $photo['is_cover'];
+        $photo['order'] = (int) $photo['order'];
+        $photo['filesize'] = isset($photo['filesize']) ? (int) $photo['filesize'] : null;
+        $photo['width'] = isset($photo['width']) ? (int) $photo['width'] : null;
+        $photo['height'] = isset($photo['height']) ? (int) $photo['height'] : null;
+
         return $photo;
     }
 
@@ -1634,11 +1925,12 @@ class PropertyController {
      * @param array $attachment
      * @return array
      */
-    private function formatAttachment($attachment) {
-        $attachment['id'] = (int)$attachment['id'];
-        $attachment['property_id'] = (int)$attachment['property_id'];
-        $attachment['display_order'] = isset($attachment['display_order']) ? (int)$attachment['display_order'] : 0;
-        $attachment['size_bytes'] = isset($attachment['size_bytes']) ? (int)$attachment['size_bytes'] : null;
+    private function formatAttachment($attachment)
+    {
+        $attachment['id'] = (int) $attachment['id'];
+        $attachment['property_id'] = (int) $attachment['property_id'];
+        $attachment['display_order'] = isset($attachment['display_order']) ? (int) $attachment['display_order'] : 0;
+        $attachment['size_bytes'] = isset($attachment['size_bytes']) ? (int) $attachment['size_bytes'] : null;
         return $attachment;
     }
 
@@ -1647,7 +1939,8 @@ class PropertyController {
      * @param int $propertyId Property ID
      * @return array
      */
-    public function getPropertyLandingPages($propertyId) {
+    public function getPropertyLandingPages($propertyId)
+    {
         try {
             $query = "SELECT landing_page_slug FROM property_landing_pages WHERE property_id = ?";
             $result = $this->db->executePrepared($query, [$propertyId], 'i');
@@ -1674,7 +1967,8 @@ class PropertyController {
      * @param array $landingPageSlugs Array of landing page slugs
      * @return array
      */
-    public function updatePropertyLandingPages($propertyId, $landingPageSlugs) {
+    public function updatePropertyLandingPages($propertyId, $landingPageSlugs)
+    {
         try {
             // Verify property exists
             $checkQuery = "SELECT id FROM properties WHERE id = ?";
@@ -1700,7 +1994,7 @@ class PropertyController {
             if (!empty($landingPageSlugs) && is_array($landingPageSlugs)) {
                 $insertQuery = "INSERT INTO property_landing_pages (property_id, landing_page_slug) VALUES (?, ?)";
                 $stmt = $this->conn->prepare($insertQuery);
-                
+
                 if ($stmt === false) {
                     $this->conn->rollback();
                     error_log("Property landing pages table error: " . $this->conn->error);
@@ -1738,7 +2032,8 @@ class PropertyController {
     /**
      * Get attachments for a property
      */
-    public function getPropertyAttachments($propertyId) {
+    public function getPropertyAttachments($propertyId)
+    {
         try {
             $query = "SELECT id, property_id, title, filename, url, mime_type, size_bytes, display_order, created_at
                       FROM property_attachments
@@ -1762,7 +2057,8 @@ class PropertyController {
     /**
      * Add attachment to property
      */
-    public function addPropertyAttachment($propertyId, $data, $userId) {
+    public function addPropertyAttachment($propertyId, $data, $userId)
+    {
         try {
             // Verify property exists
             $check = $this->db->executePrepared("SELECT id FROM properties WHERE id = ? LIMIT 1", [$propertyId], 'i');
@@ -1770,20 +2066,23 @@ class PropertyController {
                 return $this->errorResponse('Property not found', 404);
             }
 
-            if (empty($data['title']) || empty($data['url']) || empty($data['filename'])) {
-                return $this->errorResponse('Title, filename and url are required', 400);
+            if (empty($data['title']) || empty($data['url'])) {
+                return $this->errorResponse('Title and url are required', 400);
+            }
+            if (!isset($data['filename']) && (!isset($data['mime_type']) || $data['mime_type'] !== 'link')) {
+                return $this->errorResponse('Filename is required for file attachments', 400);
             }
 
-            $fields = ['property_id','title','filename','url','mime_type','size_bytes','display_order'];
+            $fields = ['property_id', 'title', 'filename', 'url', 'mime_type', 'size_bytes', 'display_order'];
             $placeholders = '?,?,?,?,?,?,?';
             $params = [
                 $propertyId,
                 $data['title'],
-                $data['filename'],
+                $data['filename'] ?? null,
                 $data['url'],
                 $data['mime_type'] ?? null,
-                isset($data['size_bytes']) ? (int)$data['size_bytes'] : null,
-                isset($data['display_order']) ? (int)$data['display_order'] : 0
+                isset($data['size_bytes']) ? (int) $data['size_bytes'] : null,
+                isset($data['display_order']) ? (int) $data['display_order'] : 0
             ];
             $types = 'issssis';
 
@@ -1806,7 +2105,8 @@ class PropertyController {
     /**
      * Update attachment (title or display_order)
      */
-    public function updatePropertyAttachment($propertyId, $attachmentId, $data, $userId) {
+    public function updatePropertyAttachment($propertyId, $attachmentId, $data, $userId)
+    {
         try {
             $check = $this->db->executePrepared(
                 "SELECT id, url FROM property_attachments WHERE id = ? AND property_id = ? LIMIT 1",
@@ -1828,7 +2128,7 @@ class PropertyController {
             }
             if (isset($data['display_order'])) {
                 $updates[] = "display_order = ?";
-                $params[] = (int)$data['display_order'];
+                $params[] = (int) $data['display_order'];
                 $types .= 'i';
             }
 
@@ -1858,7 +2158,8 @@ class PropertyController {
     /**
      * Reorder attachments
      */
-    public function reorderPropertyAttachments($propertyId, $orderData) {
+    public function reorderPropertyAttachments($propertyId, $orderData)
+    {
         try {
             if (empty($orderData) || !is_array($orderData)) {
                 return $this->errorResponse('Invalid order data');
@@ -1877,9 +2178,9 @@ class PropertyController {
                     $this->conn->rollback();
                     return $this->errorResponse('Invalid order item');
                 }
-                $order = (int)$item['display_order'];
-                $id = (int)$item['id'];
-                $pid = (int)$propertyId;
+                $order = (int) $item['display_order'];
+                $id = (int) $item['id'];
+                $pid = (int) $propertyId;
                 $stmt->bind_param('iii', $order, $id, $pid);
                 if (!$stmt->execute()) {
                     $stmt->close();
@@ -1904,7 +2205,8 @@ class PropertyController {
     /**
      * Delete attachment (and file)
      */
-    public function deletePropertyAttachment($propertyId, $attachmentId) {
+    public function deletePropertyAttachment($propertyId, $attachmentId)
+    {
         try {
             $query = "SELECT url FROM property_attachments WHERE id = ? AND property_id = ? LIMIT 1";
             $result = $this->db->executePrepared($query, [$attachmentId, $propertyId], 'ii');
@@ -1943,7 +2245,8 @@ class PropertyController {
      * @param array $orderData Array of {id, display_order}
      * @return array
      */
-    public function reorder($orderData) {
+    public function reorder($orderData)
+    {
         try {
             if (empty($orderData) || !is_array($orderData)) {
                 return $this->errorResponse('Invalid order data');
@@ -1994,19 +2297,38 @@ class PropertyController {
      * @param string $field Field name
      * @return string
      */
-    private function getParamType($field) {
+    private function getParamType($field)
+    {
         $intFields = ['year_built', 'display_order', 'views_count'];
-        $doubleFields = ['price_usd', 'price_mxn', 'price_eur', 'exchange_rate', 'price_from_usd', 'price_to_usd', 
-                         'price_from_mxn', 'price_to_mxn', 'price_from_eur', 'price_to_eur', 'sqm', 'sqft', 'lot_size_sqm', 'latitude', 'longitude'];
-        if (in_array($field, $intFields)) return 'i';
-        if (in_array($field, $doubleFields)) return 'd';
+        $doubleFields = [
+            'price_usd',
+            'price_mxn',
+            'price_eur',
+            'exchange_rate',
+            'price_from_usd',
+            'price_to_usd',
+            'price_from_mxn',
+            'price_to_mxn',
+            'price_from_eur',
+            'price_to_eur',
+            'sqm',
+            'sqft',
+            'lot_size_sqm',
+            'latitude',
+            'longitude'
+        ];
+        if (in_array($field, $intFields))
+            return 'i';
+        if (in_array($field, $doubleFields))
+            return 'd';
         return 's';
     }
 
     /**
      * Log activity
      */
-    private function logActivity($userId, $action, $entityType, $entityId, $description) {
+    private function logActivity($userId, $action, $entityType, $entityId, $description)
+    {
         try {
             $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
             $query = "INSERT INTO activity_log (user_id, action, entity_type, entity_id, description, ip_address) 
@@ -2020,7 +2342,8 @@ class PropertyController {
     /**
      * Success response
      */
-    private function successResponse($data, $code = 200) {
+    private function successResponse($data, $code = 200)
+    {
         http_response_code($code);
         return ['success' => true, 'data' => $data];
     }
@@ -2028,7 +2351,8 @@ class PropertyController {
     /**
      * Error response
      */
-    private function errorResponse($message, $code = 400) {
+    private function errorResponse($message, $code = 400)
+    {
         http_response_code($code);
         return ['success' => false, 'error' => $message];
     }

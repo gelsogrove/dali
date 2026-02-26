@@ -1,0 +1,173 @@
+.hot-deal-gate-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  background-color: var(--color-background, #fff);
+  border-top: 1px solid var(--color-border, #eee);
+  margin-top: 40px;
+}
+
+.hot-deal-gate-card {
+  max-width: 500px;
+  width: 100%;
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  border: 1px solid var(--color-border, #eee);
+}
+
+.gate-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--color-surface, #f8f9fa);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  color: var(--color-primary, #333);
+}
+
+.gate-icon-success {
+  margin: 0 auto 24px;
+}
+
+.gate-mode-content h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--color-text, #1a1a1a);
+}
+
+.gate-mode-content .gate-description {
+  font-size: 15px;
+  color: var(--color-text-light, #666);
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.gate-code-wrapper {
+  margin-bottom: 20px;
+}
+
+.gate-code-input {
+  width: 100%;
+  padding: 16px;
+  font-size: 24px;
+  text-align: center;
+  letter-spacing: 4px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  text-transform: uppercase;
+  background: var(--color-surface, #f8f9fa);
+  transition: all 0.2s ease;
+}
+
+.gate-code-input:focus {
+  outline: none;
+  border-color: var(--color-primary, #333);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+}
+
+.gate-input {
+  width: 100%;
+  padding: 14px;
+  font-size: 15px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--color-surface, #f8f9fa);
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.gate-input:focus {
+  outline: none;
+  border-color: var(--color-primary, #333);
+  background: #fff;
+}
+
+.gate-request-form .form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.gate-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gate-btn-primary {
+  background: var(--color-primary, #1a1a1a);
+  color: #fff;
+}
+
+.gate-btn-primary:hover:not(:disabled) {
+  background: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.gate-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.gate-error {
+  color: #dc2626;
+  font-size: 14px;
+  margin-bottom: 16px;
+  background: #fef2f2;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.gate-footer {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border, #eee);
+  font-size: 14px;
+  color: var(--color-text-light, #666);
+}
+
+.gate-btn-link {
+  background: none;
+  border: none;
+  color: var(--color-primary, #1a1a1a);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-top: 8px;
+  text-decoration: underline;
+  transition: opacity 0.2s;
+}
+
+.gate-btn-link:hover {
+  opacity: 0.8;
+}
+
+.gate-back-btn {
+  margin-top: 16px;
+  display: inline-block;
+}
+
+@media (max-width: 600px) {
+  .gate-request-form .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .hot-deal-gate-card {
+    padding: 30px 20px;
+  }
+}

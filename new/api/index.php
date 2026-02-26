@@ -43,6 +43,9 @@ require_once __DIR__ . '/controllers/CityController.php';
 require_once __DIR__ . '/controllers/AreaController.php';
 require_once __DIR__ . '/controllers/ExchangeRateController.php';
 require_once __DIR__ . '/controllers/ContactController.php';
+require_once __DIR__ . '/controllers/AccessRequestController.php';
+require_once __DIR__ . '/controllers/OffMarketInviteController.php';
+require_once __DIR__ . '/controllers/TodoController.php';
 // Normalize base dir to avoid trailing spaces/newlines in production paths
 $__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
 require_once $__baseDir . '/config/database.php';
@@ -127,6 +130,18 @@ try {
         
         case 'photogallery':
             handlePhotoGalleryRoutes($segments, $method);
+            break;
+
+        case 'access-requests':
+            handleAccessRequestRoutes($segments, $method);
+            break;
+
+        case 'off-market-invites':
+            handleOffMarketInviteRoutes($segments, $method);
+            break;
+
+        case 'todos':
+            handleTodoRoutes($segments, $method);
             break;
         
         case 'health':
@@ -238,9 +253,17 @@ function handlePropertyRoutes($segments, $method) {
                     echo json_encode($result);
                     break;
                 }
+
+                // GET /api/properties/:id/attachments - Get attachments for property
+                if (isset($segments[2]) && $segments[2] === 'attachments') {
+                    $result = $controller->getPropertyAttachments($segments[1]);
+                    echo json_encode($result);
+                    break;
+                }
                 
                 // GET /api/properties/:id or /api/properties/:slug - Get single property
-                $result = $controller->getById($segments[1]);
+                $token = $_GET['token'] ?? null;
+                $result = $controller->getById($segments[1], $token);
                 echo json_encode($result);
             } else {
                 // GET /api/properties - Get all with filters
@@ -272,6 +295,14 @@ function handlePropertyRoutes($segments, $method) {
                 echo json_encode($result);
                 break;
             }
+
+            // POST /api/properties/:id/attachments - Add attachment metadata after upload
+            if (isset($segments[1]) && isset($segments[2]) && $segments[2] === 'attachments') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $result = $controller->addPropertyAttachment($segments[1], $data, $user['user_id']);
+                echo json_encode($result);
+                break;
+            }
             
             // POST /api/properties - Create new property
             $data = json_decode(file_get_contents('php://input'), true);
@@ -282,6 +313,22 @@ function handlePropertyRoutes($segments, $method) {
         case 'PUT':
             $user = $auth->authenticate();
             if ($user && $auth->checkRole($user, ['admin', 'editor']) && isset($segments[1])) {
+                // PUT /api/properties/:id/attachments/reorder
+                if (isset($segments[2]) && $segments[2] === 'attachments' && isset($segments[3]) && $segments[3] === 'reorder') {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $result = $controller->reorderPropertyAttachments($segments[1], $data['order'] ?? []);
+                    echo json_encode($result);
+                    break;
+                }
+
+                // PUT /api/properties/:id/attachments/:attachmentId
+                if (isset($segments[2]) && $segments[2] === 'attachments' && isset($segments[3])) {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $result = $controller->updatePropertyAttachment($segments[1], $segments[3], $data, $user['user_id']);
+                    echo json_encode($result);
+                    break;
+                }
+
                 // PUT /api/properties/:id/landing-pages - Update landing pages associations
                 if (isset($segments[2]) && $segments[2] === 'landing-pages') {
                     $data = json_decode(file_get_contents('php://input'), true);
@@ -301,6 +348,13 @@ function handlePropertyRoutes($segments, $method) {
         case 'DELETE':
             $user = $auth->authenticate();
             if ($user && $auth->checkRole($user, ['admin']) && isset($segments[1])) {
+                // DELETE /api/properties/:id/attachments/:attachmentId
+                if (isset($segments[2]) && $segments[2] === 'attachments' && isset($segments[3])) {
+                    $result = $controller->deletePropertyAttachment($segments[1], $segments[3]);
+                    echo json_encode($result);
+                    break;
+                }
+
                 $result = $controller->delete($segments[1], $user['user_id']);
                 echo json_encode($result);
             }
@@ -360,6 +414,11 @@ function handleUploadRoutes($segments, $method) {
 
             case 'area-image':
                 $result = $controller->uploadAreaImage($_FILES['image'] ?? null);
+                echo json_encode($result);
+                break;
+
+            case 'attachment':
+                $result = $controller->uploadAttachment($_FILES['file'] ?? $_FILES['attachment'] ?? null);
                 echo json_encode($result);
                 break;
             
@@ -1014,6 +1073,17 @@ function handleExchangeRateRoutes($segments, $method) {
             break;
         
         case 'POST':
+            // POST /api/exchange-rate/refresh - Refresh rates from Frankfurter (admin only)
+            if (isset($segments[1]) && $segments[1] === 'refresh') {
+                $user = $auth->authenticate();
+                if (!$user || !$auth->checkRole($user, ['admin'])) {
+                    break;
+                }
+                $result = $controller->refreshFromFrankfurter();
+                echo json_encode($result);
+                break;
+            }
+
             // POST /api/exchange-rate - Update/create rate (admin only)
             $user = $auth->authenticate();
             if (!$user || !$auth->checkRole($user, ['admin'])) {
@@ -1030,6 +1100,243 @@ function handleExchangeRateRoutes($segments, $method) {
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
     }
 }
+
+/**
+ * Handle off-market invite routes
+ */
+function handleOffMarketInviteRoutes($segments, $method) {
+    $controller = new OffMarketInviteController();
+    $auth = new AuthMiddleware();
+
+    // PUBLIC: POST /off-market-invites/verify (verify token + code)
+    if ($method === 'POST' && isset($segments[1]) && $segments[1] === 'verify') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $result = $controller->verify($data);
+        echo json_encode($result);
+        return;
+    }
+
+    // PUBLIC: GET /off-market-invites/check-token?token=xxx
+    if ($method === 'GET' && isset($segments[1]) && $segments[1] === 'check-token') {
+        $token = $_GET['token'] ?? '';
+        $result = $controller->checkToken($token);
+        echo json_encode($result);
+        return;
+    }
+
+    // --- ADMIN routes below ---
+    $user = $auth->authenticate();
+    if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
+        return;
+    }
+
+    // GET /off-market-invites/properties (list off-market properties for dropdown)
+    if ($method === 'GET' && isset($segments[1]) && $segments[1] === 'properties') {
+        $result = $controller->getOffMarketProperties();
+        echo json_encode($result);
+        return;
+    }
+
+    // GET /off-market-invites (list all invites)
+    if ($method === 'GET' && count($segments) === 1) {
+        $filters = $_GET;
+        $result = $controller->getAll($filters);
+        echo json_encode($result);
+        return;
+    }
+
+    // POST /off-market-invites (create invite)
+    if ($method === 'POST' && count($segments) === 1) {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $result = $controller->create($data);
+        echo json_encode($result);
+        return;
+    }
+
+    // POST /off-market-invites/:id/regenerate
+    if ($method === 'POST' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'regenerate') {
+        $result = $controller->regenerate((int)$segments[1]);
+        echo json_encode($result);
+        return;
+    }
+
+    // DELETE /off-market-invites/:id
+    if ($method === 'DELETE' && isset($segments[1])) {
+        $result = $controller->delete((int)$segments[1]);
+        echo json_encode($result);
+        return;
+    }
+
+    http_response_code(405);
+    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+}
+
+/**
+ * Handle access request routes
+ */
+function handleAccessRequestRoutes($segments, $method) {
+    $controller = new AccessRequestController();
+    $auth = new AuthMiddleware();
+
+    // PUBLIC: POST /access-requests (create request)
+    if ($method === 'POST' && count($segments) === 1) {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $result = $controller->create($data);
+        echo json_encode($result);
+        return;
+    }
+
+    // PUBLIC: POST /access-requests/verify-code
+    if ($method === 'POST' && isset($segments[1]) && $segments[1] === 'verify-code') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $result = $controller->verifyCode($data);
+        echo json_encode($result);
+        return;
+    }
+
+    // --- ADMIN routes below ---
+    $user = $auth->authenticate();
+    if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
+        return;
+    }
+
+    // GET /access-requests/unviewed-count
+    if ($method === 'GET' && isset($segments[1]) && $segments[1] === 'unviewed-count') {
+        $result = $controller->getUnviewedCount();
+        echo json_encode($result);
+        return;
+    }
+
+    // POST /access-requests/mark-all-viewed
+    if ($method === 'POST' && isset($segments[1]) && $segments[1] === 'mark-all-viewed') {
+        $result = $controller->markAllViewed();
+        echo json_encode($result);
+        return;
+    }
+
+    // GET /access-requests
+    if ($method === 'GET' && count($segments) === 1) {
+        $filters = $_GET;
+        $result = $controller->getAll($filters);
+        echo json_encode($result);
+        return;
+    }
+
+    // PATCH /access-requests/:id/view
+    if (($method === 'PATCH' || $method === 'PUT') && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'view') {
+        $result = $controller->markViewed((int)$segments[1]);
+        echo json_encode($result);
+        return;
+    }
+
+    // POST /access-requests/:id/generate-code
+    if ($method === 'POST' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'generate-code') {
+        $result = $controller->generateCode((int)$segments[1]);
+        echo json_encode($result);
+        return;
+    }
+
+    // POST /access-requests/:id/regenerate-code
+    if ($method === 'POST' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'regenerate-code') {
+        $result = $controller->regenerateCode((int)$segments[1]);
+        echo json_encode($result);
+        return;
+    }
+
+    // DELETE /access-requests/:id
+    if ($method === 'DELETE' && isset($segments[1])) {
+        $result = $controller->delete((int)$segments[1]);
+        echo json_encode($result);
+        return;
+    }
+
+    http_response_code(405);
+    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+}
+
+/**
+ * Handle todo routes (admin)
+ */
+function handleTodoRoutes($segments, $method) {
+    $controller = new TodoController();
+    $auth = new AuthMiddleware();
+    $user = $auth->authenticate();
+    if (!$user || !$auth->checkRole($user, ['admin', 'editor'])) {
+        return;
+    }
+
+    // GET /todos
+    if ($method === 'GET' && count($segments) === 1) {
+        $result = $controller->list($_GET);
+        echo json_encode($result);
+        return;
+    }
+
+    // POST /todos
+    if ($method === 'POST' && count($segments) === 1) {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $result = $controller->create($data);
+        echo json_encode($result);
+        return;
+    }
+
+    // PUT /todos/:id
+    if ($method === 'PUT' && isset($segments[1]) && is_numeric($segments[1]) && count($segments) === 2) {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $result = $controller->update((int)$segments[1], $data);
+        echo json_encode($result);
+        return;
+    }
+
+    // DELETE /todos/:id
+    if ($method === 'DELETE' && isset($segments[1]) && is_numeric($segments[1])) {
+        $result = $controller->delete((int)$segments[1]);
+        echo json_encode($result);
+        return;
+    }
+
+    // POST /todos/reorder
+    if ($method === 'POST' && isset($segments[1]) && $segments[1] === 'reorder') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $result = $controller->reorder($data['items'] ?? []);
+        echo json_encode($result);
+        return;
+    }
+
+    // POST /todos/:id/comments
+    if ($method === 'POST' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'comments') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $result = $controller->addComment((int)$segments[1], $data);
+        echo json_encode($result);
+        return;
+    }
+
+    // DELETE /todos/:id/comments/:commentId
+    if ($method === 'DELETE' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'comments' && isset($segments[3])) {
+        $result = $controller->deleteComment((int)$segments[1], (int)$segments[3]);
+        echo json_encode($result);
+        return;
+    }
+
+    // POST /todos/:id/attachments
+    if ($method === 'POST' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'attachments') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $result = $controller->addAttachment((int)$segments[1], $data);
+        echo json_encode($result);
+        return;
+    }
+
+    // DELETE /todos/:id/attachments/:attachmentId
+    if ($method === 'DELETE' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'attachments' && isset($segments[3])) {
+        $result = $controller->deleteAttachment((int)$segments[1], (int)$segments[3]);
+        echo json_encode($result);
+        return;
+    }
+
+    http_response_code(405);
+    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+}
+
 
 /**
  * Handle contact routes

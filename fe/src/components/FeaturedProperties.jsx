@@ -11,6 +11,7 @@ const SECTION_LINKS = [
   { key: 'new', label: 'New Developments', href: '/new-developments', type: 'development' },
   { key: 'hot', label: 'Hot Deals', href: '/hot-deals', type: 'hot_deal' },
   { key: 'land', label: 'Land', href: '/land', type: 'land' },
+  { key: 'off', label: 'Off-Market', href: '/off-market', type: 'off_market' },
 ];
 
 /**

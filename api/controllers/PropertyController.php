@@ -301,9 +301,32 @@ class PropertyController
             $isId = is_numeric($identifier);
             $field = $isId ? 'id' : 'slug';
 
+            // For off_market slug access with a token: skip is_active filter (token grants access)
             // For slug-based access (public): only show active properties
             // For ID-based access (admin): show all properties
-            $activeFilter = $isId ? '' : ' AND is_active = 1';
+            $hasValidOffMarketToken = false;
+            if (!$isId && !empty($offMarketToken)) {
+                $db = new Database();
+                $conn = $db->getConnection();
+                $tokenStmt = $conn->prepare(
+                    "SELECT id, expires_at FROM off_market_invites 
+                     WHERE token = ? AND (property_id IS NULL OR property_id = (
+                         SELECT id FROM properties WHERE slug = ? LIMIT 1
+                     )) LIMIT 1"
+                );
+                $tokenStmt->bind_param('ss', $offMarketToken, $identifier);
+                $tokenStmt->execute();
+                $tokenResult = $tokenStmt->get_result();
+                if ($tokenResult->num_rows > 0) {
+                    $invite = $tokenResult->fetch_assoc();
+                    if (!$invite['expires_at'] || strtotime($invite['expires_at']) >= time()) {
+                        $hasValidOffMarketToken = true;
+                    }
+                }
+                $tokenStmt->close();
+            }
+
+            $activeFilter = $isId ? '' : ($hasValidOffMarketToken ? '' : ' AND is_active = 1');
 
             $query = "SELECT * FROM properties WHERE $field = ?$activeFilter LIMIT 1";
             $result = $this->db->executePrepared($query, [$identifier], $isId ? 'i' : 's');
@@ -315,29 +338,8 @@ class PropertyController
             $property = $result->fetch_assoc();
 
             // Block off_market properties for public access unless valid token provided
-            if (!$isId && $property['property_type'] === 'off_market') {
-                if (empty($offMarketToken)) {
-                    return $this->errorResponse('Property not found', 404);
-                }
-                // Verify token is valid for this property
-                $db = new Database();
-                $conn = $db->getConnection();
-                $tokenStmt = $conn->prepare(
-                    "SELECT id, expires_at FROM off_market_invites 
-                     WHERE token = ? AND property_id = ? LIMIT 1"
-                );
-                $tokenStmt->bind_param('si', $offMarketToken, $property['id']);
-                $tokenStmt->execute();
-                $tokenResult = $tokenStmt->get_result();
-                if ($tokenResult->num_rows === 0) {
-                    $tokenStmt->close();
-                    return $this->errorResponse('Property not found', 404);
-                }
-                $invite = $tokenResult->fetch_assoc();
-                $tokenStmt->close();
-                if (strtotime($invite['expires_at']) < time()) {
-                    return $this->errorResponse('Property not found', 404);
-                }
+            if (!$isId && $property['property_type'] === 'off_market' && !$hasValidOffMarketToken) {
+                return $this->errorResponse('Property not found', 404);
             }
 
             // Handle hot_deal security

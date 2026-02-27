@@ -129,6 +129,7 @@ export default function ListingDetailPage() {
   const [isScheduleSubmitting, setIsScheduleSubmitting] = useState(false);
   const [scheduleStartedAt, setScheduleStartedAt] = useState(() => Date.now());
   const [showInstagramModal, setShowInstagramModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   // Related properties
   const [relatedProperties, setRelatedProperties] = useState([]);
@@ -909,71 +910,8 @@ export default function ListingDetailPage() {
                   <div className="listing-description" dangerouslySetInnerHTML={{ __html: detail.content }}></div>
                 </div>
 
-                {/* Property Details */}
+                {/* Amenities & Attachments */}
                 <div className="listing-details-card">
-                  <h3>Property Details</h3>
-
-                  {/* Core Info — always visible */}
-                  <div className="info-grid">
-                    <div className="info-item">
-                      <span className="info-label">Property Type</span>
-                      <strong className="info-value">{propertyType}</strong>
-                    </div>
-
-                    {propertyCategories && (
-                      <div className="info-item">
-                        <span className="info-label">Category</span>
-                        <strong className="info-value">{propertyCategories}</strong>
-                      </div>
-                    )}
-
-                    <div className="info-item">
-                      <span className="info-label">Status</span>
-                      <strong className="info-value">{statusLabel}</strong>
-                    </div>
-
-                    {bedroomsLabel && (
-                      <div className="info-item">
-                        <span className="info-label">Bedrooms</span>
-                        <strong className="info-value">{bedroomsLabel}</strong>
-                      </div>
-                    )}
-
-                    {bathroomsLabel && (
-                      <div className="info-item">
-                        <span className="info-label">Bathrooms</span>
-                        <strong className="info-value">{bathroomsLabel}</strong>
-                      </div>
-                    )}
-
-                    {sizeLabel && (
-                      <div className="info-item">
-                        <span className="info-label">Living Area</span>
-                        <strong className="info-value">{sizeLabel}</strong>
-                      </div>
-                    )}
-
-                    {property.lot_size_sqm && (
-                      <div className="info-item">
-                        <span className="info-label">Lot Size</span>
-                        <strong className="info-value">{property.lot_size_sqm} m²</strong>
-                      </div>
-                    )}
-
-                    {property.year_built && (
-                      <div className="info-item">
-                        <span className="info-label">Year Built</span>
-                        <strong className="info-value">{property.year_built}</strong>
-                      </div>
-                    )}
-
-                    {property.furnishing_status && (
-                      <div className="info-item">
-                        <span className="info-label">Furnishing</span>
-                        <strong className="info-value">{property.furnishing_status.charAt(0).toUpperCase() + property.furnishing_status.slice(1)}</strong>
-                      </div>
-                    )}
-                  </div>
 
                   {/* Amenities */}
                   {amenities.length > 0 && (
@@ -1030,43 +968,6 @@ export default function ListingDetailPage() {
                     )
                   )}
                 </div>
-
-                {/* Video (YouTube, Vimeo, or Instagram) */}
-                {property.property_type !== 'hot_deal' && property.youtube_video_url && getVideoEmbed(property.youtube_video_url) && (
-                  <div className="listing-video" style={{ marginTop: '40px' }}>
-                    <h4>Property Video</h4>
-                    {(() => {
-                      const embed = getVideoEmbed(property.youtube_video_url);
-                      if (!embed) return null;
-
-                      if (embed.provider === 'instagram') {
-                        return (
-                          <div style={{ display: 'flex', justifyContent: 'center' }}>
-                            <iframe
-                              title="Property video"
-                              src={embed.src}
-                              style={{ width: '100%', maxWidth: '400px', height: '600px', border: 0, borderRadius: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                              allowTransparency="true"
-                              allow="encrypted-media"
-                            ></iframe>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '4px' }}>
-                          <iframe
-                            title="Property video"
-                            src={embed.src}
-                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          ></iframe>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
 
                 {/* Map */}
                 <div className="listing-map">
@@ -1138,16 +1039,26 @@ export default function ListingDetailPage() {
                   </div>
 
                   <ul className="property-facts">
+                    <li>
+                      <span>Status</span>
+                      <strong>{statusLabel}</strong>
+                    </li>
                     {neighborhood && (
                       <li>
-                        <span>Neighborhood</span>
+                        <span>Location</span>
                         <strong>{neighborhood}</strong>
                       </li>
                     )}
                     {sizeLabel && (
                       <li>
-                        <span>Size</span>
+                        <span>Living Area</span>
                         <strong>{sizeLabel}</strong>
+                      </li>
+                    )}
+                    {property.lot_size_sqm && (
+                      <li>
+                        <span>Lot Size</span>
+                        <strong>{property.lot_size_sqm} m²</strong>
                       </li>
                     )}
                     {bedroomsLabel && (
@@ -1162,8 +1073,31 @@ export default function ListingDetailPage() {
                         <strong>{bathroomsLabel}</strong>
                       </li>
                     )}
+                    {property.year_built && (
+                      <li>
+                        <span>Year Built</span>
+                        <strong>{property.year_built}</strong>
+                      </li>
+                    )}
+                    {property.furnishing_status && (
+                      <li>
+                        <span>Furnishing</span>
+                        <strong>{property.furnishing_status.charAt(0).toUpperCase() + property.furnishing_status.slice(1)}</strong>
+                      </li>
+                    )}
                   </ul>
                 </div>
+
+                {/* Video Button */}
+                {property.youtube_video_url && getVideoEmbed(property.youtube_video_url) && (
+                  <button
+                    className="default-button active video-sidebar-btn"
+                    style={{ width: '100%', marginBottom: '12px' }}
+                    onClick={() => setShowVideoModal(true)}
+                  >
+                    ▶&nbsp; Watch Video
+                  </button>
+                )}
 
                 {/* Contact Form */}
                 <div className="contact-form-card">
@@ -1422,6 +1356,39 @@ export default function ListingDetailPage() {
           </div>
         )
       }
+
+      {/* Video Modal */}
+      {showVideoModal && property.youtube_video_url && (() => {
+        const embed = getVideoEmbed(property.youtube_video_url);
+        if (!embed) return null;
+        return (
+          <div className="insta-modal" onClick={() => setShowVideoModal(false)}>
+            <div className="insta-backdrop" />
+            <div className="insta-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: embed.provider === 'instagram' ? '440px' : '860px', height: embed.provider === 'instagram' ? '600px' : 'auto' }}>
+              <button className="insta-close" onClick={() => setShowVideoModal(false)} aria-label="Close">×</button>
+              {embed.provider === 'instagram' ? (
+                <iframe
+                  title="Property video"
+                  src={embed.src}
+                  style={{ width: '100%', height: '100%', border: 0, borderRadius: '8px' }}
+                  allowTransparency="true"
+                  allow="encrypted-media"
+                />
+              ) : (
+                <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '8px' }}>
+                  <iframe
+                    title="Property video"
+                    src={embed.src}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 

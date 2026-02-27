@@ -31,7 +31,8 @@ export default function FeaturedProperties({
   showTitle = true,
   disableAnimations = false,
   titleKicker = 'Featured',
-  titleText = 'Properties'
+  titleText = 'Properties',
+  token = null
 }) {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -157,7 +158,8 @@ export default function FeaturedProperties({
         {renderSectionLinks(!disableAnimations && showTitle ? { 'data-aos': 'fade-up', 'data-aos-duration': '1000', 'data-aos-delay': '300' } : {})}
         <div className="fp-grid" {...(!disableAnimations && showTitle && { 'data-aos': 'fade-up', 'data-aos-duration': '1000', 'data-aos-delay': '300' })}>
           {properties.map((property) => {
-            const link = `/listings/${property.slug}/`;
+            const tokenSuffix = token && property.property_type === 'off_market' ? `?token=${encodeURIComponent(token)}` : '';
+            const link = `/listings/${property.slug}/${tokenSuffix}`;
             const location = property.city || property.neighborhood || '';
             const coverImage = property.cover_image_url; // SafeImage gestirà il fallback
 

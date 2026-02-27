@@ -25,6 +25,7 @@ export default function OffMarketPage() {
         disableAnimations={true}
         titleKicker="Private"
         titleText="Off-Market"
+        token={token}
       />
       <ContactWithCta />
     </OffMarketGate>

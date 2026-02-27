@@ -1593,12 +1593,7 @@ class PropertyController
                 }
             }
 
-            // Price validation (only for full UPDATE when price fields are included)
-            if (array_key_exists('price_usd', $data) && empty($data['price_on_demand'])) {
-                if (empty($data['price_usd']) || $data['price_usd'] <= 0) {
-                    return "price_usd is required and must be greater than 0 when price_on_demand is false";
-                }
-            }
+            // Price validation removed - no longer required
         }
 
         // Validate ENUMs
@@ -1629,8 +1624,8 @@ class PropertyController
         }
 
         // Validate price_base_currency
-        if (isset($data['price_base_currency']) && !in_array($data['price_base_currency'], ['USD', 'MXN'])) {
-            return "Invalid price_base_currency. Must be: USD, MXN";
+        if (isset($data['price_base_currency']) && !in_array($data['price_base_currency'], ['USD', 'MXN', 'EUR'])) {
+            return "Invalid price_base_currency. Must be: USD, MXN, EUR";
         }
 
         // Validate property_categories array for developments

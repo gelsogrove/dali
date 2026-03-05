@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
+import { DndContext, closestCenter, pointerWithin, rectIntersection, getFirstCollision, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
+import type { CollisionDetection } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import api from '@/lib/api';
@@ -114,9 +115,14 @@ export default function TodoPage() {
 
   const reorderMutation = useMutation({
     mutationFn: async (items: { id: number; priority: number; status: string }[]) => {
-      await api.post('/todos/reorder', { items });
+      const res = await api.post('/todos/reorder', { items });
+      if (res.data && res.data.success === false) throw new Error(res.data.error || 'Reorder failed');
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
+    onError: (_err, _vars) => {
+      // Roll back local state to server state on failure
+      queryClient.invalidateQueries({ queryKey: ['todos'] });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -215,48 +221,85 @@ export default function TodoPage() {
 
     if (!activeContainer || !overContainer) return;
 
-    setLocalItems((prev) => {
-      const byCol: Record<string, TodoItem[]> = {
-        todo: [],
-        nicetohave: [],
-        in_progress: [],
-        test: [],
-        done: [],
-      };
-      prev.forEach((item) => {
-        const key = byCol[item.status] ? item.status : 'todo';
-        byCol[key].push(item);
-      });
-
-      if (activeContainer === overContainer) {
-        const oldIndex = byCol[activeContainer].findIndex((i) => i.id === active.id);
-        const newIndex = byCol[overContainer].findIndex((i) => i.id === over.id);
-        if (oldIndex < 0 || newIndex < 0) return prev;
-        byCol[activeContainer] = arrayMove(byCol[activeContainer], oldIndex, newIndex);
-      } else {
-        const oldIndex = byCol[activeContainer].findIndex((i) => i.id === active.id);
-        const newIndex = byCol[overContainer].findIndex((i) => i.id === over.id);
-        if (oldIndex < 0) return prev;
-        const [moved] = byCol[activeContainer].splice(oldIndex, 1);
-        byCol[overContainer].splice(newIndex >= 0 ? newIndex : byCol[overContainer].length, 0, {
-          ...moved,
-          status: overContainer as TodoItem['status'],
-        });
-      }
-
-      const next: TodoItem[] = [];
-      Object.keys(byCol).forEach((k) => {
-        byCol[k].forEach((item, idx) => next.push({ ...item, priority: idx, status: k as TodoItem['status'] }));
-      });
-
-      const payload: { id: number; priority: number; status: string }[] = next.map((i) => ({
-        id: i.id,
-        priority: i.priority,
-        status: i.status,
-      }));
-      reorderMutation.mutate(payload);
-      return next;
+    // Compute the new state outside the setState updater (no side-effects inside updaters)
+    const byCol: Record<string, TodoItem[]> = {
+      todo: [],
+      nicetohave: [],
+      in_progress: [],
+      test: [],
+      done: [],
+    };
+    localItems.forEach((item) => {
+      const key = byCol[item.status] ? item.status : 'todo';
+      byCol[key].push(item);
     });
+
+    if (activeContainer === overContainer) {
+      const oldIndex = byCol[activeContainer].findIndex((i) => i.id === active.id);
+      const newIndex = byCol[overContainer].findIndex((i) => i.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return;
+      byCol[activeContainer] = arrayMove(byCol[activeContainer], oldIndex, newIndex);
+    } else {
+      const oldIndex = byCol[activeContainer].findIndex((i) => i.id === active.id);
+      const newIndex = byCol[overContainer].findIndex((i) => i.id === over.id);
+      if (oldIndex < 0) return;
+      const [moved] = byCol[activeContainer].splice(oldIndex, 1);
+      byCol[overContainer].splice(newIndex >= 0 ? newIndex : byCol[overContainer].length, 0, {
+        ...moved,
+        status: overContainer as TodoItem['status'],
+      });
+    }
+
+    const next: TodoItem[] = [];
+    Object.keys(byCol).forEach((k) => {
+      byCol[k].forEach((item, idx) => next.push({ ...item, priority: idx, status: k as TodoItem['status'] }));
+    });
+
+    // Update local state
+    setLocalItems(next);
+
+    // Fire API call separately (never inside a state updater)
+    const payload: { id: number; priority: number; status: string }[] = next.map((i) => ({
+      id: i.id,
+      priority: i.priority,
+      status: i.status,
+    }));
+    reorderMutation.mutate(payload);
+  };
+
+  // Custom collision detection: prioritise the column the pointer is inside,
+  // then use closestCenter only among items in that column.
+  // This prevents cards from "jumping" to an adjacent column (especially when
+  // the target column – e.g. 'test' – is empty and has no sortable items to anchor to).
+  const collisionDetection: CollisionDetection = (args) => {
+    const containerKeys = statusColumns.map((c) => c.key);
+
+    // 1. find all droppables whose rect the pointer is currently inside
+    const pointerHits = pointerWithin(args);
+
+    // 2. if the pointer is directly inside a column container, prefer it
+    const columnHit = pointerHits.find(({ id }) => containerKeys.includes(id as string));
+    if (columnHit) {
+      const colKey = columnHit.id as string;
+      const colItemIds = (grouped[colKey] ?? []).map((i) => i.id);
+      if (colItemIds.length > 0) {
+        // Find closest item inside this column
+        const within = closestCenter({
+          ...args,
+          droppableContainers: args.droppableContainers.filter((c) =>
+            colItemIds.includes(c.id as number)
+          ),
+        });
+        if (within.length) return within;
+      }
+      // Column is empty – just return the column itself
+      return [columnHit];
+    }
+
+    // 3. pointer is not inside any column (e.g. between columns) – fall back
+    const rectHits = rectIntersection(args);
+    if (rectHits.length) return rectHits;
+    return closestCenter(args);
   };
 
   const handleSaveDetails = () => {
@@ -349,7 +392,7 @@ export default function TodoPage() {
         <div className="px-6 pb-6">
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCenter}
+            collisionDetection={collisionDetection}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >

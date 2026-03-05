@@ -11,10 +11,10 @@ UPDATE property_attachments
 SET url = CONCAT('/api', url) 
 WHERE url LIKE '/uploads/%' AND url NOT LIKE '/api/%';
 
--- Update blog images
+-- Update blog images (column is 'featured_image', not 'cover_image')
 UPDATE blogs 
-SET cover_image = CONCAT('/api', cover_image) 
-WHERE cover_image LIKE '/uploads/%' AND cover_image NOT LIKE '/api/%';
+SET featured_image = CONCAT('/api', featured_image) 
+WHERE featured_image LIKE '/uploads/%' AND featured_image NOT LIKE '/api/%';
 
 -- Update video URLs
 UPDATE videos 

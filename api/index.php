@@ -46,6 +46,7 @@ require_once __DIR__ . '/controllers/ContactController.php';
 require_once __DIR__ . '/controllers/AccessRequestController.php';
 require_once __DIR__ . '/controllers/OffMarketInviteController.php';
 require_once __DIR__ . '/controllers/TodoController.php';
+require_once __DIR__ . '/controllers/BackupController.php';
 // Normalize base dir to avoid trailing spaces/newlines in production paths
 $__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
 require_once $__baseDir . '/config/database.php';
@@ -142,6 +143,10 @@ try {
 
         case 'todos':
             handleTodoRoutes($segments, $method);
+            break;
+
+        case 'backups':
+            handleBackupRoutes($segments, $method);
             break;
         
         case 'health':
@@ -1337,6 +1342,41 @@ function handleTodoRoutes($segments, $method) {
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
 }
 
+
+/**
+ * Handle backup routes
+ */
+function handleBackupRoutes($segments, $method) {
+    $controller = new BackupController();
+    $auth = new AuthMiddleware();
+    $user = $auth->authenticate();
+    if (!$user || !$auth->checkRole($user, ['admin'])) {
+        return;
+    }
+
+    // GET /backups
+    if ($method === 'GET' && count($segments) === 1) {
+        $result = $controller->list();
+        echo json_encode($result);
+        return;
+    }
+
+    // GET /backups/download/{filename}
+    if ($method === 'GET' && isset($segments[1]) && $segments[1] === 'download' && isset($segments[2])) {
+        $controller->download($segments[2]);
+        return;
+    }
+
+    // POST /backups (create)
+    if ($method === 'POST' && count($segments) === 1) {
+        $result = $controller->create();
+        echo json_encode($result);
+        return;
+    }
+
+    http_response_code(405);
+    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+}
 
 /**
  * Handle contact routes

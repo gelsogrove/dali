@@ -29,7 +29,7 @@ export default function FeaturedCities() {
       try {
         const [citiesRes, areasRes] = await Promise.all([
           api.get('/cities?is_home=1'),
-          api.get('/areas?is_home=1')
+          api.get('/areas')
         ]);
         const cList = citiesRes?.data?.cities ?? citiesRes?.data?.data?.cities ?? [];
         const aList = areasRes?.data?.areas ?? areasRes?.data?.data?.areas ?? [];
@@ -48,14 +48,10 @@ export default function FeaturedCities() {
 
   const grouped = useMemo(() => {
     if (!cities.length) return [];
-    const result = [];
-    cities.forEach((city, idx) => {
+    return cities.map((city, idx) => {
       const cityAreas = areas.filter((a) => a.city_id === city.id);
-      if (cityAreas.length > 0) {
-        result.push({ city, areas: cityAreas, idx });
-      }
+      return { city, areas: cityAreas, idx };
     });
-    return result;
   }, [cities, areas]);
 
   const handleAreaPrev = (cityId) => {
@@ -100,7 +96,9 @@ export default function FeaturedCities() {
                       <i className="ai-font-arrow-b"></i>
                     </button>
                   )}
-                  <h3>{city.title || city.name}</h3>
+                  <a href={`/community/${city.slug}`} className="fc-controls-city-link">
+                    <h3>{city.title || city.name}</h3>
+                  </a>
                   {areas.length > 3 && (
                     <button
                       className="next"
@@ -113,9 +111,36 @@ export default function FeaturedCities() {
                   )}
                 </div>
 
-                {/* Slider if more than 1 area, otherwise static */}
+                {/* Slider if more than 1 area, static grid if 1 area, city card if no areas */}
                 <div className="fc-grid" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300">
-                  {areas.length > 1 ? (
+                  {areas.length === 0 ? (
+                    /* No areas: show the city itself as a single card */
+                    <div className="fc-grid-static">
+                      <div className="fc-list static">
+                        <a href={`/community/${city.slug}`}>
+                          <div className="fc-item-image">
+                            {city.cover_image && !thumbErrors[`city-${city.id}`] ? (
+                              <img
+                                src={toAbsoluteUrl(city.cover_image)}
+                                alt={city.title}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                onError={() =>
+                                  setThumbErrors((prev) => ({ ...prev, [`city-${city.id}`]: true }))
+                                }
+                              />
+                            ) : (
+                              <div className="blog-placeholder" style={{ height: '100%' }}>
+                                <div className="placeholder-box" aria-hidden="true" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="fc-item-overlay">
+                            <strong>{city.title}</strong>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+                  ) : areas.length > 1 ? (
                     <Splide
                       ref={(instance) => {
                         if (instance) areaSliderRefs.current[city.id || idx] = instance;

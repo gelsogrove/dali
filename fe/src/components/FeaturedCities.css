@@ -73,6 +73,17 @@
     flex-shrink: 0;
 }
 
+.fc-controls-city-link {
+    text-decoration: none;
+    transition: var(--default-transition);
+}
+
+.fc-controls-city-link:hover h3 {
+    color: #a67b68;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
 .fc-grid {
     margin-top: 60px;
 }

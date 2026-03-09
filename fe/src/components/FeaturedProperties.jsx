@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import AOS from 'aos';
 import ImageWithOverlay from './ImageWithOverlay';
 import TitleHeader from './TitleHeader';
 import ButtonDali from './ButtonDali';
@@ -72,6 +73,8 @@ export default function FeaturedProperties({
           if (response.data.pagination) {
             setTotalPages(response.data.pagination.total_pages || 1);
           }
+          // Refresh AOS so elements rendered after async fetch are picked up
+          setTimeout(() => AOS.refresh(), 50);
         }
       } catch (err) {
         console.error('Error fetching properties:', err);

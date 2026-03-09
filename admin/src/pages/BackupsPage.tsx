@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Database, Download, Plus, HardDrive, ShieldCheck, Clock } from 'lucide-react'
+import { Database, Download, Plus, HardDrive, ShieldCheck, Clock, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Backup {
@@ -11,6 +12,8 @@ interface Backup {
 }
 
 export default function BackupsPage() {
+    const queryClient = useQueryClient()
+    const [creating, setCreating] = useState(false)
 
     const { data, isLoading } = useQuery({
         queryKey: ['backups'],
@@ -41,6 +44,19 @@ export default function BackupsPage() {
         }
     }
 
+    const handleCreate = async () => {
+        setCreating(true)
+        try {
+            await api.post('/backups')
+            toast.success('Backup created successfully!')
+            queryClient.invalidateQueries({ queryKey: ['backups'] })
+        } catch (error) {
+            toast.error('Error creating backup')
+        } finally {
+            setCreating(false)
+        }
+    }
+
     const formatSize = (bytes: number) => {
         if (bytes === 0) return '0 Bytes'
         const k = 1024
@@ -58,6 +74,18 @@ export default function BackupsPage() {
                         Monitor and download manual security copies of your database.
                     </p>
                 </div>
+                <Button
+                    onClick={handleCreate}
+                    disabled={creating}
+                    className="flex items-center gap-2"
+                >
+                    {creating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                        <Plus className="h-4 w-4" />
+                    )}
+                    {creating ? 'Creating...' : 'Create Backup'}
+                </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -182,7 +210,7 @@ export default function BackupsPage() {
                     <div>
                         <h3 className="font-semibold text-blue-900 mb-1">How to Create a Backup</h3>
                         <p className="text-blue-800 text-sm leading-relaxed mb-3">
-                            For security reasons, manual backups must be triggered via command line:
+                            Click the <strong>Create Backup</strong> button at the top of the page to generate a new backup instantly. Alternatively, you can trigger it via command line:
                         </p>
                         <div className="bg-blue-900 text-blue-50 p-2 rounded font-mono text-xs">
                             npm run backup

@@ -172,13 +172,6 @@ export default function FeaturedVideos() {
                             </div>
                           )}
                         </div>
-                        <div className="fv-play">
-                          <div className="fv-outline">
-                            <div className="fv-inline">
-                              <i className="ai-font-play-button-a"></i>
-                            </div>
-                          </div>
-                        </div>
                       </a>
                     </div>
                   </SplideSlide>
@@ -217,13 +210,6 @@ export default function FeaturedVideos() {
                             <div className="placeholder-box" aria-hidden="true" />
                           </div>
                         )}
-                      </div>
-                      <div className="fv-play">
-                        <div className="fv-outline">
-                          <div className="fv-inline">
-                            <i className="ai-font-play-button-a"></i>
-                          </div>
-                        </div>
                       </div>
                     </a>
                   </div>

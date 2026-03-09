@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +18,7 @@ import PropertyAttachments from '@/components/PropertyAttachments'
 import TagPicker from '@/components/TagPicker'
 
 export default function PropertyFormPage() {
+  const queryClient = useQueryClient()
   const { id } = useParams()
   const navigate = useNavigate()
   const isEdit = Boolean(id)
@@ -177,6 +178,8 @@ export default function PropertyFormPage() {
       return property
     },
     enabled: isEdit,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   })
 
   const mutation = useMutation({
@@ -191,8 +194,10 @@ export default function PropertyFormPage() {
       // For new properties, navigate to edit page
       if (!isEdit && response.data?.data?.id) {
         navigate(`/properties/${response.data.data.id}`)
+      } else if (isEdit && id) {
+        // Reload from DB to confirm what was actually saved
+        queryClient.invalidateQueries({ queryKey: ['property', id] })
       }
-      // For edit, just stay on page (no navigation)
     },
     onError: (error: any) => {
       alert(error.response?.data?.error || 'An error occurred')
@@ -377,6 +382,7 @@ export default function PropertyFormPage() {
       price_base_currency: formData.price_base_currency,
       price_usd: formData.price_usd ? parseFloat(formData.price_usd) : null,
       price_mxn: formData.price_mxn ? parseFloat(formData.price_mxn) : null,
+      price_eur: formData.price_eur ? parseFloat(formData.price_eur) : null,
       exchange_rate: formData.exchange_rate ? parseFloat(formData.exchange_rate) : 20.0,
       price_on_demand: formData.price_on_demand,
       price_negotiable: formData.price_negotiable,
@@ -384,6 +390,8 @@ export default function PropertyFormPage() {
       price_to_usd: formData.price_to_usd ? parseFloat(formData.price_to_usd) : null,
       price_from_mxn: formData.price_from_mxn ? parseFloat(formData.price_from_mxn) : null,
       price_to_mxn: formData.price_to_mxn ? parseFloat(formData.price_to_mxn) : null,
+      price_from_eur: formData.price_from_eur ? parseFloat(formData.price_from_eur) : null,
+      price_to_eur: formData.price_to_eur ? parseFloat(formData.price_to_eur) : null,
       sqm: formData.sqm ? parseFloat(formData.sqm) : null,
       sqft: formData.sqft ? parseFloat(formData.sqft) : null,
       sqm_min: formData.sqm_min ? parseFloat(formData.sqm_min) : null,

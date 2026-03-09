@@ -43,6 +43,21 @@
   position: relative;
 }
 
+/* <a> fills the media container so .fv-play centers correctly */
+.video-row-media > a {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.video-row-media > a img,
+.video-row-media > a .safe-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .video-row-media img {
   width: 100%;
   height: 100%;

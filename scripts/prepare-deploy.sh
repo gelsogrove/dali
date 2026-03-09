@@ -53,8 +53,8 @@ fi
 
 echo -e "${GREEN}✅ Frontend build completato${NC}"
 cp -r fe/dist/* "$DEPLOY_DIR/"
-cp fe/public/fonts "$DEPLOY_DIR/" 2>/dev/null || true
-cp fe/public/images "$DEPLOY_DIR/" 2>/dev/null || true
+cp -r fe/public/fonts "$DEPLOY_DIR/" 2>/dev/null || true
+cp -r fe/public/images "$DEPLOY_DIR/" 2>/dev/null || true
 
 # ============================================
 # BUILD ADMIN

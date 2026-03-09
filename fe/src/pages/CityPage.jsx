@@ -5,8 +5,9 @@ import ContactWithCta from '../components/ContactWithCta';
 import SEO from '../components/SEO';
 import ImageWithOverlay from '../components/ImageWithOverlay';
 import SafeImage from '../components/SafeImage';
+import TitleHeader from '../components/TitleHeader';
 import { api, endpoints } from '../config/api';
-import { formatPrice } from '../utils/propertyFormatters';
+import { formatPrice, formatBedrooms, formatBathrooms, getShortSize } from '../utils/propertyFormatters';
 
 export default function CityPage() {
   const { citySlug } = useParams();
@@ -175,47 +176,47 @@ export default function CityPage() {
         </div>
       </section>
 
-      <section className="community-properties">
-        <div className="community-detail-wrapper">
-          <h2 className="community-props-title">Featured Properties in {city.title}</h2>
+      <section id="featured-properties" className="community-properties">
+        <div className="fp-container">
+          <TitleHeader kicker={city.title} title="Featured Properties" className="fp-title" />
 
           {loadingProperties ? (
-            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ textAlign: 'center', padding: '60px 0' }}>
               <p>Loading properties...</p>
             </div>
           ) : properties.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ textAlign: 'center', padding: '60px 0' }}>
               <p>No properties available in this area yet.</p>
             </div>
           ) : (
-            <div className="community-props-grid">
+            <div className="fp-grid">
               {properties.map((property) => {
                 const link = `/listings/${property.slug}/`;
-                const coverImage = property.cover_image_url; // SafeImage gestisce fallback
+                const coverImage = property.cover_image_url;
                 const priceLabel = formatPrice(property);
+                const statusLabel = property.status === 'sold' ? 'SOLD' : property.status === 'reserved' ? 'RESERVED' : 'FOR SALE';
 
                 return (
-                  <div key={property.id} className="property-card">
-                    <Link to={link}>
-                      <div className="property-thumb">
-                        <ImageWithOverlay
-                          src={coverImage}
-                          alt={property.title}
-                          beds={property.bedrooms}
-                          baths={property.bathrooms}
-                          size={property.sqm ? `${property.sqm} m²` : null}
-                          status={property.status === 'sold' ? 'SOLD' : property.status === 'reserved' ? 'RESERVED' : 'FOR SALE'}
-                          location={property.neighborhood || property.city}
-                        >
-                          <div className="property-price">
-                            <h3>{priceLabel}</h3>
-                          </div>
-                          <div className="property-title">
-                            <h4>{property.title}</h4>
-                          </div>
-                        </ImageWithOverlay>
-                      </div>
-                    </Link>
+                  <div className="fp-list" key={property.id}>
+                    <a href={link}>
+                      <ImageWithOverlay
+                        src={coverImage}
+                        alt={property.title}
+                        className="fp-list-item-image"
+                        beds={formatBedrooms(property)}
+                        baths={formatBathrooms(property)}
+                        size={getShortSize(property)}
+                        status={statusLabel}
+                        location={property.neighborhood || property.city}
+                      >
+                        <div className="fp-item-price">
+                          <h3>{priceLabel}</h3>
+                        </div>
+                        <div className="fp-item-address">
+                          <h4>{property.title}</h4>
+                        </div>
+                      </ImageWithOverlay>
+                    </a>
                   </div>
                 );
               })}

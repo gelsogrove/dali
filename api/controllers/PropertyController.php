@@ -870,6 +870,7 @@ class PropertyController
             $types = '';
 
             $allowedFields = [
+                'slug',
                 'title',
                 'subtitle',
                 'property_type',
@@ -1012,7 +1013,19 @@ class PropertyController
             // Log activity
             $this->logActivity($userId, 'update', 'property', $id, "Updated property ID: $id");
 
-            // Regenerate sitemap if slug or is_active changed
+            // Handle slug change: create redirect + regenerate sitemap
+            $newSlug = isset($data['slug']) && $data['slug'] !== '' ? $data['slug'] : null;
+            if ($newSlug && $newSlug !== $existing['slug']) {
+                $urlOld = '/properties/' . $existing['slug'];
+                $urlNew = '/properties/' . $newSlug;
+                $existingRedirect = $this->redirectService->findByUrlOld($urlOld);
+                if (!$existingRedirect) {
+                    $this->redirectService->create($urlOld, $urlNew);
+                }
+                $this->sitemapService->generateSitemap();
+            }
+
+            // Regenerate sitemap if is_active or title changed
             if (isset($data['is_active']) || isset($data['title'])) {
                 $this->sitemapService->generateSitemap();
             }

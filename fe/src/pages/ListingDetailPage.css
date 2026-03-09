@@ -99,6 +99,43 @@
   display: block;
 }
 
+/* Video tile in thumbnail strip */
+.listing-gallery-thumb--video {
+  border-color: rgba(255,255,255,0.3);
+}
+
+.thumb-video-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.listing-gallery-thumb--video:hover .thumb-video-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.thumb-video-play {
+  width: 62px;
+  height: 62px;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: transform 0.2s ease;
+}
+
+.listing-gallery-thumb--video:hover .thumb-video-play {
+  transform: scale(1.12);
+}
+
 .thumb-loading {
   position: absolute;
   top: 0;
@@ -163,7 +200,48 @@
   flex-wrap: wrap;
 }
 
-/* Property Description */\n.listing-about {\n  margin-bottom: 0;\n}\n\n.listing-description h2 {\n  font-family: var(--font-family-title);\n  font-size: 32px;\n  color: var(--color-primary);\n  margin: 40px 0 20px;\n  font-weight: var(--font-weight-medium);\n  letter-spacing: var(--letter-spacing-normal);\n  line-height: var(--line-height-tight);\n}\n\n.listing-description h3 {\n  font-family: var(--font-family-title);\n  font-size: 26px;\n  color: var(--color-primary);\n  margin: 32px 0 16px;\n  font-weight: var(--font-weight-medium);\n  letter-spacing: var(--letter-spacing-tight);\n  line-height: var(--line-height-tight);\n}\n\n.listing-description h4 {\n  font-family: var(--font-family-title);\n  font-size: 22px;\n  color: var(--color-primary);\n  margin: 24px 0 12px;\n  font-weight: var(--font-weight-medium);\n}
+/* Property Description */
+.listing-about {
+  margin-bottom: 0;
+}
+
+.listing-description h1,
+.listing-description h2 {
+  font-family: var(--font-family-title);
+  font-size: 32px;
+  color: var(--color-primary);
+  margin: 40px 0 20px;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-normal);
+  line-height: var(--line-height-tight);
+}
+
+.listing-description h3 {
+  font-family: var(--font-family-title);
+  font-size: 26px;
+  color: var(--color-primary);
+  margin: 28px 0 28px;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
+}
+
+.listing-description h4 {
+  font-family: var(--font-family-title);
+  font-size: 22px;
+  color: var(--color-primary);
+  margin: 24px 0 12px;
+  font-weight: var(--font-weight-medium);
+}
+
+.listing-description h5,
+.listing-description h6 {
+  font-family: var(--font-family-title);
+  font-size: 18px;
+  color: var(--color-primary);
+  margin: 20px 0 10px;
+  font-weight: var(--font-weight-medium);
+}
 
 .listing-description {
   font-family: var(--font-family-default);
@@ -177,8 +255,15 @@
 }
 
 .listing-description ul {
+  list-style: disc outside;
   margin: 20px 0;
-  padding-left: 20px;
+  padding-left: 28px;
+}
+
+.listing-description ol {
+  list-style: decimal outside;
+  margin: 20px 0;
+  padding-left: 28px;
 }
 
 .listing-description li {
@@ -330,6 +415,66 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 20px var(--color-shadow);
+}
+
+.listing-map-fullwidth {
+  border-radius: 0;
+  margin-top: 40px;
+  box-shadow: none;
+}
+
+/* Video Thumbnail Card */
+.video-thumbnail-card {
+  position: relative;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 16 / 9;
+}
+
+.video-thumbnail-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.video-thumbnail-card:hover img {
+  transform: scale(1.03);
+}
+
+.video-play-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.video-thumbnail-card:hover .video-play-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.video-play-btn {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.video-thumbnail-card:hover .video-play-btn {
+  transform: scale(1.1);
+  background: #fff;
 }
 
 /* Sidebar */
@@ -925,8 +1070,6 @@
 
 .insta-dialog {
   position: relative;
-  width: min(90vw, 520px);
-  height: min(90vh, 720px);
   background: #0f172a;
   border-radius: 16px;
   overflow: hidden;

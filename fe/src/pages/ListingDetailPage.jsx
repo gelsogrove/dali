@@ -813,12 +813,12 @@ export default function ListingDetailPage() {
         </Splide>
       </section>
 
-      {heroGallery.length > 1 && (
+      {(heroGallery.length > 1 || property.youtube_video_url) && (
         <div className="listing-gallery-thumbnails" data-aos="fade-up" data-aos-duration="900" data-aos-delay="50">
           <div className="listing-gallery-container">
             <Splide
               options={{
-                type: 'loop',
+                type: heroGallery.length > 5 ? 'loop' : 'slide',
                 perPage: 6,
                 gap: '12px',
                 arrows: true,
@@ -833,6 +833,34 @@ export default function ListingDetailPage() {
               }}
               className="listing-thumbs"
             >
+              {/* Video thumbnail — first tile */}
+              {property.youtube_video_url && (() => {
+                const embed = getVideoEmbed(property.youtube_video_url);
+                if (!embed) return null;
+                const ytId = embed.provider === 'youtube'
+                  ? embed.src.replace('https://www.youtube.com/embed/', '').split('?')[0]
+                  : null;
+                const thumbSrc = ytId
+                  ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+                  : (property.cover_image_url || null);
+                if (!thumbSrc) return null;
+                return (
+                  <SplideSlide key="thumb-video">
+                    <div
+                      className="listing-gallery-thumb listing-gallery-thumb--video"
+                      onClick={() => setShowVideoModal(true)}
+                      title="Watch video"
+                    >
+                      <img src={thumbSrc} alt="Property video" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div className="thumb-video-overlay" aria-hidden="true">
+                        <div className="thumb-video-play">
+                          <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                      </div>
+                    </div>
+                  </SplideSlide>
+                );
+              })()}
               {heroGallery.map((photo, idx) => (
                 <SplideSlide key={`thumb-${idx}`}>
                   <div
@@ -895,22 +923,13 @@ export default function ListingDetailPage() {
               {/* Main Content */}
               <div className="listing-main-content" data-aos="fade-up" data-aos-duration="900" data-aos-delay="100">
 
-                {/* Action Buttons */}
-                <div className="listing-actions">
-                  <button onClick={() => setShowRequestInfo(true)} className="default-button active">
-                    Request Info
-                  </button>
-                  <button onClick={() => setShowScheduleShowing(true)} className="default-button active">
-                    Schedule a Showing
-                  </button>
-                </div>
-
                 {/* Property Description */}
                 <div className="listing-about">
                   <div className="listing-description" dangerouslySetInnerHTML={{ __html: detail.content }}></div>
                 </div>
 
                 {/* Amenities & Attachments */}
+                {(amenities.length > 0 || (attachments.length > 0 && !(['development', 'active'].includes(property.property_type)))) && (
                 <div className="listing-details-card">
 
                   {/* Amenities */}
@@ -930,16 +949,8 @@ export default function ListingDetailPage() {
                     </div>
                   )}
 
-                  {/* Attachments */}
-                  {attachments.length > 0 && (
-                    ['development', 'active'].includes(property.property_type) ? (
-                      <PropertyAccessGate
-                        property={property}
-                        attachments={attachments}
-                        attachmentIcon={attachmentIcon}
-                        formatBytes={formatBytes}
-                      />
-                    ) : (
+                  {/* Attachments - non-gated types only; gated ones go to sidebar */}
+                  {attachments.length > 0 && !(['development', 'active'].includes(property.property_type)) && (
                       <div className="listing-attachments">
                         <h4>Downloads &amp; Links</h4>
                         <ul className="attachments-list">
@@ -965,28 +976,10 @@ export default function ListingDetailPage() {
                           })}
                         </ul>
                       </div>
-                    )
                   )}
                 </div>
+                )}
 
-                {/* Map */}
-                <div className="listing-map">
-                  <iframe
-                    title="Property map"
-                    src={getGoogleMapsEmbedUrl(
-                      property.google_maps_url,
-                      property.latitude,
-                      property.longitude,
-                      property.city
-                    )}
-                    width="100%"
-                    height="450"
-                    style={{ border: 0, borderRadius: '4px' }}
-                    allowFullScreen=""
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  ></iframe>
-                </div>
               </div>
 
               {/* Sidebar */}
@@ -1088,22 +1081,42 @@ export default function ListingDetailPage() {
                   </ul>
                 </div>
 
-                {/* Video Button */}
-                {property.youtube_video_url && getVideoEmbed(property.youtube_video_url) && (
-                  <button
-                    className="default-button active video-sidebar-btn"
-                    style={{ width: '100%', marginBottom: '12px' }}
-                    onClick={() => setShowVideoModal(true)}
-                  >
-                    ▶&nbsp; Watch Video
-                  </button>
-                )}
+                {/* Video Thumbnail */}
+                {property.youtube_video_url && (() => {
+                  const embed = getVideoEmbed(property.youtube_video_url);
+                  if (!embed) return null;
+                  const ytId = embed.provider === 'youtube'
+                    ? embed.src.replace('https://www.youtube.com/embed/', '').split('?')[0]
+                    : null;
+                  const thumbSrc = ytId
+                    ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+                    : (property.cover_image_url || null);
+                  if (!thumbSrc) return null;
+                  return (
+                    <div
+                      className="video-thumbnail-card"
+                      onClick={() => setShowVideoModal(true)}
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Watch property video"
+                      onKeyDown={e => e.key === 'Enter' && setShowVideoModal(true)}
+                    >
+                      <img src={thumbSrc} alt="Watch property video" />
+                      <div className="video-play-overlay">
+                        <div className="video-play-btn" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Contact Form */}
                 <div className="contact-form-card">
                   <div className="form-header">
-                    <h4>Interested in</h4>
-                    <p>{detail.title}</p>
+                    <h4>Request Info</h4>
                   </div>
                   <form className="property-form" onSubmit={handlePropertyContact}>
                     <div className="form-honeypot" aria-hidden="true">
@@ -1125,6 +1138,17 @@ export default function ListingDetailPage() {
                     )}
                   </form>
                 </div>
+
+                {/* Documents Gate - compact sidebar version */}
+                {attachments.length > 0 && ['development', 'active'].includes(property.property_type) && (
+                  <PropertyAccessGate
+                    property={property}
+                    attachments={attachments}
+                    attachmentIcon={attachmentIcon}
+                    formatBytes={formatBytes}
+                    compact={true}
+                  />
+                )}
 
                 {/* Share Section - at bottom */}
                 <div className="share-card">
@@ -1167,6 +1191,25 @@ export default function ListingDetailPage() {
               </aside>
             </div>
           </ConditionalWrapper>
+
+        {/* Full-width Map */}
+        <div className="listing-map listing-map-fullwidth">
+          <iframe
+            title="Property map"
+            src={getGoogleMapsEmbedUrl(
+              property.google_maps_url,
+              property.latitude,
+              property.longitude,
+              property.city
+            )}
+            width="100%"
+            height="450"
+            style={{ border: 0, borderRadius: '0px' }}
+            allowFullScreen=""
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          ></iframe>
+        </div>
         </div>
       </section>
 
@@ -1361,18 +1404,19 @@ export default function ListingDetailPage() {
       {showVideoModal && property.youtube_video_url && (() => {
         const embed = getVideoEmbed(property.youtube_video_url);
         if (!embed) return null;
+        const embedSrcWithAutoplay = embed.src + (embed.src.includes('?') ? '&' : '?') + 'autoplay=1';
         return (
           <div className="insta-modal" onClick={() => setShowVideoModal(false)}>
             <div className="insta-backdrop" />
-            <div className="insta-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: embed.provider === 'instagram' ? '440px' : '860px', height: embed.provider === 'instagram' ? '600px' : 'auto' }}>
+            <div className="insta-dialog" onClick={e => e.stopPropagation()} style={{ width: embed.provider === 'instagram' ? 'min(90vw, 440px)' : 'min(90vw, 900px)', height: embed.provider === 'instagram' ? 'min(90vh, 720px)' : 'auto' }}>
               <button className="insta-close" onClick={() => setShowVideoModal(false)} aria-label="Close">×</button>
               {embed.provider === 'instagram' ? (
                 <iframe
                   title="Property video"
-                  src={embed.src}
+                  src={embedSrcWithAutoplay}
                   style={{ width: '100%', height: '100%', border: 0, borderRadius: '8px' }}
                   allowTransparency="true"
-                  allow="encrypted-media"
+                  allow="encrypted-media; autoplay"
                 />
               ) : (
                 <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '8px' }}>

@@ -1967,6 +1967,99 @@ html::-webkit-scrollbar {
   color: #000000;
 }
 
+/* Instagram card modal */
+.fv-modal-instagram {
+  background: #fff;
+  height: auto;
+  max-width: 480px;
+  width: min(480px, 90vw);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.fv-modal-instagram .fv-modal-close {
+  background: rgba(0,0,0,0.15);
+  border-color: rgba(0,0,0,0.2);
+  color: #111;
+  z-index: 10;
+}
+
+.fv-instagram-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.fv-instagram-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: #000;
+}
+
+.fv-instagram-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.7;
+}
+
+.fv-instagram-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.fv-instagram-info {
+  padding: 28px 28px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.fv-instagram-icon {
+  color: #E1306C;
+}
+
+.fv-instagram-info h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+  margin: 0;
+}
+
+.fv-instagram-info p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.fv-instagram-btn {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: opacity 0.2s ease;
+}
+
+.fv-instagram-btn:hover {
+  opacity: 0.88;
+  color: #fff;
+}
+
 .listing-hero-slider {
   position: relative;
   overflow: hidden;

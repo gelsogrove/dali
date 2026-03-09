@@ -18,6 +18,7 @@ export default function PropertyAccessGate({
   attachments,
   attachmentIcon,
   formatBytes,
+  compact = false,
 }) {
   const API_BASE = import.meta.env.VITE_API_URL || '';
   const fileUrl = (url) => {
@@ -168,35 +169,51 @@ export default function PropertyAccessGate({
   // --- LOCKED: Show lock overlay ---
   return (
     <>
-      <div className="listing-attachments listing-attachments-locked">
-        <h4>Documents</h4>
-        <div className="locked-overlay" onClick={() => setShowCodeInput(true)}>
-          <div className="locked-content">
-            <div className="lock-icon-wrapper">
-              <svg className="lock-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
+      <div className={`listing-attachments listing-attachments-locked${compact ? ' listing-attachments-compact' : ''}`}>
+        {!compact && <h4>Documents</h4>}
+        <div className={compact ? 'locked-overlay-compact' : 'locked-overlay'} onClick={() => setShowCodeInput(true)}>
+          {compact ? (
+            <div className="locked-compact-content">
+              <div className="locked-compact-left">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span className="locked-compact-label">Documents</span>
+                <span className="locked-compact-count">{attachments.length}</span>
+              </div>
+              <span className="locked-compact-cta">Access</span>
             </div>
-            <p className="locked-title">Protected Documents</p>
-            <p className="locked-subtitle">{attachments.length} document{attachments.length !== 1 ? 's' : ''} available</p>
-            <span className="locked-cta">Click to access</span>
-          </div>
-          {/* Blurred preview of attachments */}
-          <div className="locked-preview">
-            {attachments.slice(0, 3).map((file, idx) => (
-              <div key={idx} className="locked-preview-item">
-                <span>{attachmentIcon(file.filename, file.mime_type)}</span>
-                <span className="locked-preview-name">{file.title || file.filename}</span>
+          ) : (
+            <div className="locked-content">
+              <div className="lock-icon-wrapper">
+                <svg className="lock-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
               </div>
-            ))}
-            {attachments.length > 3 && (
-              <div className="locked-preview-item">
-                <span>📁</span>
-                <span className="locked-preview-name">+{attachments.length - 3} more...</span>
-              </div>
-            )}
-          </div>
+              <p className="locked-title">Protected Documents</p>
+              <p className="locked-subtitle">{attachments.length} document{attachments.length !== 1 ? 's' : ''} available</p>
+              <span className="locked-cta">Click to access</span>
+            </div>
+          )}
+          {/* Blurred preview of attachments - only in full mode */}
+          {!compact && (
+            <div className="locked-preview">
+              {attachments.slice(0, 3).map((file, idx) => (
+                <div key={idx} className="locked-preview-item">
+                  <span>{attachmentIcon(file.filename, file.mime_type)}</span>
+                  <span className="locked-preview-name">{file.title || file.filename}</span>
+                </div>
+              ))}
+              {attachments.length > 3 && (
+                <div className="locked-preview-item">
+                  <span>📁</span>
+                  <span className="locked-preview-name">+{attachments.length - 3} more...</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { DndContext, closestCenter, pointerWithin, rectIntersection, getFirstCollision, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
+import { DndContext, closestCenter, pointerWithin, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
 import type { CollisionDetection } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -267,40 +267,39 @@ export default function TodoPage() {
     reorderMutation.mutate(payload);
   };
 
-  // Custom collision detection: prioritise the column the pointer is inside,
-  // then use closestCenter only among items in that column.
-  // This prevents cards from "jumping" to an adjacent column (especially when
-  // the target column – e.g. 'test' – is empty and has no sortable items to anchor to).
-  const collisionDetection: CollisionDetection = (args) => {
+  // Tracks the last droppable the pointer was over (column key or card id).
+  // Used to avoid dropping into void when pointer moves between columns.
+  const lastOverIdRef = useRef<string | number | null>(null);
+
+  // Custom collision detection: purely pointer-position based, no stale closure.
+  // 1. If pointer is over a CARD → return that card (sortable.containerId gives column)
+  // 2. If pointer is over a COLUMN (empty area) → return the column droppable
+  // 3. Otherwise → return last known target to avoid void drops
+  const collisionDetection: CollisionDetection = useCallback((args) => {
     const containerKeys = statusColumns.map((c) => c.key);
+    const hits = pointerWithin(args);
 
-    // 1. find all droppables whose rect the pointer is currently inside
-    const pointerHits = pointerWithin(args);
+    // Card hit: id is a number (card ids are numbers)
+    const cardHit = hits.find(({ id }) => typeof id === 'number');
+    if (cardHit) {
+      lastOverIdRef.current = cardHit.id;
+      return [cardHit];
+    }
 
-    // 2. if the pointer is directly inside a column container, prefer it
-    const columnHit = pointerHits.find(({ id }) => containerKeys.includes(id as string));
+    // Column hit: id is one of the column keys
+    const columnHit = hits.find(({ id }) => containerKeys.includes(id as typeof containerKeys[number]));
     if (columnHit) {
-      const colKey = columnHit.id as string;
-      const colItemIds = (grouped[colKey] ?? []).map((i) => i.id);
-      if (colItemIds.length > 0) {
-        // Find closest item inside this column
-        const within = closestCenter({
-          ...args,
-          droppableContainers: args.droppableContainers.filter((c) =>
-            colItemIds.includes(c.id as number)
-          ),
-        });
-        if (within.length) return within;
-      }
-      // Column is empty – just return the column itself
+      lastOverIdRef.current = columnHit.id;
       return [columnHit];
     }
 
-    // 3. pointer is not inside any column (e.g. between columns) – fall back
-    const rectHits = rectIntersection(args);
-    if (rectHits.length) return rectHits;
+    // Pointer between columns: keep last valid target
+    if (lastOverIdRef.current != null) {
+      return [{ id: lastOverIdRef.current }];
+    }
+
     return closestCenter(args);
-  };
+  }, []);
 
   const handleSaveDetails = () => {
     if (!editDraft) return;
@@ -393,6 +392,7 @@ export default function TodoPage() {
           <DndContext
             sensors={sensors}
             collisionDetection={collisionDetection}
+            onDragStart={() => { lastOverIdRef.current = null; }}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >

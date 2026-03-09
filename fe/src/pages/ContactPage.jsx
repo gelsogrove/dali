@@ -1,7 +1,6 @@
 import { contactInfo } from '../data/homeData';
 import './ContactPage.css';
 import PageHero from '../components/PageHero';
-import ContactSection from '../components/ContactSection';
 import TitleHeader from '../components/TitleHeader';
 import SEO from '../components/SEO';
 

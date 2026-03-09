@@ -104,7 +104,7 @@ export default function CityPage() {
       <div style={{ padding: '100px 5%', textAlign: 'center' }}>
         <h1>City not found</h1>
         <p>The page you are looking for does not exist.</p>
-        <Link to="/communities">← Back to Communities</Link>
+        <Link to="/search">← Back to Communities</Link>
       </div>
     );
   }
@@ -127,7 +127,7 @@ export default function CityPage() {
         breadcrumb={
           <>
             <span>»</span>{' '}
-            <a href="/communities">Communities</a>
+            <a href="/search">Communities</a>
             {' '}<span>»</span>{' '}
             <span>{city.title}</span>
           </>

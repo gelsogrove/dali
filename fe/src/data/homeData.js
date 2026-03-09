@@ -4,7 +4,6 @@ export const navLinks = [
     label: 'Properties',
     href: '/properties',
   },
-  { label: 'Communities', href: '/communities' },
   { label: 'Search', href: '/search' },
   { label: 'Videos', href: '/videos' },
   { label: 'Blogs', href: '/category/blog/' },

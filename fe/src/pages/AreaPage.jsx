@@ -113,7 +113,7 @@ export default function AreaPage() {
       <div style={{ padding: '100px 5%', textAlign: 'center' }}>
         <h1>Area not found</h1>
         <p>The page you are looking for does not exist.</p>
-        <a href="/communities">← Back to Communities</a>
+        <a href="/search">← Back to Communities</a>
       </div>
     );
   }
@@ -136,7 +136,7 @@ export default function AreaPage() {
         breadcrumb={
           <>
             <span>»</span>{' '}
-            <a href="/communities">Communities</a>
+            <a href="/search">Communities</a>
             {' '}<span>»</span>{' '}
             <a href={`/community/${citySlug}`}>
               {city?.title || citySlug}

@@ -24,7 +24,7 @@ const ctaItems = [
   {
     title: 'Communities',
     description: 'Discover neighborhoods & lifestyle',
-    href: '/communities',
+    href: '/search',
     icon: (
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

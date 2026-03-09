@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import PageHero from '../components/PageHero';
 import ContactWithCta from '../components/ContactWithCta';
 import TitleHeader from '../components/TitleHeader';
@@ -9,6 +9,13 @@ import { Link } from 'react-router-dom';
 import { api, endpoints } from '../config/api';
 import SafeImage from '../components/SafeImage';
 import './SearchPage.css';
+import './CommunitiesPage.css';
+
+const toSlug = (href) => {
+  if (!href) return '';
+  const parts = href.split('/').filter(Boolean);
+  return parts[parts.length - 1] || '';
+};
 
 export default function SearchPage() {
   const [properties, setProperties] = useState([]);
@@ -17,6 +24,38 @@ export default function SearchPage() {
   const [showResults, setShowResults] = useState(false);
   const apiBase = import.meta.env.VITE_API_URL || '/api';
   const assetBase = useMemo(() => apiBase.replace(/\/api$/, ''), [apiBase]);
+
+  // Cities / areas for communities section
+  const [cities, setCities] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [citiesLoading, setCitiesLoading] = useState(true);
+  const [thumbErrors, setThumbErrors] = useState({});
+
+  useEffect(() => {
+    const load = async () => {
+      setCitiesLoading(true);
+      try {
+        const [cRes, aRes] = await Promise.all([api.get('/cities'), api.get('/areas')]);
+        const cList = cRes?.data?.cities ?? cRes?.data?.data?.cities ?? [];
+        const aList = aRes?.data?.areas ?? aRes?.data?.data?.areas ?? [];
+        setCities(cList);
+        setAreas(aList);
+      } catch (e) {
+        console.error('Failed to load communities', e);
+      } finally {
+        setCitiesLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const grouped = useMemo(() => {
+    if (!cities.length) return [];
+    return cities.map((city, idx) => {
+      const cityAreas = areas.filter((a) => a.city_id === city.id);
+      return { city, areas: cityAreas, count: cityAreas.length, idx };
+    });
+  }, [cities, areas]);
 
   const toAbsoluteUrl = (url) => {
     if (!url) return '';
@@ -118,8 +157,8 @@ export default function SearchPage() {
             <TitleHeader kicker="Search" title="Properties" />
           </div>
 
-          {!showResults ? (
-            <form onSubmit={handleSubmit} className="search-form-simple">
+          {/* Search form — always visible */}
+          <form onSubmit={handleSubmit} className="search-form-simple">
               <div className="search-bar-row">
                 <input
                   type="text"
@@ -187,7 +226,71 @@ export default function SearchPage() {
                 </button>
               </div>
             </form>
-          ) : (
+
+          {/* Communities grid — shown when no search is active */}
+          {!showResults && (
+            <section className="communities-grid-section" style={{ marginTop: '48px', padding: '0' }}>
+              <div className="communities-grid-wrapper" style={{ padding: '0' }}>
+                {citiesLoading && <div className="text-center text-muted-foreground">Loading communities…</div>}
+                {!citiesLoading && grouped.map(({ city, areas: cityAreas, count, idx }) => (
+                  <div className="communities-city" key={city.id || idx}>
+                    <div className="communities-city-head">
+                      <div>
+                        <p className="communities-city-kicker">City</p>
+                        <a href={`/community/${city.slug}`} className="communities-city-title-link">
+                          <h3>{city.title || city.name}</h3>
+                        </a>
+                      </div>
+                      <span className="communities-count">{count || cityAreas.length} communities</span>
+                    </div>
+                    {cityAreas.length === 0 ? (
+                      <div className="text-muted-foreground" style={{ padding: '10px 0 20px' }}>
+                        No areas yet for this city.
+                      </div>
+                    ) : (
+                      <div className="communities-card-grid">
+                        {cityAreas.map((community) => {
+                          const slug = community.slug || toSlug(community.href);
+                          const link =
+                            slug && (community.city_slug || city.slug)
+                              ? `/community/${community.city_slug || city.slug}/${slug}`
+                              : community.href || '#';
+                          const thumbKey = `${community.slug || community.title}-${community.city_id || idx}`;
+                          const hasImage = community.cover_image && !thumbErrors[thumbKey];
+                          return (
+                            <a href={link} className="community-card" key={thumbKey}>
+                              <div className="community-card-image">
+                                {hasImage ? (
+                                  <img
+                                    src={community.cover_image.startsWith('http') ? community.cover_image : `${assetBase}${community.cover_image}`}
+                                    alt={community.title}
+                                    loading="lazy"
+                                    onError={() => setThumbErrors((prev) => ({ ...prev, [thumbKey]: true }))}
+                                  />
+                                ) : (
+                                  <div className="blog-placeholder">
+                                    <div className="placeholder-box" aria-hidden="true" />
+                                  </div>
+                                )}
+                                <div className="community-card-gradient" />
+                              </div>
+                              <div className="community-card-body">
+                                <h4>{community.title}</h4>
+                                <span className="community-card-link">View neighborhood</span>
+                              </div>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Search results — shown after a search */}
+          {showResults && (
             <div className="search-results">
               <div className="results-header">
                 <button onClick={handleBackToSearch} className="btn-back">

@@ -233,7 +233,7 @@ export default function FeaturedCities() {
         )}
       </div>
       <div className="wc-button">
-        <ButtonDali href="/communities">
+        <ButtonDali href="/search">
           View All Communities
         </ButtonDali>
       </div>

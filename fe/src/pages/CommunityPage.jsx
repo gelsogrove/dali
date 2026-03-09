@@ -33,7 +33,7 @@ export default function CommunityPage() {
           <div className="community-detail-wrapper">
             <h1>Community not found</h1>
             <p>Please return to Communities to browse available neighborhoods.</p>
-            <a href="/communities" className="default-button">Back to Communities</a>
+            <a href="/search" className="default-button">Back to Communities</a>
           </div>
         </section>
       </>

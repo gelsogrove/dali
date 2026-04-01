@@ -30,6 +30,7 @@ class ContactController {
             $this->allowedOrigins = [
                 'https://buywithdali.com',
                 'https://www.buywithdali.com',
+                'https://new.buywithdali.com',
             ];
         }
         $this->allowedHosts = $this->extractHosts($this->allowedOrigins);

@@ -12,8 +12,17 @@ class ContactController {
     private $emailRateWindow;
     private $minSeconds;
 
+    private $operatorEmails;
+    private $siteUrl;
+
     public function __construct() {
         $this->toEmail = getenv('CONTACT_TO_EMAIL') ?: 'dalila@buywithdali.com';
+        $this->operatorEmails = [
+            'dalila@buywithdali.com',
+            'adriana@buywithdali.com',
+            'gelsogrove@gmail.com'
+        ];
+        $this->siteUrl = 'https://buywithdali.com';
         $this->fromEmail = getenv('CONTACT_FROM_EMAIL') ?: 'no-reply@buywithdali.com';
         $this->fromName = getenv('CONTACT_FROM_NAME') ?: 'Buy With Dali';
         $this->allowedOrigins = $this->normalizeOrigins(getenv('CONTACT_ALLOWED_ORIGINS'));
@@ -131,68 +140,65 @@ class ContactController {
             return $this->errorResponse('Too many requests', 429);
         }
 
-        $subject = 'New contact request - ' . trim($firstName . ' ' . $lastName);
-        $subject = $this->encodeHeader($subject);
+        // 1. Prepare Operator Email
+        $opSubject = 'New Inquiry: ' . ($propertyTitle !== '' ? $propertyTitle : 'General Request') . ' from ' . $firstName . ' ' . $lastName;
+        $opSubject = $this->encodeHeader($opSubject);
 
-        $bodyLines = [
-            "New contact request from BuyWithDali.com",
-            "",
-            "Name: {$firstName} {$lastName}",
-            "Email: {$email}",
-            "Phone: " . ($phone !== '' ? $phone : 'N/A'),
-            "Message:",
-            $message !== '' ? $message : 'N/A',
-            "",
-        ];
+        $opBodyHtml = "<h2>New Website Inquiry</h2>";
+        $opBodyHtml .= "<p>You have received a new message from the website contact form.</p>";
+        $opBodyHtml .= "<h3>Contact Information</h3>";
+        $opBodyHtml .= "<ul>";
+        $opBodyHtml .= "<li><strong>Name:</strong> {$firstName} {$lastName}</li>";
+        $opBodyHtml .= "<li><strong>Email:</strong> <a href='mailto:{$email}'>{$email}</a></li>";
+        $opBodyHtml .= "<li><strong>Phone:</strong> " . ($phone !== '' ? $phone : 'N/A') . "</li>";
+        $opBodyHtml .= "</ul>";
 
-        $metaLines = [];
-
-        if ($source !== '') {
-            $metaLines[] = "Source: {$source}";
+        if ($message !== '') {
+            $opBodyHtml .= "<h3>Message</h3>";
+            $opBodyHtml .= "<p>" . nl2br($message) . "</p>";
         }
 
-        $hasProperty = $propertyTitle !== '' || $propertySlug !== '' || $propertyId !== '' || $propertyPrice !== '' || $propertyUrl !== '';
-        if ($hasProperty) {
-            $metaLines = array_merge($metaLines, [
-                "Property: " . ($propertyTitle !== '' ? $propertyTitle : 'N/A'),
-                "Property Slug: " . ($propertySlug !== '' ? $propertySlug : 'N/A'),
-                "Property ID: " . ($propertyId !== '' ? $propertyId : 'N/A'),
-                "Property Price: " . ($propertyPrice !== '' ? $propertyPrice : 'N/A'),
-                "Property URL: " . ($propertyUrl !== '' ? $propertyUrl : 'N/A'),
-            ]);
+        if ($propertyTitle !== '' || $propertyUrl !== '') {
+            $opBodyHtml .= "<h3>Property Interest</h3>";
+            $opBodyHtml .= "<ul>";
+            if ($propertyTitle !== '') $opBodyHtml .= "<li><strong>Title:</strong> {$propertyTitle}</li>";
+            if ($propertyPrice !== '') $opBodyHtml .= "<li><strong>Price:</strong> {$propertyPrice}</li>";
+            if ($propertyUrl !== '') $opBodyHtml .= "<li><strong>Link:</strong> <a href='{$propertyUrl}'>View Property</a></li>";
+            $opBodyHtml .= "</ul>";
         }
 
-        if ($purpose !== '') {
-            $metaLines[] = "Purpose: {$purpose}";
-        }
-        if ($preferredContact !== '') {
-            $metaLines[] = "Preferred Contact: {$preferredContact}";
-        }
-        if ($knowsRiviera !== '') {
-            $metaLines[] = "Knows Riviera Maya: {$knowsRiviera}";
-        }
-        if ($budgetRange !== '') {
-            $metaLines[] = "Budget Range: {$budgetRange}";
-        }
-        if ($availability1 !== '') {
-            $metaLines[] = "Availability 1: {$availability1}";
-        }
-        if ($availability2 !== '') {
-            $metaLines[] = "Availability 2: {$availability2}";
+        $opBodyHtml .= "<h3>Additional Details</h3>";
+        $opBodyHtml .= "<ul>";
+        if ($purpose !== '') $opBodyHtml .= "<li><strong>Purpose:</strong> {$purpose}</li>";
+        if ($preferredContact !== '') $opBodyHtml .= "<li><strong>Preferred Contact:</strong> {$preferredContact}</li>";
+        if ($knowsRiviera !== '') $opBodyHtml .= "<li><strong>Knows Riviera Maya:</strong> {$knowsRiviera}</li>";
+        if ($budgetRange !== '') $opBodyHtml .= "<li><strong>Budget Range:</strong> {$budgetRange}</li>";
+        if ($availability1 !== '') $opBodyHtml .= "<li><strong>Availability 1:</strong> {$availability1}</li>";
+        if ($availability2 !== '') $opBodyHtml .= "<li><strong>Availability 2:</strong> {$availability2}</li>";
+        $opBodyHtml .= "<li><strong>Source Page:</strong> <a href='{$page}'>{$page}</a></li>";
+        $opBodyHtml .= "<li><strong>IP Address:</strong> {$ip}</li>";
+        $opBodyHtml .= "<li><strong>Time:</strong> " . date('Y-m-d H:i:s T') . "</li>";
+        $opBodyHtml .= "</ul>";
+
+        $fullOpHtml = $this->generateHtmlEmail($opSubject, $opBodyHtml);
+
+        // 2. Prepare Customer Email
+        $custSubject = "Thank you for contacting Buy With Dali";
+        $custSubject = $this->encodeHeader($custSubject);
+
+        $custBodyHtml = "<h2>Hello {$firstName},</h2>";
+        $custBodyHtml .= "<p>Thank you for reaching out to us! We have received your inquiry and one of our dedicated real estate experts will get back to you as soon as possible.</p>";
+        
+        if ($propertyTitle !== '') {
+            $custBodyHtml .= "<p>We noticed you are interested in <strong>{$propertyTitle}</strong>. We are preparing all the additional details for you.</p>";
         }
 
-        if (!empty($metaLines)) {
-            $bodyLines = array_merge($bodyLines, $metaLines, [""]);
-        }
+        $custBodyHtml .= "<p>In the meantime, feel free to explore more listings on our website or follow us on our social media channels to stay updated with the latest real estate opportunities in Riviera Maya.</p>";
+        $custBodyHtml .= "<p>Best regards,<br><strong>The Buy With Dali Team</strong></p>";
 
-        $bodyLines = array_merge($bodyLines, [
-            "Page: " . ($page !== '' ? $page : 'N/A'),
-            "IP: " . ($ip ?: 'N/A'),
-            "User Agent: " . ($_SERVER['HTTP_USER_AGENT'] ?? 'N/A'),
-            "Time: " . date('c'),
-        ]);
-        $body = implode("\n", $bodyLines);
+        $fullCustHtml = $this->generateHtmlEmail($custSubject, $custBodyHtml);
 
+        // Common Headers
         $fromName = $this->sanitizeHeaderValue($this->fromName);
         $fromEmail = $this->sanitizeHeaderValue($this->fromEmail);
         $replyTo = $this->sanitizeHeaderValue($email);
@@ -200,18 +206,79 @@ class ContactController {
         $headers = [
             'From: ' . $this->formatAddress($fromEmail, $fromName),
             'Reply-To: ' . $replyTo,
-            'Content-Type: text/plain; charset=UTF-8',
+            'MIME-Version: 1.0',
+            'Content-Type: text/html; charset=UTF-8',
             'X-Mailer: PHP/' . phpversion(),
         ];
 
-        $sent = @mail($this->toEmail, $subject, $body, implode("\r\n", $headers));
-
-        if (!$sent) {
-            error_log('Contact email failed for ' . $email);
-            return $this->errorResponse('Unable to send message', 500);
+        // Send to Operators
+        foreach ($this->operatorEmails as $toOp) {
+            @mail($toOp, $opSubject, $fullOpHtml, implode("\r\n", $headers));
         }
 
+        // Send to Customer
+        @mail($email, $custSubject, $fullCustHtml, implode("\r\n", $headers));
+
         return $this->successResponse(['message' => 'Message sent']);
+    }
+
+    private function generateHtmlEmail($title, $content) {
+        $logoUrl = $this->siteUrl . '/images/logo-black.png';
+        $siteUrl = $this->siteUrl;
+        
+        return <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f9f9f9; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border: 1px solid #eee; }
+        .header { padding: 30px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+        .header img { max-width: 200px; }
+        .content { padding: 40px 30px; }
+        .footer { padding: 30px; background: #111; color: #fff; text-align: center; font-size: 13px; }
+        .footer a { color: #fff; text-decoration: none; margin: 0 10px; }
+        .footer .social { margin-bottom: 20px; }
+        .footer .info { opacity: 0.8; line-height: 1.8; }
+        h2 { color: #000; margin-top: 0; font-weight: 300; letter-spacing: 1px; }
+        h3 { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 30px; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        ul { padding-left: 0; list-style: none; }
+        li { margin-bottom: 8px; }
+        strong { font-weight: 600; }
+        .btn { display: inline-block; padding: 12px 25px; background: #000; color: #fff; text-decoration: none; border-radius: 2px; margin-top: 20px; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="{$siteUrl}">
+                <img src="{$logoUrl}" alt="Buy With Dali Logo">
+            </a>
+        </div>
+        <div class="content">
+            {$content}
+        </div>
+        <div class="footer">
+            <div class="social">
+                <a href="https://www.instagram.com/buywithdali/">Instagram</a> |
+                <a href="https://www.facebook.com/p/Buy-With-Dali-Real-Estate-100087418732540/">Facebook</a> |
+                <a href="https://www.linkedin.com/in/dalilagelsomino">LinkedIn</a> |
+                <a href="https://www.youtube.com/@BuyWithDali">YouTube</a>
+            </div>
+            <div class="info">
+                <strong>BUY WITH DALI</strong><br>
+                Playa del Carmen, Riviera Maya, Mexico<br>
+                <a href="tel:+529841511139">+52 984 151 1139</a><br>
+                <a href="mailto:dalila@buywithdali.com">dalila@buywithdali.com</a><br>
+                <a href="{$siteUrl}">www.buywithdali.com</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+HTML;
     }
 
     private function passesTimeCheck($ts) {

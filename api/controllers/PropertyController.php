@@ -194,9 +194,10 @@ class PropertyController
                      property_category, description, price_usd, price_mxn, price_eur, price_on_demand, 
                      price_base_currency, exchange_rate, price_from_usd, price_to_usd, 
                      price_from_mxn, price_to_mxn, price_from_eur, price_to_eur, bedrooms, bedrooms_min, bedrooms_max,
-                     bathrooms, bathrooms_min, bathrooms_max, sqm, sqft, sqm_min, sqm_max, sqft_min, sqft_max, furnishing_status, 
-                     neighborhood, city, country, latitude, longitude, tags, is_active, featured, show_in_home, `order`, views_count,
-                     created_at, updated_at, youtube_video_url
+                     sqft_min, sqft_max, lot_size_sqm, lot_size_sqft, lot_size_sqm_min, lot_size_sqm_max, 
+                     lot_size_sqft_min, lot_size_sqft_max, furnishing_status, 
+                     neighborhood, city, state, country, latitude, longitude, tags, is_active, featured, show_in_home, `order`, views_count,
+                     created_at, updated_at, youtube_video_url, delivery
                      FROM properties 
                      WHERE $whereClause 
                      $orderBy
@@ -656,6 +657,36 @@ class PropertyController
                 $types .= 'd';
             }
 
+            if (isset($data['lot_size_sqft']) && $data['lot_size_sqft'] !== null) {
+                $fields[] = 'lot_size_sqft';
+                $params[] = (float) $data['lot_size_sqft'];
+                $types .= 'd';
+            }
+
+            if (isset($data['lot_size_sqm_min']) && $data['lot_size_sqm_min'] !== null) {
+                $fields[] = 'lot_size_sqm_min';
+                $params[] = (float) $data['lot_size_sqm_min'];
+                $types .= 'd';
+            }
+
+            if (isset($data['lot_size_sqm_max']) && $data['lot_size_sqm_max'] !== null) {
+                $fields[] = 'lot_size_sqm_max';
+                $params[] = (float) $data['lot_size_sqm_max'];
+                $types .= 'd';
+            }
+            
+            if (isset($data['lot_size_sqft_min']) && $data['lot_size_sqft_min'] !== null) {
+                $fields[] = 'lot_size_sqft_min';
+                $params[] = (float) $data['lot_size_sqft_min'];
+                $types .= 'd';
+            }
+
+            if (isset($data['lot_size_sqft_max']) && $data['lot_size_sqft_max'] !== null) {
+                $fields[] = 'lot_size_sqft_max';
+                $params[] = (float) $data['lot_size_sqft_max'];
+                $types .= 'd';
+            }
+
             if (isset($data['year_built']) && $data['year_built'] !== null) {
                 $fields[] = 'year_built';
                 $params[] = (int) $data['year_built'];
@@ -718,6 +749,12 @@ class PropertyController
             if (isset($data['youtube_video_url']) && $data['youtube_video_url'] !== '') {
                 $fields[] = 'youtube_video_url';
                 $params[] = $data['youtube_video_url'];
+                $types .= 's';
+            }
+
+            if (isset($data['delivery']) && $data['delivery'] !== null) {
+                $fields[] = 'delivery';
+                $params[] = $data['delivery'];
                 $types .= 's';
             }
 
@@ -904,6 +941,11 @@ class PropertyController
                 'sqft_min',
                 'sqft_max',
                 'lot_size_sqm',
+                'lot_size_sqft',
+                'lot_size_sqm_min',
+                'lot_size_sqm_max',
+                'lot_size_sqft_min',
+                'lot_size_sqft_max',
                 'year_built',
                 'furnishing_status',
                 'neighborhood',
@@ -923,7 +965,8 @@ class PropertyController
                 'show_in_home',
                 'order',
                 'internal_notes',
-                'youtube_video_url'
+                'youtube_video_url',
+                'delivery'
             ];
 
             // Fields that should be NULL if empty/zero
@@ -939,6 +982,11 @@ class PropertyController
                 'sqft_min',
                 'sqft_max',
                 'lot_size_sqm',
+                'lot_size_sqft',
+                'lot_size_sqm_min',
+                'lot_size_sqm_max',
+                'lot_size_sqft_min',
+                'lot_size_sqft_max',
                 'price_usd',
                 'price_mxn',
                 'price_eur',
@@ -950,7 +998,8 @@ class PropertyController
                 'price_to_eur',
                 'latitude',
                 'longitude',
-                'exchange_rate'
+                'exchange_rate',
+                'delivery'
             ];
 
             foreach ($allowedFields as $field) {
@@ -2332,7 +2381,16 @@ class PropertyController
             'price_to_eur',
             'sqm',
             'sqft',
+            'sqm_min',
+            'sqm_max',
+            'sqft_min',
+            'sqft_max',
             'lot_size_sqm',
+            'lot_size_sqft',
+            'lot_size_sqm_min',
+            'lot_size_sqm_max',
+            'lot_size_sqft_min',
+            'lot_size_sqft_max',
             'latitude',
             'longitude'
         ];

@@ -322,5 +322,6 @@ export const contactInfo = {
     { label: 'LinkedIn', href: 'https://www.linkedin.com/in/dalilagelsomino', icon: 'ai-font-linkedin' },
     { label: 'Instagram', href: 'https://www.instagram.com/buywithdali/', icon: 'ai-font-instagram' },
     { label: 'Facebook', href: 'https://www.facebook.com/p/Buy-With-Dali-Real-Estate-100087418732540/', icon: 'ai-font-facebook' },
+    { label: 'WhatsApp', href: 'https://chat.whatsapp.com/JTvrGRfQ7ANC0DtqlxLDc', icon: 'ai-font-whatsapp' },
   ],
 };

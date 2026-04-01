@@ -152,7 +152,19 @@ export default function ListingDetailPage() {
   };
 
   // Size unit toggle: 'sqm' or 'sqft'
-  const [selectedUnit, setSelectedUnit] = useState('sqm');
+  const [selectedUnit, setSelectedUnit] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('preferredSizeUnit') || 'sqm';
+    }
+    return 'sqm';
+  });
+
+  const handleUnitChange = (unit) => {
+    setSelectedUnit(unit);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('preferredSizeUnit', unit);
+    }
+  };
 
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
   const slug = useMemo(() => {
@@ -319,7 +331,7 @@ export default function ListingDetailPage() {
       await api.post('/contact', payload);
       form.reset();
       setContactStartedAt(Date.now());
-      setContactStatus({ type: 'success', message: "Message sent. We'll get back to you soon." });
+      setContactStatus({ type: 'success', message: "Thank you for contacting us! We have received your message and will get back to you as soon as possible." });
     } catch (error) {
       console.error('Listing contact error', error);
       setContactStatus({ type: 'error', message: 'Error sending message. Please try again later.' });
@@ -365,7 +377,7 @@ export default function ListingDetailPage() {
       await api.post('/contact', payload);
       form.reset();
       setRequestStartedAt(Date.now());
-      setRequestStatus({ type: 'success', message: "Message sent. We'll get back to you soon." });
+      setRequestStatus({ type: 'success', message: "Thank you for contacting us! We have received your message and will get back to you as soon as possible." });
     } catch (error) {
       console.error('Request info error', error);
       setRequestStatus({ type: 'error', message: 'Error sending message. Please try again later.' });
@@ -409,7 +421,7 @@ export default function ListingDetailPage() {
       await api.post('/contact', payload);
       form.reset();
       setScheduleStartedAt(Date.now());
-      setScheduleStatus({ type: 'success', message: "Message sent. We'll get back to you soon." });
+      setScheduleStatus({ type: 'success', message: "Thank you for contacting us! We have received your message and will get back to you as soon as possible." });
     } catch (error) {
       console.error('Schedule showing error', error);
       setScheduleStatus({ type: 'error', message: 'Error sending message. Please try again later.' });
@@ -625,18 +637,43 @@ export default function ListingDetailPage() {
 
   // Size with toggle
   const getSizeLabel = () => {
-    if (selectedUnit === 'sqm' && property.sqm) {
-      return `${formatSizeValue(property.sqm)} m²`;
-    } else if (selectedUnit === 'sqft' && property.sqft) {
-      return `${formatSizeValue(property.sqft)} sq ft`;
-    } else if (property.sqm) {
-      return `${formatSizeValue(property.sqm)} m²`;
-    } else if (property.sqft) {
-      return `${formatSizeValue(property.sqft)} sq ft`;
+    const isDev = property.property_type === 'development';
+    
+    if (selectedUnit === 'sqm') {
+      if (isDev && property.sqm_min && property.sqm_max) {
+        return `${formatSizeValue(property.sqm_min)} - ${formatSizeValue(property.sqm_max)} m²`;
+      }
+      if (property.sqm) return `${formatSizeValue(property.sqm)} m²`;
+    } else {
+      // sqft
+      if (isDev && property.sqft_min && property.sqft_max) {
+        return `${formatSizeValue(property.sqft_min)} - ${formatSizeValue(property.sqft_max)} sq ft`;
+      }
+      if (property.sqft) return `${formatSizeValue(property.sqft)} sq ft`;
     }
+
+    // Fallback if the above conditions aren't met
+    if (property.sqm) return `${formatSizeValue(property.sqm)} m²`;
+    if (property.sqft) return `${formatSizeValue(property.sqft)} sq ft`;
     return null;
   };
   const sizeLabel = getSizeLabel();
+  const getLotSizeLabel = () => {
+    const valSqm = property.lot_size_sqm;
+    const valSqft = property.lot_size_sqft;
+
+    if (selectedUnit === 'sqm' && valSqm) {
+      return `${formatSizeValue(valSqm)} m²`;
+    } else if (selectedUnit === 'sqft' && valSqft) {
+      return `${formatSizeValue(valSqft)} sq ft`;
+    } else if (valSqm) {
+      return `${formatSizeValue(valSqm)} m²`;
+    } else if (valSqft) {
+      return `${formatSizeValue(valSqft)} sq ft`;
+    }
+    return null;
+  };
+  const lotSizeLabel = getLotSizeLabel();
 
   const currentUrl = typeof window !== 'undefined' ? window.location.href : property.href || '';
   const amenities =
@@ -996,7 +1033,11 @@ export default function ListingDetailPage() {
                       {!property.price_on_demand && (
                         <div className="currency-toggle">
                           {['USD', 'MXN', 'EUR'].map(curr => {
-                            const hasPrice = curr === 'USD' ? property.price_usd : curr === 'MXN' ? property.price_mxn : property.price_eur;
+                            let hasPrice = false;
+                            if (curr === 'USD') hasPrice = property.price_usd || (property.price_from_usd && property.price_to_usd);
+                            else if (curr === 'MXN') hasPrice = property.price_mxn || (property.price_from_mxn && property.price_to_mxn);
+                            else if (curr === 'EUR') hasPrice = property.price_eur || (property.price_from_eur && property.price_to_eur);
+
                             if (!hasPrice) return null;
                             return (
                               <button
@@ -1016,13 +1057,13 @@ export default function ListingDetailPage() {
                         <div className="unit-toggle">
                           <button
                             className={`unit-btn ${selectedUnit === 'sqm' ? 'active' : ''}`}
-                            onClick={() => setSelectedUnit('sqm')}
+                            onClick={() => handleUnitChange('sqm')}
                           >
                             m²
                           </button>
                           <button
                             className={`unit-btn ${selectedUnit === 'sqft' ? 'active' : ''}`}
-                            onClick={() => setSelectedUnit('sqft')}
+                            onClick={() => handleUnitChange('sqft')}
                           >
                             sq ft
                           </button>
@@ -1048,10 +1089,10 @@ export default function ListingDetailPage() {
                         <strong>{sizeLabel}</strong>
                       </li>
                     )}
-                    {property.lot_size_sqm && (
+                    {lotSizeLabel && (
                       <li>
                         <span>Lot Size</span>
-                        <strong>{property.lot_size_sqm} m²</strong>
+                        <strong>{lotSizeLabel}</strong>
                       </li>
                     )}
                     {bedroomsLabel && (
@@ -1066,13 +1107,19 @@ export default function ListingDetailPage() {
                         <strong>{bathroomsLabel}</strong>
                       </li>
                     )}
-                    {property.year_built && (
+                    {property.property_type === 'development' && property.delivery && (
+                      <li>
+                        <span>Delivery</span>
+                        <strong>{property.delivery}</strong>
+                      </li>
+                    )}
+                    {property.property_type !== 'development' && property.year_built && (
                       <li>
                         <span>Year Built</span>
                         <strong>{property.year_built}</strong>
                       </li>
                     )}
-                    {property.furnishing_status && (
+                    {property.property_type !== 'development' && property.furnishing_status && (
                       <li>
                         <span>Furnishing</span>
                         <strong>{property.furnishing_status.charAt(0).toUpperCase() + property.furnishing_status.slice(1)}</strong>
@@ -1081,37 +1128,6 @@ export default function ListingDetailPage() {
                   </ul>
                 </div>
 
-                {/* Video Thumbnail */}
-                {property.youtube_video_url && (() => {
-                  const embed = getVideoEmbed(property.youtube_video_url);
-                  if (!embed) return null;
-                  const ytId = embed.provider === 'youtube'
-                    ? embed.src.replace('https://www.youtube.com/embed/', '').split('?')[0]
-                    : null;
-                  const thumbSrc = ytId
-                    ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
-                    : (property.cover_image_url || null);
-                  if (!thumbSrc) return null;
-                  return (
-                    <div
-                      className="video-thumbnail-card"
-                      onClick={() => setShowVideoModal(true)}
-                      role="button"
-                      tabIndex={0}
-                      aria-label="Watch property video"
-                      onKeyDown={e => e.key === 'Enter' && setShowVideoModal(true)}
-                    >
-                      <img src={thumbSrc} alt="Watch property video" />
-                      <div className="video-play-overlay">
-                        <div className="video-play-btn" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor">
-                            <path d="M8 5v14l11-7z"/>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
 
                 {/* Contact Form */}
                 <div className="contact-form-card">
@@ -1213,21 +1229,36 @@ export default function ListingDetailPage() {
         </div>
       </section>
 
+
       {/* Related Properties Section */}
       {
         relatedProperties.length > 0 && (
-          <section className="related-properties" style={{ padding: '80px 5%', backgroundColor: '#f9f9f9' }}>
-            <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-              <h2 style={{ fontSize: '32px', fontWeight: '700', marginBottom: '40px', textAlign: 'center' }}>
-                Vedi anche
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '30px' }}>
+          <section className="related-properties">
+            <div className="related-properties-container">
+              <TitleHeader
+                title="Related Properties"
+                subtitle="Explore more properties with similar characteristics"
+                align="center"
+              />
+              <div className="related-properties-grid">
                 {relatedProperties.map((prop) => {
-                  const priceLabel = prop.price_on_demand
-                    ? 'Price on Request'
-                    : prop.price_usd
-                      ? `USD ${Number(prop.price_usd).toLocaleString('en-US')}`
-                      : 'Contact for pricing';
+                  const getRelatedPrice = () => {
+                    if (prop.price_on_demand) return 'Price on Request';
+                    let p = null;
+                    let s = '$';
+                    if (selectedCurrency === 'USD') p = prop.price_usd;
+                    else if (selectedCurrency === 'MXN') p = prop.price_mxn;
+                    else if (selectedCurrency === 'EUR') { p = prop.price_eur; s = '€'; }
+                    
+                    if (!p) return 'Contact for pricing';
+                    return `${s}${Number(p).toLocaleString('en-US', { maximumFractionDigits: 0 })} ${selectedCurrency}`;
+                  };
+
+                  const getRelatedSize = () => {
+                    if (selectedUnit === 'sqm' && prop.sqm) return `${formatSizeValue(prop.sqm)} m²`;
+                    if (selectedUnit === 'sqft' && prop.sqft) return `${formatSizeValue(prop.sqft)} sq ft`;
+                    return prop.sqm ? `${formatSizeValue(prop.sqm)} m²` : null;
+                  };
 
                   return (
                     <div key={prop.id} className="property-card">
@@ -1238,12 +1269,12 @@ export default function ListingDetailPage() {
                             alt={prop.title}
                             beds={prop.bedrooms}
                             baths={prop.bathrooms}
-                            size={prop.sqm ? `${prop.sqm} m²` : null}
+                            size={getRelatedSize()}
                             status={prop.status === 'sold' ? 'SOLD' : prop.status === 'reserved' ? 'RESERVED' : 'FOR SALE'}
                             location={prop.neighborhood || prop.city}
                           >
                             <div className="property-price">
-                              <h3>{priceLabel}</h3>
+                              <h3>{getRelatedPrice()}</h3>
                             </div>
                             <div className="property-title">
                               <h4>{prop.title}</h4>

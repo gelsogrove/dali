@@ -22,6 +22,21 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showResults, setShowResults] = useState(false);
+  
+  // Units and Currency preferences
+  const [selectedCurrency] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('preferredCurrency') || 'USD';
+    }
+    return 'USD';
+  });
+
+  const [selectedUnit] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('preferredSizeUnit') || 'sqm';
+    }
+    return 'sqm';
+  });
   const apiBase = import.meta.env.VITE_API_URL || '/api';
   const assetBase = useMemo(() => apiBase.replace(/\/api$/, ''), [apiBase]);
 
@@ -329,15 +344,40 @@ export default function SearchPage() {
                       property.status === 'sold' ? 'Sold' :
                       property.status === 'reserved' ? 'Reserved' : property.status;
 
-                    // Format price in USD
+                    // Format price with user's preferred currency
                     const formatPrice = () => {
                       if (property.price_on_demand) return 'Price on Request';
-                      if (property.property_type === 'development' && property.price_from_usd && property.price_to_usd) {
-                        return `USD ${Number(property.price_from_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })} - ${Number(property.price_to_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+                      
+                      let price = null;
+                      let priceFrom = null;
+                      let priceTo = null;
+                      let symbol = '$';
+                      
+                      if (selectedCurrency === 'USD') {
+                        price = property.price_usd;
+                        priceFrom = property.price_from_usd;
+                        priceTo = property.price_to_usd;
+                        symbol = '$';
+                      } else if (selectedCurrency === 'MXN') {
+                        price = property.price_mxn;
+                        priceFrom = property.price_from_mxn;
+                        priceTo = property.price_to_mxn;
+                        symbol = '$';
+                      } else if (selectedCurrency === 'EUR') {
+                        price = property.price_eur;
+                        priceFrom = property.price_from_eur;
+                        priceTo = property.price_to_eur;
+                        symbol = '€';
                       }
-                      if (property.price_usd) {
-                        return `USD ${Number(property.price_usd).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+
+                      if (property.property_type === 'development' && priceFrom && priceTo) {
+                        return `${symbol}${Number(priceFrom).toLocaleString('en-US', { maximumFractionDigits: 0 })} - ${symbol}${Number(priceTo).toLocaleString('en-US', { maximumFractionDigits: 0 })} ${selectedCurrency}`;
                       }
+                      
+                      if (price) {
+                        return `${symbol}${Number(price).toLocaleString('en-US', { maximumFractionDigits: 0 })} ${selectedCurrency}`;
+                      }
+                      
                       return 'Price on Request';
                     };
 
@@ -367,11 +407,16 @@ export default function SearchPage() {
                     const propertyLink = `/listings/${property.slug}/`;
                     
                     // Format size
+                    // Format size with user's preferred unit
                     const formatSize = () => {
-                      if (property.sqm) {
-                        return `${property.sqm} m²`;
+                      if (selectedUnit === 'sqm' && property.sqm) {
+                        return `${parseFloat(property.sqm).toLocaleString('en-US', { maximumFractionDigits: 0 })} m²`;
+                      } else if (selectedUnit === 'sqft' && property.sqft) {
+                        return `${parseFloat(property.sqft).toLocaleString('en-US', { maximumFractionDigits: 0 })} sq ft`;
+                      } else if (property.sqm) {
+                        return `${parseFloat(property.sqm).toLocaleString('en-US', { maximumFractionDigits: 0 })} m²`;
                       } else if (property.sqft) {
-                        return `${property.sqft} sq ft`;
+                        return `${parseFloat(property.sqft).toLocaleString('en-US', { maximumFractionDigits: 0 })} sq ft`;
                       }
                       return null;
                     };

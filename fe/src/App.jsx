@@ -41,12 +41,14 @@ function MainLayout({ children }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
+
   const forceFixedHeader = [
     '/active-properties',
     '/new-developments',
     '/hot-deals',
-    '/land'
-  ].includes(location.pathname);
+    '/land',
+    '/off-market'
+  ].includes(location.pathname) || location.pathname.startsWith('/listings/');
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';

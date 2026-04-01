@@ -36,7 +36,7 @@ export default function ContactSection() {
       await api.post('/contact', payload);
       form.reset();
       setFormStartedAt(Date.now());
-      setStatus({ type: 'success', message: "Message sent. We'll get back to you soon." });
+      setStatus({ type: 'success', message: "Thank you for contacting us! We have received your message and will get back to you as soon as possible." });
     } catch (error) {
       console.error('Contact form error', error);
       setStatus({ type: 'error', message: 'Error sending message. Please try again later.' });

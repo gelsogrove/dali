@@ -14,6 +14,9 @@ export default function Footer() {
           <a href={`mailto:${contactInfo.email}`} aria-label={contactInfo.email}>
             <i className="ai-font-envelope"></i> {contactInfo.email}
           </a>
+          <a href="https://chat.whatsapp.com/JTvrGRfQ7ANC0DtqlxLDc" className="footer-whatsapp-group" target="_blank" rel="noopener noreferrer" aria-label="Join our WhatsApp Hub">
+            <i className="ai-font-whatsapp"></i> Join our WhatsApp Hub
+          </a>
         </div>
         <div className="menu-main-navigation-container">
           <ul id="menu-main-navigation" className="footernav">

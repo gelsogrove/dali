@@ -159,9 +159,9 @@ export default function OffMarketGate({ token, propertyId, slug, children }) {
             <p className="gate-description">
               This gallery is reserved for Dali Exclusive clients. Access is provided via direct invitation only.
             </p>
-            <div className="gate-footer" style={{ borderTop: '1px solid #eee', paddingTop: '20px', marginTop: '20px' }}>
+            <div className="gate-footer" style={{ borderTop: '1px solid #eee', paddingTop: '30px', marginTop: '30px' }}>
               <p>Requested access? <a href="/contact-us">Contact us</a></p>
-              <a href="/" className="gate-btn gate-btn-primary" style={{ marginTop: '15px', display: 'inline-block' }}>
+              <a href="/" className="gate-btn gate-btn-primary" style={{ marginTop: '20px' }}>
                 Back to Public Site
               </a>
             </div>

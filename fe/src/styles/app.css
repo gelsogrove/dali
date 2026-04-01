@@ -6545,3 +6545,39 @@ html::-webkit-scrollbar {
     height: 45px;
   }
 }
+
+
+/* ==================== WHATSAPP FOOTER HUB ==================== */
+
+.footer-links .footer-whatsapp-group {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 10px;
+  background: rgba(37, 211, 102, 0.1);
+  color: #25d366 !important;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-family: var(--font-family-title);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  margin-top: 5px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(37, 211, 102, 0.2);
+}
+
+.footer-links .footer-whatsapp-group:hover {
+  background: #25d366 !important;
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+}
+
+.footer-links .footer-whatsapp-group i {
+  font-size: 18px;
+  color: inherit !important;
+  margin-right: 0;
+}

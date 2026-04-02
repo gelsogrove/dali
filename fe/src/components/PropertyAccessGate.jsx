@@ -170,7 +170,7 @@ export default function PropertyAccessGate({
   return (
     <>
       <div className={`listing-attachments listing-attachments-locked${compact ? ' listing-attachments-compact' : ''}`}>
-        {!compact && <h4>Documents</h4>}
+        {!compact && <h4>BWD/ACCESS</h4>}
         <div className={compact ? 'locked-overlay-compact' : 'locked-overlay'} onClick={() => setShowCodeInput(true)}>
           {compact ? (
             <div className="locked-compact-content">
@@ -179,7 +179,7 @@ export default function PropertyAccessGate({
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                <span className="locked-compact-label">Documents</span>
+                <span className="locked-compact-label">BWD/ACCESS</span>
                 <span className="locked-compact-count">{attachments.length}</span>
               </div>
               <span className="locked-compact-cta">Access</span>

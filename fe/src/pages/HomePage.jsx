@@ -5,6 +5,7 @@ import HeroSlider from '../components/HeroSlider';
 import WelcomeSection from '../components/WelcomeSection';
 import FeaturedProperties from '../components/FeaturedProperties';
 import FeaturedCities from '../components/FeaturedCities';
+import FeaturedLandingPages from '../components/FeaturedLandingPages';
 import WhyWork from '../components/WhyWork';
 import Testimonials from '../components/Testimonials';
 import CtaSection from '../components/CtaSection';
@@ -31,6 +32,7 @@ export default function HomePage() {
       <WelcomeSection />
       <FeaturedProperties />
       <FeaturedCities />
+      <FeaturedLandingPages />
       <WhyWork />
       <Testimonials />
       <CtaSection />

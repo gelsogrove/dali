@@ -88,16 +88,19 @@ echo -e "${BLUE}   📦 Preparazione API Backend (PHP)${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 
 echo -e "${GREEN}📋 Copio file API e Migrazioni...${NC}"
-cp api/index.php "$DEPLOY_DIR/api/"
-cp -r api/controllers "$DEPLOY_DIR/api/"
-cp -r api/middleware "$DEPLOY_DIR/api/"
-cp -r api/config "$DEPLOY_DIR/api/"
+
+# Copia TUTTI i file PHP dalla root di api/ (escluso uploads)
+find api -maxdepth 1 -type f \( -name "*.php" -o -name ".htaccess" -o -name ".env*" \) -exec cp {} "$DEPLOY_DIR/api/" \;
+
+# Copia interi folder (struttura directory)
+cp -r api/controllers "$DEPLOY_DIR/api/" 2>/dev/null || true
+cp -r api/middleware "$DEPLOY_DIR/api/" 2>/dev/null || true
+cp -r api/config "$DEPLOY_DIR/api/" 2>/dev/null || true
 cp -r api/lib "$DEPLOY_DIR/api/" 2>/dev/null || true
-cp api/.htaccess "$DEPLOY_DIR/api/" 2>/dev/null || true
 
 # Copia database scripts e migrazioni
 mkdir -p "$DEPLOY_DIR/api/database/migrations"
-cp api/database/*.php "$DEPLOY_DIR/api/database/"
+cp api/database/*.php "$DEPLOY_DIR/api/database/" 2>/dev/null || true
 cp database/*.sql "$DEPLOY_DIR/api/database/migrations/" 2>/dev/null || true
 cp database/init.sql "$DEPLOY_DIR/init.sql" 2>/dev/null || cp api/database/init.sql "$DEPLOY_DIR/init.sql" 2>/dev/null || true
 

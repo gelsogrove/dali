@@ -54,6 +54,7 @@ export default function AreaFormPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<AreaForm>(emptyForm)
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
   const [uploadingCover, setUploadingCover] = useState(false)
   const [uploadingContent, setUploadingContent] = useState(false)
   const [coverError, setCoverError] = useState(false)
@@ -237,12 +238,36 @@ export default function AreaFormPage() {
                   value={formData.title}
                   onChange={(e) => {
                     setFormData((prev) => ({ ...prev, title: e.target.value }))
-                    if (!isEdit) {
+                    if (!isEdit && !isSlugManuallyEdited) {
                       setFormData((prev) => ({ ...prev, slug: slugify(e.target.value) }))
                     }
                   }}
                   required
                 />
+              </div>
+
+              {/* URL Field - Visible and Editable */}
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium">URL (slug) {isEdit ? '(Read-only)' : '*'}</label>
+                <div className="space-y-2">
+                  <Input
+                    value={formData.slug}
+                    onChange={(e) => {
+                      const newSlug = slugify(e.target.value)
+                      setFormData((prev) => ({ ...prev, slug: newSlug }))
+                      setIsSlugManuallyEdited(true)
+                    }}
+                    disabled={isEdit}
+                    placeholder="area-slug"
+                    required={!isEdit}
+                  />
+                  {formData.city_id && (
+                    <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded border">
+                      <span className="font-medium">Public URL:</span><br />
+                      <code>/community/{cities.find((c: City) => c.id === formData.city_id)?.slug}/{formData.slug}</code>
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-2 md:col-span-2">

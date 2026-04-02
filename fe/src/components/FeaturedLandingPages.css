@@ -1,0 +1,142 @@
+/* Featured Landing Pages Section */
+
+.featured-landing-pages {
+  padding: 4rem 1rem;
+  background: #f9fafb;
+}
+
+.landing-pages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.landing-page-card {
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.landing-page-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.landing-page-card-image {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.landing-page-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.landing-page-card:hover .landing-page-card-image img {
+  transform: scale(1.05);
+}
+
+.landing-page-card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  transition: background 0.3s ease;
+}
+
+.landing-page-card:hover .landing-page-card-overlay {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.landing-page-card-content {
+  padding: 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.landing-page-card-content h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #000;
+  line-height: 1.3;
+}
+
+.landing-page-card-content .subtitle {
+  font-size: 0.95rem;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.landing-page-card-content .description {
+  font-size: 0.9375rem;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: auto;
+  padding-bottom: 1.5rem;
+}
+
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #000;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.25rem;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+  font-size: 0.95rem;
+}
+
+.cta-button:hover {
+  background: #333;
+  gap: 0.75rem;
+}
+
+.cta-button .arrow {
+  transition: transform 0.3s ease;
+}
+
+.cta-button:hover .arrow {
+  transform: translateX(2px);
+}
+
+@media (max-width: 768px) {
+  .featured-landing-pages {
+    padding: 2.5rem 1rem;
+  }
+
+  .landing-pages-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .landing-page-card-content h3 {
+    font-size: 1.25rem;
+  }
+
+  .landing-page-card-image {
+    height: 200px;
+  }
+}

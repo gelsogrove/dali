@@ -41,6 +41,7 @@ require_once __DIR__ . '/controllers/VideoController.php';
 require_once __DIR__ . '/controllers/TestimonialController.php';
 require_once __DIR__ . '/controllers/CityController.php';
 require_once __DIR__ . '/controllers/AreaController.php';
+require_once __DIR__ . '/controllers/LandingPageController.php';
 require_once __DIR__ . '/controllers/ExchangeRateController.php';
 require_once __DIR__ . '/controllers/ContactController.php';
 require_once __DIR__ . '/controllers/AccessRequestController.php';
@@ -115,6 +116,10 @@ try {
 
         case 'areas':
             handleAreaRoutes($segments, $method);
+            break;
+
+        case 'landing-pages':
+            handleLandingPageRoutes($segments, $method);
             break;
 
         case 'exchange-rate':
@@ -1376,6 +1381,66 @@ function handleBackupRoutes($segments, $method) {
 
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+}
+
+/**
+ * Handle landing page routes
+ */
+function handleLandingPageRoutes($segments, $method) {
+    $controller = new LandingPageController();
+    $auth = new AuthMiddleware();
+
+    switch ($method) {
+        case 'GET':
+            // Get by slug (public)
+            if (isset($segments[1]) && $segments[1] === 'slug' && !empty($segments[2])) {
+                $result = $controller->getBySlug($segments[2]);
+            }
+            // Get by ID (admin)
+            elseif (isset($segments[1]) && is_numeric($segments[1])) {
+                $result = $controller->getById($segments[1]);
+            }
+            // Get all (with filters)
+            else {
+                $result = $controller->getAll($_GET);
+            }
+            echo json_encode($result);
+            break;
+
+        case 'POST':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $result = $controller->create($data);
+                echo json_encode($result);
+            }
+            break;
+
+        case 'PUT':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                if (isset($segments[1]) && is_numeric($segments[1])) {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $result = $controller->update($segments[1], $data);
+                    echo json_encode($result);
+                }
+            }
+            break;
+
+        case 'DELETE':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin'])) {
+                if (isset($segments[1]) && is_numeric($segments[1])) {
+                    $result = $controller->delete($segments[1]);
+                    echo json_encode($result);
+                }
+            }
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
 }
 
 /**

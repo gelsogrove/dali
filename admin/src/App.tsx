@@ -19,11 +19,12 @@ import TestimonialsPage from './pages/TestimonialsPage'
 import TestimonialFormPage from './pages/TestimonialFormPage'
 import RedirectsPage from './pages/RedirectsPage'
 import SeoRulesPage from './pages/SeoRulesPage'
-import LandingPagesHub from './pages/LandingPagesHub'
 import CitiesPage from './pages/CitiesPage'
 import CityFormPage from './pages/CityFormPage'
 import AreasPage from './pages/AreasPage'
 import AreaFormPage from './pages/AreaFormPage'
+import LandingPagesPage from './pages/LandingPagesPage'
+import LandingPageFormPage from './pages/LandingPageFormPage'
 import BuyersGuideAdminPage from './pages/BuyersGuideAdminPage'
 import AccessRequestsPage from './pages/AccessRequestsPage'
 import OffMarketInvitesPage from './pages/OffMarketInvitesPage'
@@ -135,7 +136,9 @@ function App() {
         <Route path="testimonials/:id/edit" element={<TestimonialFormPage />} />
         <Route path="redirects" element={<RedirectsPage />} />
         <Route path="feedbacks" element={<Navigate to="/testimonials" replace />} />
-        <Route path="landing-pages" element={<LandingPagesHub />} />
+        <Route path="landing-pages" element={<LandingPagesPage />} />
+        <Route path="landing-pages/new" element={<LandingPageFormPage />} />
+        <Route path="landing-pages/:id" element={<LandingPageFormPage />} />
         <Route path="cities" element={<CitiesPage />} />
         <Route path="cities/new" element={<CityFormPage />} />
         <Route path="cities/:id/edit" element={<CityFormPage />} />

@@ -33,7 +33,7 @@ export default function DashboardLayout() {
     { name: 'Blogs', href: '/blogs', icon: BookOpen },
     { name: 'Videos', href: '/videos', icon: Video },
     { name: 'Testimonials', href: '/testimonials', icon: MessageSquare },
-    { name: 'Landing Page', href: '/landing-pages', icon: MapPin },
+    { name: 'Landing Pages', href: '/landing-pages', icon: MapPin },
     { name: 'Cities', href: '/cities', icon: MapPin, nested: true },
   ]
 

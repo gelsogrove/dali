@@ -1,0 +1,151 @@
+/* Landing Page Detail Styles */
+
+.landing-page-header {
+  position: relative;
+  height: 400px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+  overflow: hidden;
+}
+
+.landing-page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+.landing-page-header-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  padding: 0 20px;
+}
+
+.landing-page-header h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.landing-page-header p {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.landing-page-content {
+  padding: 4rem 2rem;
+}
+
+.landing-page-content-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.landing-page-prose {
+  line-height: 1.8;
+  color: #333;
+  font-size: 1.0625rem;
+}
+
+.landing-page-prose h2,
+.landing-page-prose h3,
+.landing-page-prose h4 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  color: #000;
+}
+
+.landing-page-prose p {
+  margin-bottom: 1.5rem;
+}
+
+.landing-page-prose ul,
+.landing-page-prose ol {
+  margin-bottom: 1.5rem;
+  margin-left: 2rem;
+}
+
+.landing-page-prose li {
+  margin-bottom: 0.5rem;
+}
+
+.landing-page-cta {
+  background: #f9fafb;
+  padding: 4rem 2rem;
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.landing-page-cta h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.landing-page-cta p {
+  font-size: 1.125rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.landing-page-cta button,
+.landing-page-cta a {
+  display: inline-block;
+  background: #000;
+  color: white;
+  padding: 0.875rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+  font-size: 1rem;
+}
+
+.landing-page-cta button:hover,
+.landing-page-cta a:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .landing-page-header {
+    height: 300px;
+  }
+
+  .landing-page-header h1 {
+    font-size: 1.875rem;
+  }
+
+  .landing-page-header p {
+    font-size: 1rem;
+  }
+
+  .landing-page-content {
+    padding: 2rem 1rem;
+  }
+
+  .landing-page-prose {
+    font-size: 0.9375rem;
+  }
+
+  .landing-page-cta {
+    padding: 2rem 1rem;
+  }
+
+  .landing-page-cta h2 {
+    font-size: 1.5rem;
+  }
+}

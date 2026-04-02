@@ -28,6 +28,7 @@ import CityPage from './pages/CityPage';
 import AreaPage from './pages/AreaPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ListingDetailPage from './pages/ListingDetailPage';
+import LandingPageDetail from './pages/LandingPageDetail';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Redirect component for old /properties/:slug URLs
@@ -101,6 +102,7 @@ export default function App() {
             <Route path="/category/blog" element={<MainLayout><BlogsPage /></MainLayout>} />
             <Route path="/blogs" element={<MainLayout><BlogsPage /></MainLayout>} />
             <Route path="/blog/:slug" element={<MainLayout><BlogDetailPage /></MainLayout>} />
+            <Route path="/landing-pages/:slug" element={<MainLayout><LandingPageDetail /></MainLayout>} />
             <Route path="/listings/*" element={<MainLayout><ListingDetailPage /></MainLayout>} />
             <Route path="/properties/:slug" element={<PropertyRedirect />} />
             <Route path="*" element={<NotFoundPage />} />

@@ -42,18 +42,8 @@ class ContactController {
     }
 
     public function send($data) {
-        // DEBUG: Log origin check
-        $debug = [
-            'origin' => $_SERVER['HTTP_ORIGIN'] ?? 'none',
-            'referer' => $_SERVER['HTTP_REFERER'] ?? 'none',
-            'allowedOrigins' => $this->allowedOrigins,
-            'allowedHosts' => $this->allowedHosts,
-            'envVar' => getenv('CONTACT_ALLOWED_ORIGINS') ?: 'not set'
-        ];
-        error_log('CONTACT DEBUG: ' . json_encode($debug));
-        
         if (!$this->isAllowedOrigin()) {
-            return $this->errorResponse('Not allowed - DEBUG: ' . json_encode($debug), 403);
+            return $this->errorResponse('Not allowed', 403);
         }
 
         if (!is_array($data)) {

@@ -22,19 +22,26 @@ admin/dist/
 npm-debug.log*
 logs/
 
-# IDEs
+# IDEs and system files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.DS_Store
+**/.DS_Store
+
+# Build tools
+.zencoder/
+.zenflow/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Old WordPress files
+# Old/backup directories
 old/
+new/
 
 # Images and media files
 *.jpg

@@ -231,12 +231,12 @@ export default function LandingPageFormPage() {
                     placeholder="landing-page-slug"
                     required={!isEdit}
                   />
-                  <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded border">
+                    <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded border">
                     <span className="font-medium">Public URL:</span><br />
-                    <code>/landing-pages/{formData.slug}</code>
+                    <code>/{formData.slug}</code>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium">Subtitle</label>

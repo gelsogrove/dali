@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowLeft, Upload, X } from 'lucide-react'
+import { ArrowLeft, Upload, X, Lock, Unlock } from 'lucide-react'
 import api from '@/lib/api'
 import TrixEditor from '@/components/TrixEditor'
 
@@ -55,6 +55,7 @@ export default function AreaFormPage() {
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<AreaForm>(emptyForm)
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
+  const [isSlugEditable, setIsSlugEditable] = useState(!isEdit)
   const [uploadingCover, setUploadingCover] = useState(false)
   const [uploadingContent, setUploadingContent] = useState(false)
   const [coverError, setCoverError] = useState(false)
@@ -248,7 +249,30 @@ export default function AreaFormPage() {
 
               {/* URL Field - Visible and Editable */}
               <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium">URL (slug) {isEdit ? '(Read-only)' : '*'}</label>
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-sm font-medium">URL (slug) *</label>
+                  {isEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsSlugEditable(!isSlugEditable)}
+                      className="h-7 gap-1.5"
+                    >
+                      {isSlugEditable ? (
+                        <>
+                          <Lock className="h-3.5 w-3.5" />
+                          Lock URL
+                        </>
+                      ) : (
+                        <>
+                          <Unlock className="h-3.5 w-3.5" />
+                          Change URL
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <Input
                     value={formData.slug}
@@ -257,9 +281,10 @@ export default function AreaFormPage() {
                       setFormData((prev) => ({ ...prev, slug: newSlug }))
                       setIsSlugManuallyEdited(true)
                     }}
-                    disabled={isEdit}
+                    readOnly={isEdit && !isSlugEditable}
+                    className={isEdit && !isSlugEditable ? 'bg-gray-50 cursor-not-allowed' : ''}
                     placeholder="area-slug"
-                    required={!isEdit}
+                    required
                   />
                   {formData.city_id && (
                     <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded border">
@@ -431,7 +456,8 @@ export default function AreaFormPage() {
                     name="slug"
                     value={formData.slug} 
                     onChange={(e) => setFormData((prev) => ({ ...prev, slug: slugify(e.target.value) }))}
-                    disabled={isEdit}
+                    readOnly={isEdit && !isSlugEditable}
+                    className={isEdit && !isSlugEditable ? 'bg-gray-50 cursor-not-allowed' : ''}
                     required
                   />
                 </div>

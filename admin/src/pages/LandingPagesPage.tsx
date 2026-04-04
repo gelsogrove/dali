@@ -144,7 +144,7 @@ export default function LandingPagesPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <code className="bg-gray-100 px-2 py-1 rounded text-xs">/landing-pages/{page.slug}</code>
+                        <code className="bg-gray-100 px-2 py-1 rounded text-xs">/{page.slug}</code>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <Switch

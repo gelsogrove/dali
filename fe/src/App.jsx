@@ -37,6 +37,12 @@ function PropertyRedirect() {
   return <Navigate to={`/listings/${slug}`} replace />;
 }
 
+// Redirect legacy landing page URLs to root-based slugs
+function LandingPageRedirect() {
+  const { slug } = useParams();
+  return <Navigate to={`/${slug}`} replace />;
+}
+
 // Layout with header/footer for normal pages
 function MainLayout({ children }) {
   const location = useLocation();
@@ -102,7 +108,8 @@ export default function App() {
             <Route path="/category/blog" element={<MainLayout><BlogsPage /></MainLayout>} />
             <Route path="/blogs" element={<MainLayout><BlogsPage /></MainLayout>} />
             <Route path="/blog/:slug" element={<MainLayout><BlogDetailPage /></MainLayout>} />
-            <Route path="/landing-pages/:slug" element={<MainLayout><LandingPageDetail /></MainLayout>} />
+            <Route path="/landing-pages/:slug" element={<LandingPageRedirect />} />
+            <Route path="/:slug" element={<MainLayout><LandingPageDetail /></MainLayout>} />
             <Route path="/listings/*" element={<MainLayout><ListingDetailPage /></MainLayout>} />
             <Route path="/properties/:slug" element={<PropertyRedirect />} />
             <Route path="*" element={<NotFoundPage />} />

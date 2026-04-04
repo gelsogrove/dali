@@ -32,11 +32,11 @@ export default function FeaturedLandingPages() {
       <div className="container">
         <div className="landing-pages-grid">
           {pages.map((page) => (
-            <div 
-              key={page.id} 
-              className="landing-page-card"
-              onClick={() => navigate(`/landing-pages/${page.slug}`)}
-            >
+              <div 
+                key={page.id} 
+                className="landing-page-card"
+              onClick={() => navigate(`/${page.slug}`)}
+              >
               {page.coverImage && (
                 <div className="landing-page-card-image">
                   <img 

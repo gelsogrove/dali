@@ -221,52 +221,6 @@ export default function CityFormPage() {
                 />
               </div>
 
-              {/* URL Field - Visible and Editable */}
-              <div className="space-y-2 md:col-span-2">
-                <div className="flex items-center justify-between gap-2">
-                  <label className="text-sm font-medium">URL (slug) *</label>
-                  {isEdit && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsSlugEditable(!isSlugEditable)}
-                      className="h-7 gap-1.5"
-                    >
-                      {isSlugEditable ? (
-                        <>
-                          <Lock className="h-3.5 w-3.5" />
-                          Lock URL
-                        </>
-                      ) : (
-                        <>
-                          <Unlock className="h-3.5 w-3.5" />
-                          Change URL
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Input
-                    value={formData.slug}
-                    onChange={(e) => {
-                      const newSlug = slugify(e.target.value)
-                      setFormData((prev) => ({ ...prev, slug: newSlug }))
-                      setIsSlugManuallyEdited(true)
-                    }}
-                    readOnly={isEdit && !isSlugEditable}
-                    className={isEdit && !isSlugEditable ? 'bg-gray-50 cursor-not-allowed' : ''}
-                    placeholder="city-slug"
-                    required
-                  />
-                  <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded border">
-                    <span className="font-medium">Public URL:</span><br />
-                    <code>/community/{formData.slug}</code>
-                  </div>
-                </div>
-              </div>
-              
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium">Short description</label>
                 <Textarea
@@ -423,7 +377,30 @@ export default function CityFormPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">LNK (url)</label>
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-sm font-medium">URL (slug) *</label>
+                    {isEdit && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsSlugEditable(!isSlugEditable)}
+                        className="h-7 gap-1.5"
+                      >
+                        {isSlugEditable ? (
+                          <>
+                            <Lock className="h-3.5 w-3.5" />
+                            Lock URL
+                          </>
+                        ) : (
+                          <>
+                            <Unlock className="h-3.5 w-3.5" />
+                            Change URL
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                   <Input 
                     name="slug"
                     value={formData.slug} 
@@ -432,6 +409,10 @@ export default function CityFormPage() {
                     className={isEdit && !isSlugEditable ? 'bg-gray-50 cursor-not-allowed' : ''}
                     required
                   />
+                  <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded border">
+                    <span className="font-medium">Public URL:</span><br />
+                    <code>/community/{formData.slug}</code>
+                  </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Title tag (&lt;title&gt;)</label>

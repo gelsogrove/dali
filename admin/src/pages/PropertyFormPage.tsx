@@ -65,6 +65,10 @@ export default function PropertyFormPage() {
     sqm_max: '',
     sqft_min: '',
     sqft_max: '',
+    interior_sqm: '',
+    interior_sqft: '',
+    exterior_sqm: '',
+    exterior_sqft: '',
     lot_size_sqm: '',
     lot_size_sqft: '',
     lot_size_sqm_min: '',
@@ -155,6 +159,10 @@ export default function PropertyFormPage() {
         sqm_max: property.sqm_max?.toString() || '',
         sqft_min: property.sqft_min?.toString() || '',
         sqft_max: property.sqft_max?.toString() || '',
+        interior_sqm: property.interior_sqm?.toString() || '',
+        interior_sqft: property.interior_sqft?.toString() || '',
+        exterior_sqm: property.exterior_sqm?.toString() || '',
+        exterior_sqft: property.exterior_sqft?.toString() || '',
         lot_size_sqm: property.lot_size_sqm?.toString() || '',
         lot_size_sqft: property.lot_size_sqft?.toString() || '',
         lot_size_sqm_min: property.lot_size_sqm_min?.toString() || '',
@@ -1526,6 +1534,76 @@ export default function PropertyFormPage() {
               </div>
             </div>
           )}
+
+          <div className="col-span-2">
+            <Label className="text-sm font-medium mb-2 block">Interior & Exterior Size</Label>
+            {formData.size_unit === 'sqm' ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs">Interior Size (m²)</Label>
+                  <Input
+                    type="number"
+                    name="interior_sqm"
+                    value={formData.interior_sqm}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(0) : ''
+                      setFormData(prev => ({ ...prev, interior_sqm: val, interior_sqft: sqftVal }))
+                    }}
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Exterior Size (m²)</Label>
+                  <Input
+                    type="number"
+                    name="exterior_sqm"
+                    value={formData.exterior_sqm}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(0) : ''
+                      setFormData(prev => ({ ...prev, exterior_sqm: val, exterior_sqft: sqftVal }))
+                    }}
+                    step="0.01"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs">Interior Size (sq ft)</Label>
+                  <Input
+                    type="number"
+                    name="interior_sqft"
+                    value={formData.interior_sqft}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      const sqmVal = val ? (parseFloat(val) / 10.7639).toFixed(0) : ''
+                      setFormData(prev => ({ ...prev, interior_sqft: val, interior_sqm: sqmVal }))
+                    }}
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Exterior Size (sq ft)</Label>
+                  <Input
+                    type="number"
+                    name="exterior_sqft"
+                    value={formData.exterior_sqft}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      const sqmVal = val ? (parseFloat(val) / 10.7639).toFixed(0) : ''
+                      setFormData(prev => ({ ...prev, exterior_sqft: val, exterior_sqm: sqmVal }))
+                    }}
+                    step="0.01"
+                  />
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-2">
+              Uses the same unit selector set below in Property Size.
+            </p>
+          </div>
         </div>
 
         {/* SIZE FIELDS WITH UNIT SELECTOR */}

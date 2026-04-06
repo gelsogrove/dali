@@ -194,7 +194,8 @@ class PropertyController
                      property_category, description, price_usd, price_mxn, price_eur, price_on_demand, 
                      price_base_currency, exchange_rate, price_from_usd, price_to_usd, 
                      price_from_mxn, price_to_mxn, price_from_eur, price_to_eur, bedrooms, bedrooms_min, bedrooms_max,
-                     sqft_min, sqft_max, lot_size_sqm, lot_size_sqft, lot_size_sqm_min, lot_size_sqm_max, 
+                     sqft_min, sqft_max, interior_sqm, interior_sqft, exterior_sqm, exterior_sqft,
+                     lot_size_sqm, lot_size_sqft, lot_size_sqm_min, lot_size_sqm_max, 
                      lot_size_sqft_min, lot_size_sqft_max, furnishing_status, 
                      neighborhood, city, state, country, latitude, longitude, tags, is_active, featured, show_in_home, `order`, views_count,
                      created_at, updated_at, youtube_video_url, delivery
@@ -627,6 +628,30 @@ class PropertyController
                 $types .= 'd';
             }
 
+            if (isset($data['interior_sqm']) && $data['interior_sqm'] !== null) {
+                $fields[] = 'interior_sqm';
+                $params[] = (float) $data['interior_sqm'];
+                $types .= 'd';
+            }
+
+            if (isset($data['interior_sqft']) && $data['interior_sqft'] !== null) {
+                $fields[] = 'interior_sqft';
+                $params[] = (float) $data['interior_sqft'];
+                $types .= 'd';
+            }
+
+            if (isset($data['exterior_sqm']) && $data['exterior_sqm'] !== null) {
+                $fields[] = 'exterior_sqm';
+                $params[] = (float) $data['exterior_sqm'];
+                $types .= 'd';
+            }
+
+            if (isset($data['exterior_sqft']) && $data['exterior_sqft'] !== null) {
+                $fields[] = 'exterior_sqft';
+                $params[] = (float) $data['exterior_sqft'];
+                $types .= 'd';
+            }
+
             if (isset($data['sqm_min']) && $data['sqm_min'] !== null) {
                 $fields[] = 'sqm_min';
                 $params[] = (float) $data['sqm_min'];
@@ -940,6 +965,10 @@ class PropertyController
                 'sqm_max',
                 'sqft_min',
                 'sqft_max',
+                'interior_sqm',
+                'interior_sqft',
+                'exterior_sqm',
+                'exterior_sqft',
                 'lot_size_sqm',
                 'lot_size_sqft',
                 'lot_size_sqm_min',
@@ -981,6 +1010,10 @@ class PropertyController
                 'sqm_max',
                 'sqft_min',
                 'sqft_max',
+                'interior_sqm',
+                'interior_sqft',
+                'exterior_sqm',
+                'exterior_sqft',
                 'lot_size_sqm',
                 'lot_size_sqft',
                 'lot_size_sqm_min',
@@ -1793,6 +1826,22 @@ class PropertyController
             return "sqft must be a positive number";
         }
 
+        if (isset($data['interior_sqm']) && $data['interior_sqm'] !== null && $data['interior_sqm'] < 0) {
+            return "interior_sqm must be a positive number";
+        }
+
+        if (isset($data['interior_sqft']) && $data['interior_sqft'] !== null && $data['interior_sqft'] < 0) {
+            return "interior_sqft must be a positive number";
+        }
+
+        if (isset($data['exterior_sqm']) && $data['exterior_sqm'] !== null && $data['exterior_sqm'] < 0) {
+            return "exterior_sqm must be a positive number";
+        }
+
+        if (isset($data['exterior_sqft']) && $data['exterior_sqft'] !== null && $data['exterior_sqft'] < 0) {
+            return "exterior_sqft must be a positive number";
+        }
+
         if (isset($data['lot_size_sqm']) && $data['lot_size_sqm'] !== null && $data['lot_size_sqm'] < 0) {
             return "lot_size_sqm must be a positive number";
         }
@@ -1944,6 +1993,10 @@ class PropertyController
         $property['price_to_eur'] = isset($property['price_to_eur']) ? (float) $property['price_to_eur'] : null;
         $property['sqm'] = isset($property['sqm']) ? (float) $property['sqm'] : null;
         $property['sqft'] = isset($property['sqft']) ? (float) $property['sqft'] : null;
+        $property['interior_sqm'] = isset($property['interior_sqm']) ? (float) $property['interior_sqm'] : null;
+        $property['interior_sqft'] = isset($property['interior_sqft']) ? (float) $property['interior_sqft'] : null;
+        $property['exterior_sqm'] = isset($property['exterior_sqm']) ? (float) $property['exterior_sqm'] : null;
+        $property['exterior_sqft'] = isset($property['exterior_sqft']) ? (float) $property['exterior_sqft'] : null;
         $property['lot_size_sqm'] = isset($property['lot_size_sqm']) ? (float) $property['lot_size_sqm'] : null;
         $property['latitude'] = isset($property['latitude']) ? (float) $property['latitude'] : null;
         $property['longitude'] = isset($property['longitude']) ? (float) $property['longitude'] : null;
@@ -2385,6 +2438,10 @@ class PropertyController
             'sqm_max',
             'sqft_min',
             'sqft_max',
+            'interior_sqm',
+            'interior_sqft',
+            'exterior_sqm',
+            'exterior_sqft',
             'lot_size_sqm',
             'lot_size_sqft',
             'lot_size_sqm_min',

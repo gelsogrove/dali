@@ -15,7 +15,7 @@ import { formatSize, formatBedrooms, formatBathrooms } from '../utils/propertyFo
 import './ListingDetailPage.css';
 
 // Convert Google Maps URL to embeddable format
-const getGoogleMapsEmbedUrl = (url, latitude, longitude, city) => {
+const getGoogleMapsEmbedUrl = (url, latitude, longitude, city, title, address, state, country) => {
   // If already an embed URL, use it
   if (url && url.includes('/maps/embed')) {
     return url;
@@ -50,6 +50,12 @@ const getGoogleMapsEmbedUrl = (url, latitude, longitude, city) => {
   // If we have coordinates, create embed URL
   if (lat && lng) {
     return `https://www.google.com/maps?q=${lat},${lng}&output=embed`;
+  }
+
+  // If no coordinates (e.g. short maps.app.goo.gl URL), fallback to textual query
+  const queryParts = [title, address, city, state, country].filter(Boolean);
+  if (queryParts.length) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(queryParts.join(', '))}&output=embed`;
   }
 
   // Fallback to default location (Playa del Carmen)
@@ -658,6 +664,15 @@ export default function ListingDetailPage() {
     return null;
   };
   const sizeLabel = getSizeLabel();
+  const getUnitSizeLabel = (valSqm, valSqft) => {
+    if (selectedUnit === 'sqm' && valSqm) return `${formatSizeValue(valSqm)} m²`;
+    if (selectedUnit === 'sqft' && valSqft) return `${formatSizeValue(valSqft)} sq ft`;
+    if (valSqm) return `${formatSizeValue(valSqm)} m²`;
+    if (valSqft) return `${formatSizeValue(valSqft)} sq ft`;
+    return null;
+  };
+  const interiorSizeLabel = getUnitSizeLabel(property.interior_sqm, property.interior_sqft);
+  const exteriorSizeLabel = getUnitSizeLabel(property.exterior_sqm, property.exterior_sqft);
   const getLotSizeLabel = () => {
     const valSqm = property.lot_size_sqm;
     const valSqft = property.lot_size_sqft;
@@ -1053,7 +1068,7 @@ export default function ListingDetailPage() {
                       )}
 
                       {/* Unit Toggle */}
-                      {(property.sqm || property.sqft) && (
+                      {(property.sqm || property.sqft || property.interior_sqm || property.interior_sqft || property.exterior_sqm || property.exterior_sqft || property.lot_size_sqm || property.lot_size_sqft) && (
                         <div className="unit-toggle">
                           <button
                             className={`unit-btn ${selectedUnit === 'sqm' ? 'active' : ''}`}
@@ -1083,10 +1098,23 @@ export default function ListingDetailPage() {
                         <strong>{neighborhood}</strong>
                       </li>
                     )}
-                    {sizeLabel && (
+                    {interiorSizeLabel ? (
                       <li>
-                        <span>Living Area</span>
-                        <strong>{sizeLabel}</strong>
+                        <span>Interior Size</span>
+                        <strong>{interiorSizeLabel}</strong>
+                      </li>
+                    ) : (
+                      sizeLabel && (
+                        <li>
+                          <span>Living Area</span>
+                          <strong>{sizeLabel}</strong>
+                        </li>
+                      )
+                    )}
+                    {exteriorSizeLabel && (
+                      <li>
+                        <span>Exterior Size</span>
+                        <strong>{exteriorSizeLabel}</strong>
                       </li>
                     )}
                     {lotSizeLabel && (
@@ -1216,7 +1244,11 @@ export default function ListingDetailPage() {
               property.google_maps_url,
               property.latitude,
               property.longitude,
-              property.city
+              property.city,
+              property.title,
+              property.address,
+              property.state,
+              property.country
             )}
             width="100%"
             height="450"

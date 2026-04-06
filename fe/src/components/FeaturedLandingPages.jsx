@@ -27,16 +27,20 @@ export default function FeaturedLandingPages() {
     return null;
   }
 
+  const featuredPages = [...pages]
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    .slice(0, 2);
+
   return (
     <section className="featured-landing-pages">
       <div className="container">
         <div className="landing-pages-grid">
-          {pages.map((page) => (
-              <div 
-                key={page.id} 
-                className="landing-page-card"
+          {featuredPages.map((page) => (
+            <div 
+              key={page.id} 
+              className="landing-page-card"
               onClick={() => navigate(`/${page.slug}`)}
-              >
+            >
               {page.coverImage && (
                 <div className="landing-page-card-image">
                   <img 

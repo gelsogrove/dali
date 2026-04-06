@@ -24,6 +24,10 @@ ALTER TABLE `properties`
   ADD COLUMN IF NOT EXISTS `sqm_max` DECIMAL(10,2) NULL AFTER `sqm_min`,
   ADD COLUMN IF NOT EXISTS `sqft_min` DECIMAL(10,2) NULL AFTER `sqm_max`,
   ADD COLUMN IF NOT EXISTS `sqft_max` DECIMAL(10,2) NULL AFTER `sqft_min`,
+  ADD COLUMN IF NOT EXISTS `interior_sqm` DECIMAL(10,2) NULL AFTER `sqft_max`,
+  ADD COLUMN IF NOT EXISTS `interior_sqft` DECIMAL(10,2) NULL AFTER `interior_sqm`,
+  ADD COLUMN IF NOT EXISTS `exterior_sqm` DECIMAL(10,2) NULL AFTER `interior_sqft`,
+  ADD COLUMN IF NOT EXISTS `exterior_sqft` DECIMAL(10,2) NULL AFTER `exterior_sqm`,
   
   -- Missing display fields
   ADD COLUMN IF NOT EXISTS `show_in_home` TINYINT(1) DEFAULT 0 AFTER `featured`,

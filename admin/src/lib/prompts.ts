@@ -71,9 +71,10 @@ STRATEGY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 JSON TEMPLATE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ NOTE: Replace "example-luxury-villa-tulum" with an actual slug based on the property title using the SLUG GENERATION RULES above (lowercase, hyphenated, 3-50 chars, no special chars). This is YOUR job!
 {
   "title": "",
-  "slug": "",
+  "slug": "example-luxury-villa-tulum",
   "subtitle": "",
   "property_type": "",
   "status": "for_sale",

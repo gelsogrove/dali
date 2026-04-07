@@ -12,7 +12,7 @@ export default function FeaturedLandingPages() {
     const fetchPages = async () => {
       try {
         const res = await api.get('/landing-pages?is_home=1&is_active=1');
-        setPages(res.data?.data || []);
+        setPages(res.data?.data?.landing_pages || res.data?.data || []);
       } catch (error) {
         console.error('Error fetching landing pages:', error);
       } finally {
@@ -27,15 +27,16 @@ export default function FeaturedLandingPages() {
     return null;
   }
 
-  const featuredPages = [...pages]
-    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
-    .slice(0, 2);
+  // Show ALL landing pages (not just 2)
+  const allPages = [...pages]
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
 
   return (
     <section className="featured-landing-pages">
       <div className="container">
+        <h2 className="section-title">Explore Our Services</h2>
         <div className="landing-pages-grid">
-          {featuredPages.map((page) => (
+          {allPages.map((page) => (
             <div 
               key={page.id} 
               className="landing-page-card"

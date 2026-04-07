@@ -87,9 +87,6 @@ export default function LandingPageFormPage() {
   const [formData, setFormData] = useState<LandingPageForm>(emptyForm)
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
   const [isSlugEditable, setIsSlugEditable] = useState(true)
-  const [uploadingCover, setUploadingCover] = useState(false)
-  const [coverError, setCoverError] = useState(false)
-  const coverInputRef = useRef<HTMLInputElement>(null)
   const [uploadingBlock, setUploadingBlock] = useState<number | null>(null)
   const [blockImageErrors, setBlockImageErrors] = useState<Record<number, boolean>>({})
   const blockImageRefs = useRef<Record<number, HTMLInputElement | null>>({})
@@ -175,7 +172,6 @@ export default function LandingPageFormPage() {
     if (!formData.seoTitle.trim()) errors.push('SEO Title is required')
     if (!formData.seoDescription.trim()) errors.push('SEO Description is required')
     if (!formData.seoKeywords.trim()) errors.push('SEO Keywords is required')
-    if (formData.cover_image && !formData.cover_image_alt.trim()) errors.push('Alt text is required for cover image')
     if (errors.length) {
       alert(errors.join('\n'))
       return
@@ -194,47 +190,6 @@ export default function LandingPageFormPage() {
       .trim()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'landing-page'
-
-  const uploadImage = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      console.warn('Please select an image file')
-      return
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      console.warn('Image must be smaller than 10MB')
-      return
-    }
-    setUploadingCover(true)
-    try {
-      const form = new FormData()
-      form.append('image', file)
-      const res = await api.post('/upload/landing-page-image', form, { headers: { 'Content-Type': 'multipart/form-data' } })
-      const url = res.data?.data?.url
-      if (url) {
-        setFormData((prev) => ({ ...prev, cover_image: url }))
-      }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setUploadingCover(false)
-    }
-  }
-
-  const removeImage = async () => {
-    const current = formData.cover_image
-    if (!current) return
-    if (!confirm('Remove this image?')) return
-    try {
-      await api.delete(`/upload/file?url=${encodeURIComponent(current)}`)
-    } catch (err) {
-      console.error(err)
-    }
-    setFormData((prev) => ({
-      ...prev,
-      cover_image: '',
-      cover_image_alt: '',
-    }))
-  }
 
   const uploadBlockImage = async (blockNum: number, file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -355,63 +310,15 @@ export default function LandingPageFormPage() {
           </CardContent>
         </Card>
 
-        {/* Cover Image */}
-        <Card>
+        {/* Cover Image - REMOVED: Using content_block_1_image as cover instead */}
+        {/* <Card>
           <CardHeader>
             <CardTitle>Cover Image</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {formData.cover_image && !coverError ? (
-              <div className="relative inline-block">
-                <img
-                  src={toAbsoluteUrl(formData.cover_image)}
-                  alt="Cover"
-                  className="object-cover rounded-lg border"
-                  style={{ width: '100%', maxWidth: 400, height: 240 }}
-                  onError={() => setCoverError(true)}
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={removeImage}
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Remove
-                </Button>
-              </div>
-            ) : (
-              <div
-                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition"
-                onClick={() => coverInputRef.current?.click()}
-              >
-                <Upload className="h-10 w-10 mx-auto text-gray-400 mb-3" />
-                <p className="text-sm font-medium text-gray-700">Upload cover image</p>
-                <input
-                  ref={coverInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) uploadImage(e.target.files[0])
-                  }}
-                  disabled={uploadingCover}
-                  className="hidden"
-                />
-                {uploadingCover && <p className="text-sm text-primary mt-2">Uploading...</p>}
-              </div>
-            )}
-            <div className="space-y-1">
-              <label className="text-sm font-medium">Alt Text</label>
-              <Input
-                name="cover_image_alt"
-                value={formData.cover_image_alt}
-                onChange={handleChange}
-                required={!!formData.cover_image}
-              />
-            </div>
+            ...
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Content Editor */}
         <Card>
@@ -430,55 +337,94 @@ export default function LandingPageFormPage() {
         </Card>
 
         {/* Content Blocks */}
-        {[1, 2, 3, 4].map((blockNum) => (
-          <Card key={`block-${blockNum}`}>
-            <CardHeader>
-              <CardTitle>Content Block {blockNum}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Title</label>
-                <Input
-                  name={`content_block_${blockNum}_title`}
-                  value={(formData as any)[`content_block_${blockNum}_title`]}
-                  onChange={handleChange}
-                  placeholder={`Block ${blockNum} title`}
-                />
-              </div>
+        {[1, 2, 3, 4].map((blockNum) => {
+          const blockImage = (formData as any)[`content_block_${blockNum}_image`]
+          const hasImageError = blockImageErrors[blockNum]
+          
+          return (
+            <Card key={`block-${blockNum}`}>
+              <CardHeader>
+                <CardTitle>Content Block {blockNum}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Title</label>
+                  <Input
+                    name={`content_block_${blockNum}_title`}
+                    value={(formData as any)[`content_block_${blockNum}_title`]}
+                    onChange={handleChange}
+                    placeholder={`Block ${blockNum} title`}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Subtitle</label>
-                <Input
-                  name={`content_block_${blockNum}_subtitle`}
-                  value={(formData as any)[`content_block_${blockNum}_subtitle`]}
-                  onChange={handleChange}
-                  placeholder={`Block ${blockNum} subtitle`}
-                />
-              </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Subtitle</label>
+                  <Input
+                    name={`content_block_${blockNum}_subtitle`}
+                    value={(formData as any)[`content_block_${blockNum}_subtitle`]}
+                    onChange={handleChange}
+                    placeholder={`Block ${blockNum} subtitle`}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  name={`content_block_${blockNum}_description`}
-                  value={(formData as any)[`content_block_${blockNum}_description`]}
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder={`Block ${blockNum} description`}
-                />
-              </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description (Rich Text)</label>
+                  <TrixEditor
+                    value={(formData as any)[`content_block_${blockNum}_description`]}
+                    onChange={(html) => setFormData((prev) => ({ 
+                      ...prev, 
+                      [`content_block_${blockNum}_description`]: html 
+                    }))}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Image</label>
-                <Input
-                  name={`content_block_${blockNum}_image`}
-                  value={(formData as any)[`content_block_${blockNum}_image`]}
-                  onChange={handleChange}
-                  placeholder={`/path/to/image-${blockNum}.jpg`}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Image</label>
+                  {blockImage && !hasImageError ? (
+                    <div className="relative inline-block">
+                      <img
+                        src={toAbsoluteUrl(blockImage)}
+                        alt={`Block ${blockNum}`}
+                        className="object-cover rounded-lg border"
+                        style={{ width: '100%', maxWidth: 400, height: 240 }}
+                        onError={() => setBlockImageErrors((prev) => ({ ...prev, [blockNum]: true }))}
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => removeBlockImage(blockNum)}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition"
+                      onClick={() => blockImageRefs.current[blockNum]?.click()}
+                    >
+                      <Upload className="h-10 w-10 mx-auto text-gray-400 mb-3" />
+                      <p className="text-sm font-medium text-gray-700">Upload image for Block {blockNum}</p>
+                      <input
+                        ref={(el) => (blockImageRefs.current[blockNum] = el)}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) uploadBlockImage(blockNum, e.target.files[0])
+                        }}
+                        disabled={uploadingBlock === blockNum}
+                        className="hidden"
+                      />
+                      {uploadingBlock === blockNum && <p className="text-sm text-primary mt-2">Uploading...</p>}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
 
         {/* SEO Fields */}
         <Card>

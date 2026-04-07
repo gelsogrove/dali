@@ -1,6 +1,22 @@
+import { useState, useEffect } from 'react';
 import { contactInfo, navLinks } from '../data/homeData';
+import { api } from '../config/api';
 
 export default function Footer() {
+  const [landingPages, setLandingPages] = useState([]);
+
+  useEffect(() => {
+    const fetchLandingPages = async () => {
+      try {
+        const res = await api.get('/landing-pages?is_active=1');
+        setLandingPages(res.data?.data?.landing_pages || res.data?.data || []);
+      } catch (error) {
+        console.error('Error fetching landing pages:', error);
+      }
+    };
+    fetchLandingPages();
+  }, []);
+
   return (
     <footer className="footer">
       <div className="footer-container">
@@ -24,6 +40,13 @@ export default function Footer() {
               <li key={item.label} className="menu-item">
                 <a href={item.href} data-title={item.label}>
                   {item.label}
+                </a>
+              </li>
+            ))}
+            {landingPages.map((page) => (
+              <li key={page.id} className="menu-item">
+                <a href={`/${page.slug}`} data-title={page.title}>
+                  {page.title}
                 </a>
               </li>
             ))}

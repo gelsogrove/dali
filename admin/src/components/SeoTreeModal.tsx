@@ -26,47 +26,79 @@ export default function SeoTreeModal() {
     },
   })
 
-  // Convert tree to ASCII art
   const generateTree = () => {
     if (!treeQuery.data) return ''
 
+    const activePaths: string[] = []
+    const collectActivePaths = (node: any) => {
+      if (node?.path && node.is_active) {
+        activePaths.push(node.path)
+      }
+      if (node?.children?.length) {
+        node.children.forEach((child: any) => collectActivePaths(child))
+      }
+    }
+
+    if (treeQuery.data.children) {
+      treeQuery.data.children.forEach((node: any) => collectActivePaths(node))
+    }
+
+    const uniquePaths = Array.from(new Set(activePaths)).sort((a, b) => a.localeCompare(b))
+
+    type TreeNode = {
+      segment: string
+      fullPath: string
+      children: Map<string, TreeNode>
+    }
+
+    const root: TreeNode = { segment: '', fullPath: '', children: new (Map as any)() }
+
+    const insertPath = (path: string) => {
+      if (path === '/' || path === '') {
+        if (!root.children.has('/')) {
+          root.children.set('/', { segment: '/', fullPath: '/', children: new (Map as any)() })
+        }
+        return
+      }
+
+      const parts = path.split('/').filter(Boolean)
+      let current = root
+      let currentPath = ''
+      for (const segment of parts) {
+        currentPath += '/' + segment
+        if (!current.children.has(segment)) {
+          current.children.set(segment, { segment, fullPath: currentPath, children: new (Map as any)() })
+        }
+        current = current.children.get(segment)!
+      }
+    }
+
+    uniquePaths.forEach((path) => insertPath(path))
+
     let ascii = ''
-    const printNode = (node: any, prefix = '', isLast = true) => {
+    const printNode = (node: TreeNode, prefix = '', isLast = true) => {
       const connector = isLast ? '└── ' : '├── '
-      let line = prefix + connector + node.name
+      ascii += prefix + connector + node.fullPath + '\n'
 
-      if (node.type === 'category') {
-        line += ` (${node.count || 0})`
-      } else if (node.path && node.path !== '/') {
-        line += ` → ${node.path}`
-      }
-
-      if (node.is_home) {
-        line += ' [HOME]'
-      }
-
-      if (!node.is_active) {
-        line += ' [OFF]'
-      }
-
-      ascii += line + '\n'
-
-      if (node.children && node.children.length > 0) {
+      const children = Array.from(node.children.values()).sort((a, b) =>
+        a.fullPath.localeCompare(b.fullPath)
+      )
+      if (children.length > 0) {
         const newPrefix = prefix + (isLast ? '    ' : '│   ')
-        node.children.forEach((child: any, idx: number) => {
-          const isLastChild = idx === node.children.length - 1
+        children.forEach((child, idx) => {
+          const isLastChild = idx === children.length - 1
           printNode(child, newPrefix, isLastChild)
         })
       }
     }
 
-    ascii = 'SITE STRUCTURE\n\n'
-    if (treeQuery.data.children) {
-      treeQuery.data.children.forEach((node: any, idx: number) => {
-        const isLast = idx === treeQuery.data.children.length - 1
-        printNode(node, '', isLast)
-      })
-    }
+    const topLevel = Array.from(root.children.values()).sort((a, b) =>
+      a.fullPath.localeCompare(b.fullPath)
+    )
+    topLevel.forEach((node, idx) => {
+      const isLast = idx === topLevel.length - 1
+      printNode(node, '', isLast)
+    })
 
     return ascii
   }
@@ -100,9 +132,7 @@ export default function SeoTreeModal() {
       <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Site Structure & SEO</DialogTitle>
-          <DialogDescription>
-            Complete URL hierarchy and content overview
-          </DialogDescription>
+          <DialogDescription>Active URL hierarchy</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -114,11 +144,6 @@ export default function SeoTreeModal() {
                 <pre className="font-mono text-xs whitespace-pre-wrap break-words overflow-auto max-h-96 text-gray-700">
                   {asciiTree}
                 </pre>
-              </div>
-
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p>📌 Items in brackets = metadata about pages</p>
-                <p>✓ = Show on homepage | [OFF] = Not published</p>
               </div>
 
               <Button

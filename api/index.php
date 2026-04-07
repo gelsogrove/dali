@@ -158,6 +158,10 @@ try {
         case 'seo':
             handleSeoTreeRoutes($segments, $method);
             break;
+
+        case 'dashboard':
+            handleDashboardRoutes($segments, $method);
+            break;
         
         case 'health':
             echo json_encode([
@@ -1495,4 +1499,66 @@ function handleSeoTreeRoutes($segments, $method) {
 
     http_response_code(404);
     echo json_encode(['success' => false, 'error' => 'SEO endpoint not found']);
+}
+
+function handleDashboardRoutes($segments, $method) {
+    $auth = new AuthMiddleware();
+    $user = $auth->authenticate();
+    if (!$user || !$auth->checkRole($user, ['admin'])) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+        return;
+    }
+
+    $db = new Database();
+    $conn = $db->getConnection();
+
+    // GET /api/dashboard/stats - Get dashboard stats
+    if ($method === 'GET' && isset($segments[1]) && $segments[1] === 'stats') {
+        try {
+            $stats = [
+                'active_properties' => 0,
+                'active_landing_pages' => 0,
+                'active_videos' => 0,
+                'access_requests' => 0,
+                'off_market_invites' => 0,
+            ];
+
+            // Count active properties
+            $result = $conn->query("SELECT COUNT(*) as count FROM properties WHERE is_active = 1");
+            $stats['active_properties'] = $result ? $result->fetch_assoc()['count'] : 0;
+
+            // Count active landing pages
+            $result = $conn->query("SELECT COUNT(*) as count FROM landing_pages WHERE is_active = 1");
+            $stats['active_landing_pages'] = $result ? $result->fetch_assoc()['count'] : 0;
+
+            // Count active videos
+            $result = $conn->query("SELECT COUNT(*) as count FROM videos WHERE is_active = 1");
+            $stats['active_videos'] = $result ? $result->fetch_assoc()['count'] : 0;
+
+            // Count access requests
+            $result = $conn->query("SELECT COUNT(*) as count FROM property_access_requests");
+            $stats['access_requests'] = $result ? $result->fetch_assoc()['count'] : 0;
+
+            // Count off market invites
+            $result = $conn->query("SELECT COUNT(*) as count FROM off_market_invites");
+            $stats['off_market_invites'] = $result ? $result->fetch_assoc()['count'] : 0;
+
+            echo json_encode([
+                'success' => true,
+                'data' => $stats
+            ]);
+            return;
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch dashboard stats: ' . $e->getMessage()
+            ]);
+            return;
+        }
+    }
+
+    http_response_code(404);
+    echo json_encode(['success' => false, 'error' => 'Dashboard endpoint not found']);
 }

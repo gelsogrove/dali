@@ -9,7 +9,7 @@
 
 .prompt-header {
   display: flex;
-  items-align: center;
+  align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
   padding: 1rem 1.5rem;

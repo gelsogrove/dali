@@ -56,7 +56,7 @@ export default function LandingPageFormPage() {
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<LandingPageForm>(emptyForm)
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
-  const [isSlugEditable, setIsSlugEditable] = useState(!isEdit)
+  const [isSlugEditable, setIsSlugEditable] = useState(true)
   const [uploadingCover, setUploadingCover] = useState(false)
   const [coverError, setCoverError] = useState(false)
   const coverInputRef = useRef<HTMLInputElement>(null)
@@ -102,7 +102,6 @@ export default function LandingPageFormPage() {
       const body = {
         ...payload,
         is_active: payload.is_active ? 1 : 0,
-        featured: payload.featured ? 1 : 0,
       }
       if (isEdit) return api.put(`/landing-pages/${id}`, body)
       return api.post('/landing-pages', body)

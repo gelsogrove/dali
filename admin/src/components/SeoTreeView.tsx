@@ -29,7 +29,7 @@ export default function SeoTreeView() {
       alert('✅ Sitemap regenerated successfully!\n\n' + data.data.message)
     },
     onError: (error) => {
-      const errMsg = error.response?.data?.error || error.message
+      const errMsg = (error as any)?.response?.data?.error || (error as Error)?.message
       alert('❌ Error regenerating sitemap:\n\n' + errMsg)
     }
   })
@@ -43,7 +43,7 @@ export default function SeoTreeView() {
     let goodCount = 0
     let warningCount = 0
 
-    const printNode = (node, prefix = '', isLast = true) => {
+    const printNode = (node: any, prefix = '', isLast = true) => {
       const connector = isLast ? '└── ' : '├── '
       const quality = node.quality || 'normal'
       let line = prefix + connector
@@ -83,7 +83,7 @@ export default function SeoTreeView() {
       // Process children
       if (node.children && node.children.length > 0) {
         const newPrefix = prefix + (isLast ? '    ' : '│   ')
-        node.children.forEach((child, idx) => {
+        node.children.forEach((child: any, idx: number) => {
           const isLastChild = idx === node.children.length - 1
           printNode(child, newPrefix, isLastChild)
         })
@@ -96,7 +96,7 @@ export default function SeoTreeView() {
       ascii += '├─ Base URL: /\n'
       ascii += '│\n'
 
-      treeQuery.data.children.forEach((node, idx) => {
+      treeQuery.data.children.forEach((node: any, idx: number) => {
         const isLast = idx === treeQuery.data.children.length - 1
         printNode(node, '', isLast)
       })
@@ -207,7 +207,7 @@ export default function SeoTreeView() {
               <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-red-700">
                 <p className="font-semibold">Sitemap regeneration failed</p>
-                <p className="mt-1">{sitemapMutation.error?.response?.data?.error || sitemapMutation.error?.message}</p>
+                <p className="mt-1">{(sitemapMutation.error as any)?.response?.data?.error || (sitemapMutation.error as Error)?.message}</p>
               </div>
             </div>
           </div>

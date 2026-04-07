@@ -54,7 +54,7 @@ export default function AreaFormPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<AreaForm>(emptyForm)
-  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
+  const [isSlugManuallyEdited] = useState(false)
   const [isSlugEditable, setIsSlugEditable] = useState(!isEdit)
   const [uploadingCover, setUploadingCover] = useState(false)
   const [uploadingContent, setUploadingContent] = useState(false)

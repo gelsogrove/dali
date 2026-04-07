@@ -42,7 +42,6 @@ export default function DashboardLayout() {
     { name: 'Access Requests', href: '/access-requests', icon: Mail, badge: unviewedCount },
     { name: 'Off Market Invites', href: '/off-market-invites', icon: Shield },
     { name: 'Redirects', href: '/redirects', icon: Repeat },
-    { name: 'Exchange Rates', href: '/', icon: DollarSign },
     { name: 'Backups', href: '/backups', icon: Database },
   ]
 

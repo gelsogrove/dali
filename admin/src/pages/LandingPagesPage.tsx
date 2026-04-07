@@ -35,6 +35,7 @@ export default function LandingPagesPage() {
   }
   const [thumbErrors, setThumbErrors] = useState<Record<string, boolean>>({})
   const [draggedId, setDraggedId] = useState<number | null>(null)
+
   const { data, isLoading } = useQuery({
     queryKey: ['landing-pages'],
     queryFn: async () => {
@@ -45,7 +46,6 @@ export default function LandingPagesPage() {
 
   const pages: LandingPage[] = useMemo(() => {
     if (!data) return []
-    // Sort by display_order
     return [...data].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
   }, [data])
 
@@ -85,7 +85,6 @@ export default function LandingPagesPage() {
     setDraggedId(null)
   }
 
-  return (
   const toggleActive = useMutation({
     mutationFn: async ({ id, value }: { id: number; value: boolean }) => {
       return api.put(`/landing-pages/${id}`, { is_active: value ? 1 : 0 })
@@ -98,6 +97,7 @@ export default function LandingPagesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['landing-pages'] }),
   })
 
+  return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -105,17 +105,15 @@ export default function LandingPagesPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 classLanding Pages</CardTitlerdHeader>
-          <CardTitle>Search</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Input
-            placeholder="Search by title or slug..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </CardContent>
-      </Card>
+            <h1 className="text-3xl font-bold">Landing Pages</h1>
+            <p className="text-sm text-muted-foreground">Manage custom landing pages</p>
+          </div>
+        </div>
+        <Button onClick={() => navigate('/landing-pages/new')} className="gap-2">
+          <Plus className="h-4 w-4" />
+          New Landing Page
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>
@@ -131,6 +129,7 @@ export default function LandingPagesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
+                    <th className="w-12"></th>
                     <th className="text-left py-3 px-4 font-medium">Title</th>
                     <th className="text-left py-3 px-4 font-medium">Slug (URL)</th>
                     <th className="text-center py-3 px-4 font-medium">Active</th>

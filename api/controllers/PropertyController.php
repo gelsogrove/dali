@@ -298,7 +298,7 @@ class PropertyController
 
         } catch (Exception $e) {
             error_log("Error fetching properties: " . $e->getMessage());
-            return $this->errorResponse('An error occurred');
+            return $this->errorResponse('Error fetching properties: ' . $e->getMessage());
         }
     }
 

@@ -1,4 +1,5 @@
-import { GlobalExchangeRate } from '@/components/GlobalExchangeRate';
+import { GlobalExchangeRate } from '@/components/GlobalExchangeRate'
+import SeoTreeView from '@/components/SeoTreeView'
 
 export default function DashboardPage() {
   return (
@@ -13,9 +14,10 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <GlobalExchangeRate currencyTo="MXN" title="USD to MXN" />
         <GlobalExchangeRate currencyTo="EUR" title="USD to EUR" />
-        
-        {/* Add more widgets here */}
       </div>
+
+      {/* SEO Tree View */}
+      <SeoTreeView />
     </div>
-  );
+  )
 }

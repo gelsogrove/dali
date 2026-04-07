@@ -1,0 +1,75 @@
+.seo-tree-card {
+  border: 1px solid hsl(var(--border));
+}
+
+.seo-tree-container {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.seo-tree-pre {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Courier New', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  padding: 1rem;
+  margin: 0;
+  color: #2c3e50;
+  white-space: pre;
+  word-break: break-word;
+  background: transparent;
+}
+
+/* Color syntax highlighting for ASCII tree */
+.seo-tree-pre {
+  --green: #22c55e;
+  --yellow: #eab308;
+  --blue: #3b82f6;
+}
+
+/* Scrollbar styling */
+.seo-tree-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.seo-tree-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.seo-tree-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.seo-tree-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Stats cards */
+.seo-tree-card .bg-blue-50 {
+  background-color: hsl(210, 100%, 97.5%);
+}
+
+.seo-tree-card .bg-green-50 {
+  background-color: hsl(142, 76%, 96.3%);
+}
+
+.seo-tree-card .bg-yellow-50 {
+  background-color: hsl(49, 100%, 97.2%);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .seo-tree-pre {
+    font-size: 0.75rem;
+  }
+
+  .seo-tree-container {
+    max-height: 400px;
+  }
+}

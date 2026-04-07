@@ -48,6 +48,7 @@ require_once __DIR__ . '/controllers/AccessRequestController.php';
 require_once __DIR__ . '/controllers/OffMarketInviteController.php';
 require_once __DIR__ . '/controllers/TodoController.php';
 require_once __DIR__ . '/controllers/BackupController.php';
+require_once __DIR__ . '/controllers/SeoTreeController.php';
 // Normalize base dir to avoid trailing spaces/newlines in production paths
 $__baseDir = rtrim(__DIR__, "/\\ \t\n\r\0\x0B");
 require_once $__baseDir . '/config/database.php';
@@ -152,6 +153,10 @@ try {
 
         case 'backups':
             handleBackupRoutes($segments, $method);
+            break;
+
+        case 'seo':
+            handleSeoTreeRoutes($segments, $method);
             break;
         
         case 'health':
@@ -1458,4 +1463,36 @@ function handleContactRoutes($segments, $method) {
 
     http_response_code(405);
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+}
+
+/**
+ * Handle SEO tree routes
+ */
+function handleSeoTreeRoutes($segments, $method) {
+    $auth = new AuthMiddleware();
+    $user = $auth->authenticate();
+    if (!$user || !$auth->checkRole($user, ['admin'])) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+        return;
+    }
+
+    $controller = new SeoTreeController();
+
+    // GET /api/seo/tree - Get SEO tree structure
+    if ($method === 'GET' && isset($segments[1]) && $segments[1] === 'tree') {
+        $result = $controller->getTree();
+        echo json_encode($result);
+        return;
+    }
+
+    // POST /api/seo/regenerate-sitemap - Regenerate sitemap
+    if ($method === 'POST' && isset($segments[1]) && $segments[1] === 'regenerate-sitemap') {
+        $result = $controller->regenerateSitemap();
+        echo json_encode($result);
+        return;
+    }
+
+    http_response_code(404);
+    echo json_encode(['success' => false, 'error' => 'SEO endpoint not found']);
 }

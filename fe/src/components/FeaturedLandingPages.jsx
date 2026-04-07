@@ -11,7 +11,7 @@ export default function FeaturedLandingPages() {
   useEffect(() => {
     const fetchPages = async () => {
       try {
-        const res = await api.get('/landing-pages?featured=1&is_active=1');
+        const res = await api.get('/landing-pages?is_home=1&is_active=1');
         setPages(res.data?.data || []);
       } catch (error) {
         console.error('Error fetching landing pages:', error);
@@ -41,11 +41,11 @@ export default function FeaturedLandingPages() {
               className="landing-page-card"
               onClick={() => navigate(`/${page.slug}`)}
             >
-              {page.coverImage && (
+              {page.cover_image && (
                 <div className="landing-page-card-image">
                   <img 
-                    src={page.coverImage} 
-                    alt={page.title}
+                    src={page.cover_image} 
+                    alt={page.cover_image_alt || page.title}
                     loading="lazy"
                   />
                   <div className="landing-page-card-overlay"></div>

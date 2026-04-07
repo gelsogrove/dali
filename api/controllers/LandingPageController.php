@@ -44,9 +44,16 @@ class LandingPageController {
                 $types .= 'i';
             }
 
-            // Filter by featured
-            if (isset($filters['featured'])) {
-                $where[] = "featured = ?";
+            // Filter by is_home
+            if (isset($filters['is_home'])) {
+                $where[] = "is_home = ?";
+                $params[] = ($filters['is_home'] === 'true' || $filters['is_home'] === '1') ? 1 : 0;
+                $types .= 'i';
+            }
+
+            // Support legacy 'featured' parameter for backward compatibility
+            if (isset($filters['featured']) && !isset($filters['is_home'])) {
+                $where[] = "is_home = ?";
                 $params[] = ($filters['featured'] === 'true' || $filters['featured'] === '1') ? 1 : 0;
                 $types .= 'i';
             }
@@ -144,7 +151,7 @@ class LandingPageController {
                 'seo_title', 'seo_description', 'seo_keywords',
                 'og_title', 'og_description', 'og_image',
                 'cover_image', 'cover_image_alt',
-                'is_active', 'featured', 'display_order'
+                'is_active', 'is_home', 'display_order'
             ];
 
             $columns = [];
@@ -164,7 +171,7 @@ class LandingPageController {
                     }
                     
                     // Determine type
-                    if (in_array($field, ['is_active', 'featured', 'display_order'])) {
+                    if (in_array($field, ['is_active', 'is_home', 'display_order'])) {
                         $types .= 'i';
                     } else {
                         $types .= 's';
@@ -212,18 +219,35 @@ class LandingPageController {
     public function update($id, $data) {
         try {
             // Verify exists
-            $checkQuery = "SELECT id FROM landing_pages WHERE id = ?";
+            $checkQuery = "SELECT id, slug FROM landing_pages WHERE id = ?";
             $checkResult = $this->db->executePrepared($checkQuery, [$id], 'i');
             if (!$checkResult || $checkResult->num_rows === 0) {
                 return $this->errorResponse('Landing page not found', 404);
             }
+            $existingPage = $checkResult->fetch_assoc();
+
+            // Check slug uniqueness if slug is being updated
+            if (array_key_exists('slug', $data) && !empty($data['slug'])) {
+                $newSlug = $this->slugify($data['slug']);
+                if ($newSlug !== $existingPage['slug']) {
+                    $slugCheck = $this->db->executePrepared(
+                        "SELECT id FROM landing_pages WHERE slug = ? AND id != ? LIMIT 1",
+                        [$newSlug, $id],
+                        'si'
+                    );
+                    if ($slugCheck && $slugCheck->num_rows > 0) {
+                        return $this->errorResponse('Slug already exists', 400);
+                    }
+                    $data['slug'] = $newSlug;
+                }
+            }
 
             $allowedFields = [
-                'title', 'subtitle', 'description', 'content',
+                'title', 'subtitle', 'slug', 'description', 'content',
                 'seo_title', 'seo_description', 'seo_keywords',
                 'og_title', 'og_description', 'og_image',
                 'cover_image', 'cover_image_alt',
-                'is_active', 'featured', 'display_order'
+                'is_active', 'is_home', 'display_order'
             ];
 
             $updates = [];
@@ -235,7 +259,7 @@ class LandingPageController {
                     $updates[] = "$field = ?";
                     $params[] = $data[$field];
                     
-                    if (in_array($field, ['is_active', 'featured', 'display_order'])) {
+                    if (in_array($field, ['is_active', 'is_home', 'display_order'])) {
                         $types .= 'i';
                     } else {
                         $types .= 's';
@@ -319,7 +343,7 @@ class LandingPageController {
             'cover_image' => $row['cover_image'] ?? '',
             'cover_image_alt' => $row['cover_image_alt'] ?? '',
             'is_active' => (int)$row['is_active'],
-            'featured' => (int)$row['featured'],
+            'is_home' => (int)$row['is_home'],
             'display_order' => (int)$row['display_order'],
             'created_at' => $row['created_at'] ?? '',
             'updated_at' => $row['updated_at'] ?? '',

@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft, Upload, X, Lock, Unlock } from 'lucide-react'
 import api from '@/lib/api'
 import TrixEditor from '@/components/TrixEditor'
+import './LandingPageFormPage.css'
 
 type LandingPageForm = {
   title: string
@@ -25,7 +26,7 @@ type LandingPageForm = {
   ogDescription: string
   ogImage: string
   is_active: number
-  featured: number
+  is_home: number
   display_order: number
 }
 
@@ -44,7 +45,7 @@ const emptyForm: LandingPageForm = {
   ogDescription: '',
   ogImage: '',
   is_active: 1,
-  featured: 0,
+  is_home: 0,
   display_order: 0,
 }
 
@@ -91,7 +92,7 @@ export default function LandingPageFormPage() {
       ogDescription: page.ogDescription || '',
       ogImage: page.ogImage || '',
       is_active: page.is_active ? 1 : 0,
-      featured: page.featured ? 1 : 0,
+      is_home: page.is_home ? 1 : 0,
       display_order: page.display_order || 0,
     })
   }, [pageQuery.data])
@@ -134,7 +135,7 @@ export default function LandingPageFormPage() {
       ...formData,
       slug: formData.slug.trim() || slugify(formData.title),
       is_active: formData.is_active ? 1 : 0,
-      featured: formData.featured ? 1 : 0,
+      is_home: formData.is_home ? 1 : 0,
     })
   }
 
@@ -248,10 +249,11 @@ export default function LandingPageFormPage() {
 
               <div className="flex items-center gap-3">
                 <Switch
-                  checked={!!formData.featured}
-                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, featured: checked ? 1 : 0 }))}
+                  className="switch-green"
+                  checked={!!formData.is_home}
+                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_home: checked ? 1 : 0 }))}
                 />
-                <span className="text-sm font-medium">Featured (Homepage)</span>
+                <span className="text-sm font-medium">Show in Homepage</span>
               </div>
             </div>
           </CardContent>

@@ -147,50 +147,54 @@ export default function AreaPage() {
 
       <section className="community-detail">
         <div className="community-detail-wrapper">
-          <div className="community-header">
+          <div className="community-header community-header--left">
             <h1 className="community-page-title">{area.title}</h1>
             {area.subtitle && <p className="community-page-subtitle">{area.subtitle}</p>}
           </div>
-          
-          <div className="community-hero">
-            {(() => {
-              // Priorità: content_image > cover_image
-              const imageUrl = area.content_image || area.cover_image;
-              const imageAlt = area.content_image 
-                ? (area.content_image_alt || area.title)
-                : (area.cover_image_alt || area.title);
-              const hasError = area.content_image ? contentError : coverError;
-              
-              if (imageUrl && !hasError) {
+
+          <div className="community-copy community-copy-wrap">
+            <div className="community-float-image">
+              {(() => {
+                // Priorità: content_image > cover_image
+                const imageUrl = area.content_image || area.cover_image;
+                const imageAlt = area.content_image
+                  ? (area.content_image_alt || area.title)
+                  : (area.cover_image_alt || area.title);
+                const hasError = area.content_image ? contentError : coverError;
+
+                if (imageUrl && !hasError) {
+                  return (
+                    <SafeImage
+                      src={toAbsoluteUrl(imageUrl)}
+                      alt={imageAlt}
+                      placeholder="gradient"
+                      onError={() => {
+                        if (area.content_image) {
+                          setContentError(true);
+                        } else {
+                          setCoverError(true);
+                        }
+                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  );
+                }
+
                 return (
-                  <img
-                    src={toAbsoluteUrl(imageUrl)}
-                    alt={imageAlt}
-                    onError={() => {
-                      if (area.content_image) {
-                        setContentError(true);
-                      } else {
-                        setCoverError(true);
-                      }
-                    }}
-                  />
+                  <div className="blog-placeholder">
+                    <div className="placeholder-box" aria-hidden="true" />
+                  </div>
                 );
-              }
-              
-              return (
-                <div className="blog-placeholder">
-                  <div className="placeholder-box" aria-hidden="true" />
-                </div>
-              );
-            })()}
-          </div>
-          <div className="community-copy">
+              })()}
+            </div>
+
             {area.fullContent && (
               <div
                 className="community-content"
                 dangerouslySetInnerHTML={{ __html: area.fullContent }}
               />
             )}
+            <div className="community-clear" />
           </div>
         </div>
       </section>

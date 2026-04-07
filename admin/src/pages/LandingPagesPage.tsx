@@ -14,7 +14,7 @@ type LandingPage = {
   subtitle?: string
   slug: string
   is_active: number
-  featured: number
+  is_home: number
   cover_image?: string
   cover_image_alt?: string
   content_block_1_image?: string
@@ -204,8 +204,7 @@ export default function LandingPagesPage() {
                               }}
                               disabled={deletePage.isPending}
                             >
-                              <Trash className="mr-2 h-4 w-4" />
-                              Delete
+                              <Trash className="h-4 w-4" />
                             </Button>
                           </div>
                         </td>

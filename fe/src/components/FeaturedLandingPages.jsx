@@ -41,10 +41,10 @@ export default function FeaturedLandingPages() {
               className="landing-page-card"
               onClick={() => navigate(`/${page.slug}`)}
             >
-              {page.cover_image && (
+              {(page.content_block_1_image || page.cover_image) && (
                 <div className="landing-page-card-image">
                   <img 
-                    src={page.cover_image} 
+                    src={page.content_block_1_image || page.cover_image} 
                     alt={page.cover_image_alt || page.title}
                     loading="lazy"
                   />

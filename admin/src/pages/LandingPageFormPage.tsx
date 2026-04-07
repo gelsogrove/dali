@@ -90,6 +90,10 @@ export default function LandingPageFormPage() {
   const [uploadingCover, setUploadingCover] = useState(false)
   const [coverError, setCoverError] = useState(false)
   const coverInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingBlock, setUploadingBlock] = useState<number | null>(null)
+  const [blockImageErrors, setBlockImageErrors] = useState<Record<number, boolean>>({})
+  const blockImageRefs = useRef<Record<number, HTMLInputElement | null>>({})
+
 
   const apiBase = import.meta.env.VITE_API_URL || '/api'
   const assetBase = useMemo(() => apiBase.replace(/\/api$/, ''), [apiBase])
@@ -232,6 +236,52 @@ export default function LandingPageFormPage() {
     }))
   }
 
+  const uploadBlockImage = async (blockNum: number, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image must be smaller than 10MB')
+      return
+    }
+    setUploadingBlock(blockNum)
+    try {
+      const form = new FormData()
+      form.append('image', file)
+      const res = await api.post('/upload/landing-page-image', form, { 
+        headers: { 'Content-Type': 'multipart/form-data' } 
+      })
+      const url = res.data?.data?.url
+      if (url) {
+        setFormData((prev) => ({ 
+          ...prev, 
+          [`content_block_${blockNum}_image`]: url 
+        }))
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Upload failed')
+    } finally {
+      setUploadingBlock(null)
+    }
+  }
+
+  const removeBlockImage = async (blockNum: number) => {
+    const current = (formData as any)[`content_block_${blockNum}_image`]
+    if (!current) return
+    if (!confirm('Remove this image?')) return
+    try {
+      await api.delete(`/upload/file?url=${encodeURIComponent(current)}`)
+    } catch (err) {
+      console.error(err)
+    }
+    setFormData((prev) => ({
+      ...prev,
+      [`content_block_${blockNum}_image`]: '',
+    }))
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -288,8 +338,18 @@ export default function LandingPageFormPage() {
                 <Switch
                   checked={!!formData.is_active}
                   onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked ? 1 : 0 }))}
+                  className="switch-green"
                 />
                 <span className="text-sm font-medium">Active (Published)</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={!!formData.is_home}
+                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_home: checked ? 1 : 0 }))}
+                  className="switch-green"
+                />
+                <span className="text-sm font-medium">Show in Homepage</span>
               </div>
             </div>
           </CardContent>
@@ -383,6 +443,16 @@ export default function LandingPageFormPage() {
                   value={(formData as any)[`content_block_${blockNum}_title`]}
                   onChange={handleChange}
                   placeholder={`Block ${blockNum} title`}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subtitle</label>
+                <Input
+                  name={`content_block_${blockNum}_subtitle`}
+                  value={(formData as any)[`content_block_${blockNum}_subtitle`]}
+                  onChange={handleChange}
+                  placeholder={`Block ${blockNum} subtitle`}
                 />
               </div>
 

@@ -61,6 +61,8 @@ export default function LandingPageDetail() {
   }
 
   const coverImage = page.cover_image || contentBlocks[0]?.image || null
+  const heroBlock = contentBlocks[0] || null
+  const remainingBlocks = contentBlocks.length > 1 ? contentBlocks.slice(1) : []
 
   return (
     <>
@@ -92,16 +94,35 @@ export default function LandingPageDetail() {
         </script>
       </Helmet>
 
-      {/* Page Title - always show below fixed header */}
-      <div className="lp-title-section">
-        <TitleHeader title={page.title} subtitle={page.subtitle} align="center" />
-      </div>
+      {/* Hero Section */}
+      <section className="lp-hero">
+        <div className="lp-hero-wrapper">
+          {coverImage && (
+            <div className="lp-hero-image">
+              <img src={coverImage} alt={page.title} />
+            </div>
+          )}
+          <div className="lp-hero-text">
+            <TitleHeader
+              title={page.title}
+              subtitle={page.subtitle || heroBlock?.subtitle}
+              align="left"
+            />
+            {(heroBlock?.description || page.description) && (
+              <div
+                className="lp-block-prose"
+                dangerouslySetInnerHTML={{ __html: heroBlock?.description || page.description }}
+              />
+            )}
+          </div>
+        </div>
+      </section>
 
       {/* Content Blocks - image left, text right (alternating) */}
-      {contentBlocks.length > 0 && (
+      {remainingBlocks.length > 0 && (
         <div className="lp-blocks">
           <div className="lp-blocks-wrapper">
-            {contentBlocks.map((block, index) => (
+            {remainingBlocks.map((block, index) => (
               <div key={block.id || index} className="lp-block-row">
                 {/* Image */}
                 {block.image && (

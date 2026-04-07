@@ -100,6 +100,11 @@ export const featuredProperties = [
 
 export const featuredCities = [
   {
+    name: 'Miami',
+    id: 'miami',
+    communities: [],
+  },
+  {
     name: 'Cancun',
     id: 'cancun',
     communities: [

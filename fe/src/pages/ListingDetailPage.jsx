@@ -8,6 +8,7 @@ import PropertyAccessGate from '../components/PropertyAccessGate';
 import OffMarketGate from '../components/OffMarketGate';
 import HotDealGate from '../components/HotDealGate';
 import TitleHeader from '../components/TitleHeader';
+import PropertyGrid from '../components/PropertyGrid';
 import { api } from '../config/api';
 import { listingDetails } from '../data/listingDetails';
 import { listingContent } from '../data/listingContent';
@@ -1263,65 +1264,13 @@ export default function ListingDetailPage() {
 
 
       {/* Related Properties Section */}
-      {
-        relatedProperties.length > 0 && (
-          <section className="related-properties">
-            <div className="related-properties-container">
-              <TitleHeader
-                title="Related Properties"
-                subtitle="Explore more properties with similar characteristics"
-                align="center"
-              />
-              <div className="related-properties-grid">
-                {relatedProperties.map((prop) => {
-                  const getRelatedPrice = () => {
-                    if (prop.price_on_demand) return 'Price on Request';
-                    let p = null;
-                    let s = '$';
-                    if (selectedCurrency === 'USD') p = prop.price_usd;
-                    else if (selectedCurrency === 'MXN') p = prop.price_mxn;
-                    else if (selectedCurrency === 'EUR') { p = prop.price_eur; s = '€'; }
-                    
-                    if (!p) return 'Contact for pricing';
-                    return `${s}${Number(p).toLocaleString('en-US', { maximumFractionDigits: 0 })} ${selectedCurrency}`;
-                  };
-
-                  const getRelatedSize = () => {
-                    if (selectedUnit === 'sqm' && prop.sqm) return `${formatSizeValue(prop.sqm)} m²`;
-                    if (selectedUnit === 'sqft' && prop.sqft) return `${formatSizeValue(prop.sqft)} sq ft`;
-                    return prop.sqm ? `${formatSizeValue(prop.sqm)} m²` : null;
-                  };
-
-                  return (
-                    <div key={prop.id} className="property-card">
-                      <Link to={`/listings/${prop.slug}/`}>
-                        <div className="property-thumb">
-                          <ImageWithOverlay
-                            src={prop.cover_image_url}
-                            alt={prop.title}
-                            beds={prop.bedrooms}
-                            baths={prop.bathrooms}
-                            size={getRelatedSize()}
-                            status={prop.status === 'sold' ? 'SOLD' : prop.status === 'reserved' ? 'RESERVED' : 'FOR SALE'}
-                            location={prop.neighborhood || prop.city}
-                          >
-                            <div className="property-price">
-                              <h3>{getRelatedPrice()}</h3>
-                            </div>
-                            <div className="property-title">
-                              <h4>{prop.title}</h4>
-                            </div>
-                          </ImageWithOverlay>
-                        </div>
-                      </Link>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )
-      }
+      {relatedProperties.length > 0 && (
+        <PropertyGrid
+          properties={relatedProperties}
+          title="Related Properties"
+          subtitle="Explore more properties with similar characteristics"
+        />
+      )}
 
       {/* Request Info Popup */}
       {

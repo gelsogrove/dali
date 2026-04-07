@@ -46,14 +46,9 @@ export default function LandingPageDetail() {
     return <Navigate to="/" replace />
   }
 
-  // Use first block image as cover, or cover_image
-  const firstBlockImage = page.blocks?.[0]?.image
-  const coverImage = firstBlockImage || page.cover_image
-
   // Use dynamic blocks from the API, fallback to old content_block columns
   let contentBlocks = page.blocks || []
   if (contentBlocks.length === 0) {
-    // Fallback: build blocks from old content_block_X_ columns
     for (let i = 1; i <= 4; i++) {
       const title = page[`content_block_${i}_title`]
       const subtitle = page[`content_block_${i}_subtitle`]
@@ -65,6 +60,8 @@ export default function LandingPageDetail() {
     }
   }
 
+  const coverImage = page.cover_image || contentBlocks[0]?.image || null
+
   return (
     <>
       <Helmet>
@@ -72,22 +69,16 @@ export default function LandingPageDetail() {
         <meta name="description" content={page.seoDescription || page.description || ''} />
         {page.seoKeywords && <meta name="keywords" content={page.seoKeywords} />}
         <link rel="canonical" href={`https://buywithdali.com/${page.slug}`} />
-        
-        {/* Open Graph */}
         <meta property="og:title" content={page.ogTitle || page.seoTitle || page.title} />
         <meta property="og:description" content={page.ogDescription || page.seoDescription || page.description || ''} />
         {coverImage && <meta property="og:image" content={coverImage} />}
         <meta property="og:url" content={`https://buywithdali.com/${page.slug}`} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Buy With Dali" />
-
-        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={page.ogTitle || page.seoTitle || page.title} />
         <meta name="twitter:description" content={page.ogDescription || page.seoDescription || page.description || ''} />
         {coverImage && <meta name="twitter:image" content={coverImage} />}
-
-        {/* JSON-LD Structured Data */}
         <script type="application/ld+json">
           {JSON.stringify({
             '@context': 'https://schema.org',
@@ -96,85 +87,60 @@ export default function LandingPageDetail() {
             description: page.seoDescription || page.description || '',
             url: `https://buywithdali.com/${page.slug}`,
             ...(coverImage ? { image: coverImage } : {}),
-            publisher: {
-              '@type': 'Organization',
-              name: 'Buy With Dali',
-              url: 'https://buywithdali.com'
-            }
+            publisher: { '@type': 'Organization', name: 'Buy With Dali', url: 'https://buywithdali.com' }
           })}
         </script>
       </Helmet>
 
-      {/* Header with Cover Image */}
-      {coverImage && (
-        <div className="landing-page-header" style={{ backgroundImage: `url(${coverImage})` }}>
-          <div className="landing-page-header-content">
-            <h1>{page.title}</h1>
-            {page.subtitle && <p>{page.subtitle}</p>}
+      {/* Page Title - always show below fixed header */}
+      <div className="lp-title-section">
+        <TitleHeader title={page.title} subtitle={page.subtitle} align="center" />
+      </div>
+
+      {/* Content Blocks - image left, text right (alternating) */}
+      {contentBlocks.length > 0 && (
+        <div className="lp-blocks">
+          <div className="lp-blocks-wrapper">
+            {contentBlocks.map((block, index) => (
+              <div key={block.id || index} className="lp-block-row">
+                {/* Image */}
+                {block.image && (
+                  <div className={`lp-block-image ${index % 2 === 1 ? 'lp-block-image--right' : ''}`}>
+                    <img src={block.image} alt={block.title || `Block ${index + 1}`} />
+                  </div>
+                )}
+
+                {/* Text */}
+                <div className={`lp-block-text ${!block.image ? 'lp-block-text--full' : ''}`}>
+                  {block.title && <h2>{block.title}</h2>}
+                  {block.subtitle && <h3>{block.subtitle}</h3>}
+                  {block.description && (
+                    <div className="lp-block-prose" dangerouslySetInnerHTML={{ __html: block.description }} />
+                  )}
+                </div>
+
+                {/* Image on right for odd rows (re-render for CSS order) */}
+                {block.image && index % 2 === 1 && (
+                  <div className="lp-block-image lp-block-image--right-mobile">
+                    <img src={block.image} alt={block.title || `Block ${index + 1}`} />
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {!coverImage && (
-        <TitleHeader title={page.title} subtitle={page.subtitle} />
+      {/* Rich Content (from WYSIWYG editor) */}
+      {page.content && (
+        <div className="lp-prose-section">
+          <div className="lp-prose-wrapper" dangerouslySetInnerHTML={{ __html: page.content }} />
+        </div>
       )}
 
-      {/* Main Content */}
-      <div className="landing-page-content">
-        <div className="landing-page-content-wrapper">
-          {/* Rich Content */}
-          {page.content && (
-            <div
-              className="landing-page-prose"
-              dangerouslySetInnerHTML={{ __html: page.content }}
-            ></div>
-          )}
-
-          {/* Content Blocks */}
-          {contentBlocks.map((block, index) => (
-            <div 
-              key={block.id || index} 
-              className={`content-block ${index % 2 === 0 ? 'block-even' : 'block-odd'}`}
-            >
-              <div className="content-block-grid">
-                {/* Image on left for even, right for odd */}
-                {index % 2 === 0 && block.image && (
-                  <div className="block-image">
-                    <img 
-                      src={block.image} 
-                      alt={block.title || `Content block ${index + 1}`} 
-                    />
-                  </div>
-                )}
-                
-                <div className="block-content">
-                  {block.title && <h2>{block.title}</h2>}
-                  {block.subtitle && <h3>{block.subtitle}</h3>}
-                  {block.description && (
-                    <div 
-                      className="prose"
-                      dangerouslySetInnerHTML={{ __html: block.description }}
-                    ></div>
-                  )}
-                </div>
-
-                {index % 2 === 1 && block.image && (
-                  <div className="block-image">
-                    <img 
-                      src={block.image} 
-                      alt={block.title || `Content block ${index + 1}`} 
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* CTA Section */}
-      <div className="landing-page-cta">
-        <div className="landing-page-cta-inner">
+      <div className="lp-cta">
+        <div className="lp-cta-inner">
           <h2>Ready to Get Started?</h2>
           <p>Contact us today to learn more about our services.</p>
           <a href="/contact-us">Get in Touch</a>

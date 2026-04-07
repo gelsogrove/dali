@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { contactInfo, featuredCities } from '../data/homeData';
+import { contactInfo } from '../data/homeData';
 import { api } from '../config/api';
 
 export default function Footer() {
   const [landingPages, setLandingPages] = useState([]);
+  const [cities, setCities] = useState([]);
 
   useEffect(() => {
     const fetchLandingPages = async () => {
@@ -19,10 +20,24 @@ export default function Footer() {
     fetchLandingPages();
   }, []);
 
-  const communityLinks = featuredCities.map((city) => ({
-    id: `community-${city.id}`,
-    title: city.name,
-    href: `/community/${city.id}`,
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        const res = await api.get('/cities');
+        const list = res?.data?.cities ?? res?.data?.data?.cities ?? [];
+        setCities(list);
+      } catch (error) {
+        console.error('Error fetching cities:', error);
+        setCities([]);
+      }
+    };
+    fetchCities();
+  }, []);
+
+  const communityLinks = cities.map((city) => ({
+    id: `community-${city.id || city.slug || city.title}`,
+    title: city.title || city.name,
+    href: `/community/${city.slug}`,
   }));
 
   return (
@@ -43,7 +58,7 @@ export default function Footer() {
           </a>
         </div>
         <div className="footer-services">
-          <h4 className="footer-services-title">Services</h4>
+          <h4 className="footer-services-title">services</h4>
           <ul className="footernav">
             <li className="menu-item">
               <a href="/developers-services" data-title="Developers Services">
@@ -58,7 +73,7 @@ export default function Footer() {
           </ul>
         </div>
         <div className="footer-services">
-          <h4 className="footer-services-title">Communities</h4>
+          <h4 className="footer-services-title">communities</h4>
           <ul className="footernav">
             {communityLinks.map((item) => (
               <li key={item.id} className="menu-item">

@@ -5,22 +5,19 @@ import { format } from 'date-fns'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Calendar, Edit, GripVertical, Plus, Trash2 } from 'lucide-react'
 
 export default function TestimonialsPage() {
   const queryClient = useQueryClient()
-  const [searchTerm, setSearchTerm] = useState('')
   const [list, setList] = useState<any[]>([])
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['testimonials', searchTerm],
+    queryKey: ['testimonials'],
     queryFn: async () => {
-      const q = searchTerm ? `&q=${encodeURIComponent(searchTerm)}` : ''
-      const response = await api.get(`/testimonials${q ? `?${q.slice(1)}` : ''}`)
+      const response = await api.get('/testimonials')
       return response.data.data
     },
     refetchOnWindowFocus: false,
@@ -100,20 +97,12 @@ export default function TestimonialsPage() {
             {data?.pagination?.total || 0} total testimonials
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Input
-            placeholder="Search testimonials..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-56"
-          />
-          <Link to="/testimonials/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Testimonial
-            </Button>
-          </Link>
-        </div>
+        <Link to="/testimonials/new">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Testimonial
+          </Button>
+        </Link>
       </div>
 
       {list.length === 0 && !isLoading && (

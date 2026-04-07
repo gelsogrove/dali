@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Plus, Edit, Trash2, GripVertical, Calendar, Link2 } from 'lucide-react'
@@ -212,64 +212,74 @@ export default function BlogsPage() {
               onDrop={() => handleDrop(idx)}
               onDragEnd={() => setDragIndex(null)}
             >
-              <div className="flex gap-4 items-center p-4">
-                <div className="text-muted-foreground cursor-grab flex flex-col items-center gap-1">
+              <div className="flex gap-4 items-start">
+                <div className="p-3 text-muted-foreground cursor-grab">
                   <GripVertical className="h-5 w-5" />
-                  <span className="text-xs">#{idx + 1}</span>
+                  <div className="text-xs text-muted-foreground text-center mt-1">#{idx + 1}</div>
                 </div>
 
-                <SafeImage
-                  src={toAbsoluteUrl(blog.featured_image)}
-                  alt={blog.featured_image_alt || blog.title}
-                  className="w-32 h-20 object-cover rounded flex-shrink-0"
-                />
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-base mb-1 truncate">{blog.title}</h3>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                    <Link2 className="h-3 w-3" />
-                    <span className="truncate">/blog/{blog.slug}</span>
-                  </p>
-                  {blog.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {blog.description}
-                    </p>
-                  )}
+                <div className="w-32 h-24 my-4 ml-1 mr-3 flex-shrink-0">
+                  <SafeImage
+                    src={toAbsoluteUrl(blog.featured_image)}
+                    alt={blog.featured_image_alt || blog.title}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
                 </div>
-                
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Home</span>
-                    <Switch
-                      checked={!!blog.is_home}
-                      onCheckedChange={(v) => toggleHome(blog, v)}
-                      className="data-[state=checked]:bg-green-500"
-                    />
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>
-                      {blog.published_date 
-                        ? format(new Date(blog.published_date), 'MMM dd, yyyy')
-                        : 'No date'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/blogs/${blog.id}/edit`}>
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setDeleteId(blog.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+
+                <div className="flex-1 py-4 pr-4 min-w-0">
+                  <CardHeader className="p-0 pb-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <CardTitle className="line-clamp-1">{blog.title}</CardTitle>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <Link2 className="h-3 w-3" />
+                          <span className="truncate">/blog/{blog.slug}</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 ml-2">
+                        <span className="text-xs text-muted-foreground">Show in Home</span>
+                        <Switch
+                          checked={!!blog.is_home}
+                          onCheckedChange={(v) => toggleHome(blog, v)}
+                          className="data-[state=checked]:bg-green-500"
+                        />
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="p-0">
+                    {blog.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                        {blog.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {blog.published_date
+                            ? format(new Date(blog.published_date), 'MMM dd, yyyy')
+                            : 'No date'}
+                        </span>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/blogs/${blog.id}/edit`}>
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setDeleteId(blog.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
                 </div>
               </div>
             </Card>

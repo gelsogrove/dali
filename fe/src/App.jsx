@@ -49,13 +49,8 @@ function MainLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
 
-  const forceFixedHeader = [
-    '/active-properties',
-    '/new-developments',
-    '/hot-deals',
-    '/land',
-    '/off-market'
-  ].includes(location.pathname) || location.pathname.startsWith('/listings/');
+  // Force fixed (solid) header on all pages except homepage (which has full-height hero)
+  const forceFixedHeader = location.pathname !== '/';
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';

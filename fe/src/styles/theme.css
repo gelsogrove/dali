@@ -2035,6 +2035,17 @@ header.header {
     font-weight: 600;
 }
 
+.footer-services .footernav {
+    margin-top: 0;
+    margin-left: 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+.footer-services .footernav li a {
+    text-transform: lowercase;
+}
+
 .footer-smi {
     display: flex;
     gap: 30px;

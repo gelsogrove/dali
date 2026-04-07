@@ -402,6 +402,10 @@ export default function PropertyFormPage() {
       sqm_max: formData.sqm_max ? parseFloat(formData.sqm_max) : null,
       sqft_min: formData.sqft_min ? parseFloat(formData.sqft_min) : null,
       sqft_max: formData.sqft_max ? parseFloat(formData.sqft_max) : null,
+      interior_sqm: formData.interior_sqm ? parseFloat(formData.interior_sqm) : null,
+      interior_sqft: formData.interior_sqft ? parseFloat(formData.interior_sqft) : null,
+      exterior_sqm: formData.exterior_sqm ? parseFloat(formData.exterior_sqm) : null,
+      exterior_sqft: formData.exterior_sqft ? parseFloat(formData.exterior_sqft) : null,
       lot_size_sqm: formData.lot_size_sqm ? parseFloat(formData.lot_size_sqm) : null,
       lot_size_sqft: formData.lot_size_sqft ? parseFloat(formData.lot_size_sqft) : null,
       lot_size_sqm_min: formData.lot_size_sqm_min ? parseFloat(formData.lot_size_sqm_min) : null,
@@ -1329,25 +1333,21 @@ export default function PropertyFormPage() {
 
       {/* TAB 3: Details */}
       <TabsContent value="details" className="space-y-6">
+        
+        {/* BEDROOMS & BATHROOMS */}
         <div className="grid grid-cols-2 gap-4">
           {isActiveLike ? (
-            // ACTIVE-LIKE: Single select for bedrooms
             <div>
               <Label>Bedrooms</Label>
               <Select value={formData.bedrooms} onValueChange={(v) => handleSelectChange('bedrooms', v)}>
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="studio">Studio</SelectItem>
-                  <SelectItem value="1">1</SelectItem>
-                  <SelectItem value="2">2</SelectItem>
-                  <SelectItem value="3">3</SelectItem>
-                  <SelectItem value="4">4</SelectItem>
-                  <SelectItem value="5+">5+</SelectItem>
+                  {['1','2','3','4','5+'].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           ) : (
-            // DEVELOPMENT: Range (min to max)
             <div>
               <Label className="text-sm font-medium mb-2">Bedrooms Range</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -1357,11 +1357,7 @@ export default function PropertyFormPage() {
                     <SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="studio">Studio</SelectItem>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="4">4</SelectItem>
-                      <SelectItem value="5+">5+</SelectItem>
+                      {['1','2','3','4','5+'].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1371,11 +1367,7 @@ export default function PropertyFormPage() {
                     <SelectTrigger><SelectValue placeholder="Max" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="studio">Studio</SelectItem>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="4">4</SelectItem>
-                      <SelectItem value="5+">5+</SelectItem>
+                      {['1','2','3','4','5+'].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1384,7 +1376,6 @@ export default function PropertyFormPage() {
           )}
           
           {isActiveLike ? (
-            // ACTIVE-LIKE: Single select for bathrooms
             <div>
               <Label>Bathrooms</Label>
               <Select value={formData.bathrooms} onValueChange={(v) => handleSelectChange('bathrooms', v)}>
@@ -1397,7 +1388,6 @@ export default function PropertyFormPage() {
               </Select>
             </div>
           ) : (
-            // DEVELOPMENT: Range (min to max)
             <div>
               <Label className="text-sm font-medium mb-2">Bathrooms Range</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -1426,344 +1416,247 @@ export default function PropertyFormPage() {
               </div>
             </div>
           )}
-
-          <div className="col-span-2">
-            <Label className="text-sm font-medium mb-2 block">Interior & Exterior Size</Label>
-            {formData.size_unit === 'sqm' ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs">Interior Size (m²)</Label>
-                  <Input
-                    type="number"
-                    name="interior_sqm"
-                    value={formData.interior_sqm}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(0) : ''
-                      setFormData(prev => ({ ...prev, interior_sqm: val, interior_sqft: sqftVal }))
-                    }}
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Exterior Size (m²)</Label>
-                  <Input
-                    type="number"
-                    name="exterior_sqm"
-                    value={formData.exterior_sqm}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(0) : ''
-                      setFormData(prev => ({ ...prev, exterior_sqm: val, exterior_sqft: sqftVal }))
-                    }}
-                    step="0.01"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs">Interior Size (sq ft)</Label>
-                  <Input
-                    type="number"
-                    name="interior_sqft"
-                    value={formData.interior_sqft}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      const sqmVal = val ? (parseFloat(val) / 10.7639).toFixed(0) : ''
-                      setFormData(prev => ({ ...prev, interior_sqft: val, interior_sqm: sqmVal }))
-                    }}
-                    step="0.01"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Exterior Size (sq ft)</Label>
-                  <Input
-                    type="number"
-                    name="exterior_sqft"
-                    value={formData.exterior_sqft}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      const sqmVal = val ? (parseFloat(val) / 10.7639).toFixed(0) : ''
-                      setFormData(prev => ({ ...prev, exterior_sqft: val, exterior_sqm: sqmVal }))
-                    }}
-                    step="0.01"
-                  />
-                </div>
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground mt-2">
-              Uses the same unit selector set below in Property Size.
-            </p>
-          </div>
         </div>
 
-        {/* SIZE FIELDS WITH UNIT SELECTOR */}
-        <div className="bg-slate-50 border rounded-lg p-4">
-          <Label className="text-sm font-medium mb-3 block">Property Size</Label>
-          
-          {/* UNIT SELECTOR */}
-          <div className="flex gap-2 mb-4">
-            <button
-              type="button"
-              onClick={() => setFormData(prev => ({ ...prev, size_unit: 'sqm' }))}
-              className={`flex-1 py-2 px-4 rounded-md font-medium transition ${
-                formData.size_unit === 'sqm'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              m² (Square Meters)
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData(prev => ({ ...prev, size_unit: 'sqft' }))}
-              className={`flex-1 py-2 px-4 rounded-md font-medium transition ${
-                formData.size_unit === 'sqft'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              sq ft (Square Feet)
-            </button>
-          </div>
+        {/* UNIT TOGGLE */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, size_unit: 'sqm' }))}
+            className={`flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm transition ${
+              formData.size_unit === 'sqm'
+                ? 'bg-gray-900 text-white shadow-md'
+                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            m² (Square Meters)
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData(prev => ({ ...prev, size_unit: 'sqft' }))}
+            className={`flex-1 py-2.5 px-4 rounded-lg font-semibold text-sm transition ${
+              formData.size_unit === 'sqft'
+                ? 'bg-gray-900 text-white shadow-md'
+                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            sq ft (Square Feet)
+          </button>
+        </div>
 
+        {/* CARD 1: PROPERTY SIZE — Blue */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <Label className="text-sm font-bold text-blue-800 mb-3 block">
+            📐 Property Size {isDevelopment ? '(Range)' : ''}
+          </Label>
           {isActiveLike ? (
-            // ACTIVE-LIKE: Single value
-            <div className="grid grid-cols-2 gap-4">
-              {formData.size_unit === 'sqm' ? (
-                <>
-                  <div>
-                    <Label className="text-xs">Size (m²)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqm" 
-                      value={formData.sqm} 
-                      onChange={(e) => {
-                        const sqmValue = e.target.value;
-                        const sqftValue = sqmValue ? (parseFloat(sqmValue) * 10.7639).toFixed(0) : '';
-                        setFormData(prev => ({ ...prev, sqm: sqmValue, sqft: sqftValue }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-600">Size (sq ft) - auto</Label>
-                    <Input 
-                      type="text" 
-                      value={formData.sqft ? `${parseFloat(formData.sqft).toFixed(0)} sq ft` : ''} 
-                      disabled 
-                      className="bg-gray-50 text-gray-600"
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <Label className="text-xs">Size (sq ft)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqft" 
-                      value={formData.sqft} 
-                      onChange={(e) => {
-                        const sqftValue = e.target.value;
-                        const sqmValue = sqftValue ? (parseFloat(sqftValue) / 10.7639).toFixed(0) : '';
-                        setFormData(prev => ({ ...prev, sqft: sqftValue, sqm: sqmValue }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-600">Size (m²) - auto</Label>
-                    <Input 
-                      type="text" 
-                      value={formData.sqm ? `${parseFloat(formData.sqm).toFixed(0)} m²` : ''} 
-                      disabled 
-                      className="bg-gray-50 text-gray-600"
-                    />
-                  </div>
-                </>
-              )}
+            <div className="grid grid-cols-3 gap-3 items-end">
+              <div>
+                <Label className="text-xs text-blue-700">{formData.size_unit === 'sqm' ? 'm²' : 'sq ft'}</Label>
+                <Input 
+                  type="number" 
+                  value={formData.size_unit === 'sqm' ? formData.sqm : formData.sqft}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (formData.size_unit === 'sqm') {
+                      setFormData(prev => ({ ...prev, sqm: val, sqft: val ? (parseFloat(val) * 10.7639).toFixed(0) : '' }));
+                    } else {
+                      setFormData(prev => ({ ...prev, sqft: val, sqm: val ? (parseFloat(val) / 10.7639).toFixed(0) : '' }));
+                    }
+                  }}
+                  step="0.01"
+                  className="border-blue-300 focus:border-blue-500"
+                />
+              </div>
+              <div className="text-center text-gray-400 pb-2">=</div>
+              <div>
+                <Label className="text-xs text-gray-500">{formData.size_unit === 'sqm' ? 'sq ft' : 'm²'} (auto)</Label>
+                <Input 
+                  type="text" 
+                  value={formData.size_unit === 'sqm' 
+                    ? (formData.sqft ? `${parseFloat(formData.sqft).toLocaleString()} sq ft` : '—') 
+                    : (formData.sqm ? `${parseFloat(formData.sqm).toLocaleString()} m²` : '—')} 
+                  disabled 
+                  className="bg-blue-100/50 text-blue-800 font-medium border-blue-200"
+                />
+              </div>
             </div>
           ) : (
-            // DEVELOPMENT: Range (min to max)
-            <div>
-              <Label className="text-sm font-medium mb-2">Size Range (for developments)</Label>
-              {formData.size_unit === 'sqm' ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs">From (m²)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqm_min" 
-                      value={formData.sqm_min} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(0) : '';
-                        setFormData(prev => ({ ...prev, sqm_min: val, sqft_min: sqftVal }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">To (m²)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqm_max" 
-                      value={formData.sqm_max} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(0) : '';
-                        setFormData(prev => ({ ...prev, sqm_max: val, sqft_max: sqftVal }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs text-gray-600">Range in sq ft (auto-calculated)</Label>
-                    <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
-                      {formData.sqft_min && formData.sqft_max 
-                        ? `${parseFloat(formData.sqft_min).toFixed(0)} - ${parseFloat(formData.sqft_max).toFixed(0)} sq ft`
-                        : 'Enter m² range above'}
-                    </div>
-                  </div>
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-blue-700">From ({formData.size_unit === 'sqm' ? 'm²' : 'sq ft'})</Label>
+                  <Input 
+                    type="number" 
+                    value={formData.size_unit === 'sqm' ? formData.sqm_min : formData.sqft_min}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (formData.size_unit === 'sqm') {
+                        setFormData(prev => ({ ...prev, sqm_min: val, sqft_min: val ? (parseFloat(val) * 10.7639).toFixed(0) : '' }));
+                      } else {
+                        setFormData(prev => ({ ...prev, sqft_min: val, sqm_min: val ? (parseFloat(val) / 10.7639).toFixed(0) : '' }));
+                      }
+                    }}
+                    step="0.01"
+                    className="border-blue-300 focus:border-blue-500"
+                  />
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs">From (sq ft)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqft_min" 
-                      value={formData.sqft_min} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const sqmVal = val ? (parseFloat(val) / 10.7639).toFixed(0) : '';
-                        setFormData(prev => ({ ...prev, sqft_min: val, sqm_min: sqmVal }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">To (sq ft)</Label>
-                    <Input 
-                      type="number" 
-                      name="sqft_max" 
-                      value={formData.sqft_max} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const sqmVal = val ? (parseFloat(val) / 10.7639).toFixed(0) : '';
-                        setFormData(prev => ({ ...prev, sqft_max: val, sqm_max: sqmVal }));
-                      }}
-                      step="0.01" 
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs text-gray-600">Range in m² (auto-calculated)</Label>
-                    <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
-                      {formData.sqm_min && formData.sqm_max 
-                        ? `${Math.round(parseFloat(formData.sqm_min))} - ${Math.round(parseFloat(formData.sqm_max))} m²`
-                        : 'Enter sq ft range above'}
-                    </div>
-                  </div>
+                <div>
+                  <Label className="text-xs text-blue-700">To ({formData.size_unit === 'sqm' ? 'm²' : 'sq ft'})</Label>
+                  <Input 
+                    type="number" 
+                    value={formData.size_unit === 'sqm' ? formData.sqm_max : formData.sqft_max}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (formData.size_unit === 'sqm') {
+                        setFormData(prev => ({ ...prev, sqm_max: val, sqft_max: val ? (parseFloat(val) * 10.7639).toFixed(0) : '' }));
+                      } else {
+                        setFormData(prev => ({ ...prev, sqft_max: val, sqm_max: val ? (parseFloat(val) / 10.7639).toFixed(0) : '' }));
+                      }
+                    }}
+                    step="0.01"
+                    className="border-blue-300 focus:border-blue-500"
+                  />
                 </div>
+              </div>
+              {((formData.size_unit === 'sqm' && (formData.sqft_min || formData.sqft_max)) || (formData.size_unit === 'sqft' && (formData.sqm_min || formData.sqm_max))) && (
+                <p className="text-xs text-blue-600 font-medium bg-blue-100/60 rounded px-2 py-1">
+                  = {formData.size_unit === 'sqm' 
+                    ? `${formData.sqft_min ? parseFloat(formData.sqft_min).toLocaleString() : '?'} – ${formData.sqft_max ? parseFloat(formData.sqft_max).toLocaleString() : '?'} sq ft`
+                    : `${formData.sqm_min ? parseFloat(formData.sqm_min).toLocaleString() : '?'} – ${formData.sqm_max ? parseFloat(formData.sqm_max).toLocaleString() : '?'} m²`}
+                </p>
               )}
             </div>
           )}
         </div>
 
-        <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-4">
-          <Label className="text-sm font-medium mb-3 block">Lot Size (Land/Exterior)</Label>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2">
-              {formData.size_unit === 'sqm' ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs">Lot Size (m²)</Label>
-                    <Input 
-                      type="number" 
-                      name="lot_size_sqm" 
-                      value={formData.lot_size_sqm} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const sqftVal = val ? (parseFloat(val) * 10.7639).toFixed(0) : '';
-                        setFormData(prev => ({ ...prev, lot_size_sqm: val, lot_size_sqft: sqftVal }));
-                      }} 
-                      step="0.01" 
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-600">Lot Size (sq ft) - auto</Label>
-                    <Input 
-                      type="text" 
-                      value={formData.lot_size_sqft ? `${parseFloat(formData.lot_size_sqft).toFixed(0)} sq ft` : ''} 
-                      disabled 
-                      className="bg-gray-50 text-gray-600"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs">Lot Size (sq ft)</Label>
-                    <Input 
-                      type="number" 
-                      name="lot_size_sqft" 
-                      value={formData.lot_size_sqft} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const sqmVal = val ? (parseFloat(val) / 10.7639).toFixed(0) : '';
-                        setFormData(prev => ({ ...prev, lot_size_sqft: val, lot_size_sqm: sqmVal }));
-                      }} 
-                      step="0.01" 
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-600">Lot Size (m²) - auto</Label>
-                    <Input 
-                      type="text" 
-                      value={formData.lot_size_sqm ? `${Math.round(parseFloat(formData.lot_size_sqm))} m²` : ''} 
-                      disabled 
-                      className="bg-gray-50 text-gray-600"
-                    />
-                  </div>
-                </div>
+        {/* CARD 2: INTERIOR & EXTERIOR — Amber */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <Label className="text-sm font-bold text-amber-800 mb-3 block">🏠 Interior & Exterior Size</Label>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Interior */}
+            <div className="space-y-1">
+              <Label className="text-xs text-amber-700 font-medium">Interior ({formData.size_unit === 'sqm' ? 'm²' : 'sq ft'})</Label>
+              <Input
+                type="number"
+                value={formData.size_unit === 'sqm' ? formData.interior_sqm : formData.interior_sqft}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (formData.size_unit === 'sqm') {
+                    setFormData(prev => ({ ...prev, interior_sqm: val, interior_sqft: val ? (parseFloat(val) * 10.7639).toFixed(0) : '' }));
+                  } else {
+                    setFormData(prev => ({ ...prev, interior_sqft: val, interior_sqm: val ? (parseFloat(val) / 10.7639).toFixed(0) : '' }));
+                  }
+                }}
+                step="0.01"
+                className="border-amber-300 focus:border-amber-500"
+              />
+              {((formData.size_unit === 'sqm' && formData.interior_sqft) || (formData.size_unit === 'sqft' && formData.interior_sqm)) && (
+                <p className="text-xs text-amber-600 font-medium bg-amber-100/60 rounded px-2 py-0.5">
+                  = {formData.size_unit === 'sqm' 
+                    ? `${parseFloat(formData.interior_sqft).toLocaleString()} sq ft`
+                    : `${parseFloat(formData.interior_sqm).toLocaleString()} m²`}
+                </p>
               )}
             </div>
-            {!isDevelopment && (
-              <div>
-                <Label>Year Built</Label>
-                <Input type="number" name="year_built" value={formData.year_built} onChange={handleChange} />
-              </div>
-            )}
-            {isDevelopment && (
-              <div>
-                <Label>Delivery / Completion</Label>
-                <Input 
-                  type="text" 
-                  name="delivery" 
-                  value={formData.delivery} 
-                  onChange={handleChange} 
-                  placeholder="e.g. Q4 2025, Immediate..."
-                />
-              </div>
-            )}
+            {/* Exterior */}
+            <div className="space-y-1">
+              <Label className="text-xs text-amber-700 font-medium">Exterior ({formData.size_unit === 'sqm' ? 'm²' : 'sq ft'})</Label>
+              <Input
+                type="number"
+                value={formData.size_unit === 'sqm' ? formData.exterior_sqm : formData.exterior_sqft}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (formData.size_unit === 'sqm') {
+                    setFormData(prev => ({ ...prev, exterior_sqm: val, exterior_sqft: val ? (parseFloat(val) * 10.7639).toFixed(0) : '' }));
+                  } else {
+                    setFormData(prev => ({ ...prev, exterior_sqft: val, exterior_sqm: val ? (parseFloat(val) / 10.7639).toFixed(0) : '' }));
+                  }
+                }}
+                step="0.01"
+                className="border-amber-300 focus:border-amber-500"
+              />
+              {((formData.size_unit === 'sqm' && formData.exterior_sqft) || (formData.size_unit === 'sqft' && formData.exterior_sqm)) && (
+                <p className="text-xs text-amber-600 font-medium bg-amber-100/60 rounded px-2 py-0.5">
+                  = {formData.size_unit === 'sqm' 
+                    ? `${parseFloat(formData.exterior_sqft).toLocaleString()} sq ft`
+                    : `${parseFloat(formData.exterior_sqm).toLocaleString()} m²`}
+                </p>
+              )}
+            </div>
           </div>
         </div>
-        
-        {!isDevelopment && (
-          <div>
-            <Label>Furnishing Status</Label>
-            <Select value={formData.furnishing_status} onValueChange={(v) => handleSelectChange('furnishing_status', v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="furnished">Furnished</SelectItem>
-                <SelectItem value="semi-furnished">Semi-Furnished</SelectItem>
-                <SelectItem value="unfurnished">Unfurnished</SelectItem>
-              </SelectContent>
-            </Select>
+
+        {/* CARD 3: LOT SIZE — Green */}
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+          <Label className="text-sm font-bold text-emerald-800 mb-3 block">🌿 Lot Size</Label>
+          <div className="grid grid-cols-3 gap-3 items-end">
+            <div>
+              <Label className="text-xs text-emerald-700">{formData.size_unit === 'sqm' ? 'm²' : 'sq ft'}</Label>
+              <Input 
+                type="number" 
+                value={formData.size_unit === 'sqm' ? formData.lot_size_sqm : formData.lot_size_sqft}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (formData.size_unit === 'sqm') {
+                    setFormData(prev => ({ ...prev, lot_size_sqm: val, lot_size_sqft: val ? (parseFloat(val) * 10.7639).toFixed(0) : '' }));
+                  } else {
+                    setFormData(prev => ({ ...prev, lot_size_sqft: val, lot_size_sqm: val ? (parseFloat(val) / 10.7639).toFixed(0) : '' }));
+                  }
+                }} 
+                step="0.01"
+                className="border-emerald-300 focus:border-emerald-500"
+              />
+            </div>
+            <div className="text-center text-gray-400 pb-2">=</div>
+            <div>
+              <Label className="text-xs text-gray-500">{formData.size_unit === 'sqm' ? 'sq ft' : 'm²'} (auto)</Label>
+              <Input 
+                type="text" 
+                value={formData.size_unit === 'sqm' 
+                  ? (formData.lot_size_sqft ? `${parseFloat(formData.lot_size_sqft).toLocaleString()} sq ft` : '—') 
+                  : (formData.lot_size_sqm ? `${parseFloat(formData.lot_size_sqm).toLocaleString()} m²` : '—')} 
+                disabled 
+                className="bg-emerald-100/50 text-emerald-800 font-medium border-emerald-200"
+              />
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* OTHER DETAILS */}
+        <div className="grid grid-cols-2 gap-4">
+          {!isDevelopment && (
+            <div>
+              <Label>Year Built</Label>
+              <Input type="number" name="year_built" value={formData.year_built} onChange={handleChange} />
+            </div>
+          )}
+          {isDevelopment && (
+            <div>
+              <Label>Delivery / Completion</Label>
+              <Input 
+                type="text" 
+                name="delivery" 
+                value={formData.delivery} 
+                onChange={handleChange} 
+                placeholder="e.g. Q4 2025, Immediate..."
+              />
+            </div>
+          )}
+          {!isDevelopment && (
+            <div>
+              <Label>Furnishing Status</Label>
+              <Select value={formData.furnishing_status} onValueChange={(v) => handleSelectChange('furnishing_status', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="furnished">Furnished</SelectItem>
+                  <SelectItem value="semi-furnished">Semi-Furnished</SelectItem>
+                  <SelectItem value="unfurnished">Unfurnished</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
       </TabsContent>
 
       {/* TAB 3: Location */}

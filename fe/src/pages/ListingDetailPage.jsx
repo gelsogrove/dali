@@ -137,6 +137,7 @@ export default function ListingDetailPage() {
   const [scheduleStartedAt, setScheduleStartedAt] = useState(() => Date.now());
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [hotDealUnlocked, setHotDealUnlocked] = useState(false);
 
   // Related properties
   const [relatedProperties, setRelatedProperties] = useState([]);
@@ -231,6 +232,30 @@ export default function ListingDetailPage() {
   useEffect(() => {
     fetchProperty();
   }, [fetchProperty]);
+
+  useEffect(() => {
+    if (property?.property_type !== 'hot_deal') {
+      setHotDealUnlocked(true);
+      return;
+    }
+    const stored = localStorage.getItem('hot_deal_access');
+    if (!stored) {
+      setHotDealUnlocked(false);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(stored);
+      if (parsed.expires_at && new Date(parsed.expires_at).getTime() > Date.now()) {
+        setHotDealUnlocked(true);
+      } else {
+        localStorage.removeItem('hot_deal_access');
+        setHotDealUnlocked(false);
+      }
+    } catch {
+      localStorage.removeItem('hot_deal_access');
+      setHotDealUnlocked(false);
+    }
+  }, [property?.property_type]);
 
   // Load related properties based on city/neighborhood
   useEffect(() => {
@@ -621,6 +646,8 @@ export default function ListingDetailPage() {
     return 'For Sale';
   };
   const statusLabel = getStatusLabel(property.status);
+  const isHotDeal = property?.property_type === 'hot_deal';
+  const isHotDealLocked = isHotDeal && !hotDealUnlocked;
 
   // Property Categories (unified: always an array)
   const categoriesArr = property.property_categories?.length
@@ -840,38 +867,47 @@ export default function ListingDetailPage() {
         />
       )}
 
-      <section className="listing-hero-slider">
-        <Splide
-          ref={mainSliderRef}
-          options={{
-            type: 'loop',
-            perPage: 1,
-            arrows: true,
-            pagination: false,
-            autoplay: true,
-            interval: 5000,
-            speed: 900,
-          }}
-          className="listing-hero-splide"
-        >
-          {heroGallery.map((photo, idx) => (
-            <SplideSlide key={`hero-${idx}`}>
-              <div className="listing-hero-frame">
-                <SafeImage
-                  src={photo.url}
-                  alt={photo.alt || `${detail.title} - Image ${idx + 1}`}
-                  loading={idx === 0 ? "eager" : "lazy"}
-                  placeholder="gradient"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-                <div className="listing-hero-overlay"></div>
-              </div>
-            </SplideSlide>
-          ))}
-        </Splide>
-      </section>
+      {!isHotDealLocked ? (
+        <section className="listing-hero-slider">
+          <Splide
+            ref={mainSliderRef}
+            options={{
+              type: 'loop',
+              perPage: 1,
+              arrows: true,
+              pagination: false,
+              autoplay: true,
+              interval: 5000,
+              speed: 900,
+            }}
+            className="listing-hero-splide"
+          >
+            {heroGallery.map((photo, idx) => (
+              <SplideSlide key={`hero-${idx}`}>
+                <div className="listing-hero-frame">
+                  <SafeImage
+                    src={photo.url}
+                    alt={photo.alt || `${detail.title} - Image ${idx + 1}`}
+                    loading={idx === 0 ? "eager" : "lazy"}
+                    placeholder="gradient"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div className="listing-hero-overlay"></div>
+                </div>
+              </SplideSlide>
+            ))}
+          </Splide>
+        </section>
+      ) : (
+        <section className="listing-hero-slider listing-hero-locked">
+          <div className="listing-hero-locked-content">
+            <div className="listing-hero-lock-icon" aria-hidden="true">🔒</div>
+            <p>Photos are available after unlocking.</p>
+          </div>
+        </section>
+      )}
 
-      {(heroGallery.length > 1 || property.youtube_video_url) && (
+      {!isHotDealLocked && (heroGallery.length > 1 || property.youtube_video_url) && (
         <div className="listing-gallery-thumbnails" data-aos="fade-up" data-aos-duration="900" data-aos-delay="50">
           <div className="listing-gallery-container">
             <Splide
@@ -974,7 +1010,17 @@ export default function ListingDetailPage() {
 
           <ConditionalWrapper
             condition={property?.property_type === 'hot_deal'}
-            wrapper={children => <HotDealGate propertyId={property.id} onUnlock={fetchProperty}>{children}</HotDealGate>}
+            wrapper={children => (
+              <HotDealGate
+                propertyId={property.id}
+                onUnlock={() => {
+                  setHotDealUnlocked(true);
+                  fetchProperty();
+                }}
+              >
+                {children}
+              </HotDealGate>
+            )}
           >
             <div className="listing-content-grid">
 
@@ -1255,34 +1301,35 @@ export default function ListingDetailPage() {
             </div>
           </ConditionalWrapper>
 
-        {/* Full-width Map */}
-        <div className="listing-map listing-map-fullwidth">
-          <iframe
-            title="Property map"
-            src={getGoogleMapsEmbedUrl(
-              property.google_maps_url,
-              property.latitude,
-              property.longitude,
-              property.city,
-              property.title,
-              property.address,
-              property.state,
-              property.country
-            )}
-            width="100%"
-            height="450"
-            style={{ border: 0, borderRadius: '0px' }}
-            allowFullScreen=""
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          ></iframe>
-        </div>
+        {!isHotDealLocked && (
+          <div className="listing-map listing-map-fullwidth">
+            <iframe
+              title="Property map"
+              src={getGoogleMapsEmbedUrl(
+                property.google_maps_url,
+                property.latitude,
+                property.longitude,
+                property.city,
+                property.title,
+                property.address,
+                property.state,
+                property.country
+              )}
+              width="100%"
+              height="450"
+              style={{ border: 0, borderRadius: '0px' }}
+              allowFullScreen=""
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
+        )}
         </div>
       </section>
 
 
       {/* Related Properties Section */}
-      {relatedProperties.length > 0 && (
+      {!isHotDealLocked && relatedProperties.length > 0 && (
         <PropertyGrid
           properties={relatedProperties}
           title="Related Properties"

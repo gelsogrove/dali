@@ -130,6 +130,20 @@ class LandingPageController {
      */
     public function create($data) {
         try {
+            // Map camelCase from frontend to snake_case DB columns
+            $fieldMap = [
+                'seoTitle' => 'seo_title',
+                'seoDescription' => 'seo_description',
+                'seoKeywords' => 'seo_keywords',
+                'ogTitle' => 'og_title',
+                'ogDescription' => 'og_description',
+            ];
+            foreach ($fieldMap as $camel => $snake) {
+                if (array_key_exists($camel, $data) && !array_key_exists($snake, $data)) {
+                    $data[$snake] = $data[$camel];
+                }
+            }
+
             if (empty($data['title']) || empty($data['slug'])) {
                 return $this->errorResponse('Title and slug are required', 400);
             }
@@ -230,6 +244,20 @@ class LandingPageController {
      */
     public function update($id, $data) {
         try {
+            // Map camelCase from frontend to snake_case DB columns
+            $fieldMap = [
+                'seoTitle' => 'seo_title',
+                'seoDescription' => 'seo_description',
+                'seoKeywords' => 'seo_keywords',
+                'ogTitle' => 'og_title',
+                'ogDescription' => 'og_description',
+            ];
+            foreach ($fieldMap as $camel => $snake) {
+                if (array_key_exists($camel, $data) && !array_key_exists($snake, $data)) {
+                    $data[$snake] = $data[$camel];
+                }
+            }
+
             // Verify exists
             $checkQuery = "SELECT id, slug FROM landing_pages WHERE id = ?";
             $checkResult = $this->db->executePrepared($checkQuery, [$id], 'i');

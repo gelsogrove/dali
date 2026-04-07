@@ -102,6 +102,7 @@ export default function LandingPageFormPage() {
       const body = {
         ...payload,
         is_active: payload.is_active ? 1 : 0,
+        is_home: payload.is_home ? 1 : 0,
       }
       if (isEdit) return api.put(`/landing-pages/${id}`, body)
       return api.post('/landing-pages', body)

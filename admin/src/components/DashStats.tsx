@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
-import { Property, MapPin, Film, Mail, Lock } from 'lucide-react'
+import { Home, MapPin, Film, Mail, Lock } from 'lucide-react'
 import api from '@/lib/api'
 
 export default function DashStats() {
@@ -13,7 +13,7 @@ export default function DashStats() {
   })
 
   const stats = [
-    { label: 'Active Properties', value: data?.active_properties ?? 0, icon: Property, color: 'bg-blue-100 text-blue-600' },
+    { label: 'Active Properties', value: data?.active_properties ?? 0, icon: Home, color: 'bg-blue-100 text-blue-600' },
     { label: 'Active Landing Pages', value: data?.active_landing_pages ?? 0, icon: MapPin, color: 'bg-green-100 text-green-600' },
     { label: 'Active Videos', value: data?.active_videos ?? 0, icon: Film, color: 'bg-purple-100 text-purple-600' },
     { label: 'Access Requests', value: data?.access_requests ?? 0, icon: Mail, color: 'bg-amber-100 text-amber-600' },

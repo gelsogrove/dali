@@ -118,7 +118,7 @@ export default function LandingPagesPage() {
                     <th className="text-left py-3 px-4 font-medium">Title</th>
                     <th className="text-left py-3 px-4 font-medium">Slug (URL)</th>
                     <th className="text-center py-3 px-4 font-medium">Active</th>
-                    <th className="text-center py-3 px-4 font-medium">Featured</th>
+                    <th className="text-center py-3 px-4 font-medium">Show in Homepage</th>
                     <th className="text-right py-3 px-4 font-medium">Actions</th>
                   </tr>
                 </thead>

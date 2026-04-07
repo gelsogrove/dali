@@ -2,7 +2,7 @@ import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Repeat, Mail, Shield, DollarSign, ListChecks, Database } from 'lucide-react'
+import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Repeat, Mail, Shield, ListChecks, Database } from 'lucide-react'
 import { useState } from 'react'
 import { api } from '@/lib/api'
 

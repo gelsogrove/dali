@@ -416,6 +416,12 @@ class LandingPageController {
 
         if ($includeBlocks) {
             $data['blocks'] = $this->getBlocksForPage((int)$row['id']);
+        } else {
+            // Include first block image for list thumbnail
+            $firstBlock = $this->getFirstBlockImage((int)$row['id']);
+            if ($firstBlock) {
+                $data['first_block_image'] = $firstBlock;
+            }
         }
 
         return $data;
@@ -424,6 +430,19 @@ class LandingPageController {
     /**
      * Get content blocks from the dynamic blocks table
      */
+    private function getFirstBlockImage($landingPageId) {
+        try {
+            $query = "SELECT image FROM landing_page_content_blocks WHERE landing_page_id = ? AND image IS NOT NULL AND image != '' ORDER BY display_order ASC LIMIT 1";
+            $result = $this->db->executePrepared($query, [$landingPageId], 'i');
+            if ($result && $row = $result->fetch_assoc()) {
+                return $row['image'];
+            }
+            return null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
     private function getBlocksForPage($landingPageId) {
         try {
             $query = "SELECT * FROM landing_page_content_blocks WHERE landing_page_id = ? ORDER BY display_order ASC";

@@ -207,7 +207,7 @@ export default function CityPage() {
                         baths={formatBathrooms(property)}
                         size={getShortSize(property)}
                         status={statusLabel}
-                        location={property.neighborhood || property.city}
+                        location={[property.neighborhood, property.city].filter(Boolean).join(', ')}
                       >
                         <div className="fp-item-price">
                           <h3>{priceLabel}</h3>

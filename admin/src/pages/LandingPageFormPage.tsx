@@ -64,7 +64,9 @@ export default function LandingPageFormPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<LandingPageForm>(emptyForm)
-  const [blocks, setBlocks] = useState<ContentBlock[]>([])
+  const [blocks, setBlocks] = useState<ContentBlock[]>(isEdit ? [] : [
+    { title: '', subtitle: '', description: '', image: '', display_order: 1, _isNew: true }
+  ])
   const [deletedBlockIds, setDeletedBlockIds] = useState<number[]>([])
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
   const [isSlugEditable, setIsSlugEditable] = useState(true)

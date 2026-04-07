@@ -39,7 +39,7 @@ export default function PropertyGrid({ properties = [], title, subtitle }) {
                   baths={formatBathrooms(property)}
                   size={getShortSize(property)}
                   status={getStatusLabel(property)}
-                  location={property.neighborhood || property.city || ''}
+                  location={[property.neighborhood, property.city].filter(Boolean).join(', ') || ''}
                 >
                   <div className="property-price">
                     <h3>{formatPrice(property)}</h3>

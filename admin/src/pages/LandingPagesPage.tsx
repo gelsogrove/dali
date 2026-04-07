@@ -18,6 +18,7 @@ type LandingPage = {
   cover_image?: string
   cover_image_alt?: string
   content_block_1_image?: string
+  first_block_image?: string
   deleted_at?: string | null
   display_order?: number
 }
@@ -119,7 +120,7 @@ export default function LandingPagesPage() {
           ) : (
             <div className="space-y-3">
               {list.map((page, index) => {
-                const coverImg = page.content_block_1_image || page.cover_image
+                const coverImg = page.first_block_image || page.content_block_1_image || page.cover_image
                 return (
                   <Card
                     key={page.id}

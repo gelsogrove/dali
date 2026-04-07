@@ -702,6 +702,11 @@ export default function ListingDetailPage() {
       })();
   const additionalInfo = detail.additionalInfo || [];
   const attachments = property.attachments || [];
+  const tags = Array.isArray(property.tags)
+    ? property.tags
+    : typeof property.tags === 'string'
+      ? property.tags.split(',').map((t) => t.trim()).filter(Boolean)
+      : [];
 
   const attachmentIcon = (filename = '', mime = '') => {
     if (mime === 'link' || !filename) return '🔗';
@@ -982,8 +987,21 @@ export default function ListingDetailPage() {
                 </div>
 
                 {/* Amenities & Attachments */}
-                {(amenities.length > 0 || (attachments.length > 0 && !(['development', 'active'].includes(property.property_type)))) && (
+                {(tags.length > 0 || amenities.length > 0 || (attachments.length > 0 && !(['development', 'active'].includes(property.property_type)))) && (
                 <div className="listing-details-card">
+
+                  {tags.length > 0 && (
+                    <div className="listing-tags-section">
+                      <h4>Tags</h4>
+                      <ul className="listing-tags-list">
+                        {tags.map((tag, idx) => (
+                          <li key={`tag-${idx}`} className="listing-tag">
+                            {tag}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {/* Amenities */}
                   {amenities.length > 0 && (

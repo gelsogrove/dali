@@ -163,7 +163,7 @@ export default function FeaturedProperties({
           {properties.map((property) => {
             const tokenSuffix = token && property.property_type === 'off_market' ? `?token=${encodeURIComponent(token)}` : '';
             const link = `/listings/${property.slug}/${tokenSuffix}`;
-            const location = property.city || property.neighborhood || '';
+            const location = [property.neighborhood, property.city].filter(Boolean).join(', ');
             const coverImage = property.cover_image_url; // SafeImage gestirà il fallback
 
             return (

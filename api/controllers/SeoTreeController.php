@@ -142,6 +142,11 @@ class SeoTreeController {
                      LIMIT 100";
             $result = $this->conn->query($query);
 
+            if (!$result) {
+                error_log("Properties query failed: " . $this->conn->error);
+                return $items;
+            }
+
             while ($row = $result->fetch_assoc()) {
                 $items[] = [
                     'name' => $row['title'],
@@ -168,6 +173,11 @@ class SeoTreeController {
                      WHERE deleted_at IS NULL
                      ORDER BY display_order ASC";
             $result = $this->conn->query($query);
+
+            if (!$result) {
+                error_log("Landing pages query failed: " . $this->conn->error);
+                return $items;
+            }
 
             while ($row = $result->fetch_assoc()) {
                 $items[] = [
@@ -199,6 +209,11 @@ class SeoTreeController {
                      LIMIT 100";
             $result = $this->conn->query($query);
 
+            if (!$result) {
+                error_log("Blog query failed: " . $this->conn->error);
+                return $items;
+            }
+
             while ($row = $result->fetch_assoc()) {
                 $items[] = [
                     'name' => $row['title'],
@@ -223,6 +238,11 @@ class SeoTreeController {
             $query = "SELECT id, name, slug FROM cities ORDER BY name ASC";
             $result = $this->conn->query($query);
 
+            if (!$result) {
+                error_log("Cities query failed: " . $this->conn->error);
+                return $items;
+            }
+
             while ($row = $result->fetch_assoc()) {
                 $items[] = [
                     'name' => $row['name'],
@@ -246,6 +266,11 @@ class SeoTreeController {
         try {
             $query = "SELECT id, title FROM videos WHERE is_active = 1 ORDER BY display_order ASC LIMIT 100";
             $result = $this->conn->query($query);
+
+            if (!$result) {
+                error_log("Videos query failed: " . $this->conn->error);
+                return $items;
+            }
 
             while ($row = $result->fetch_assoc()) {
                 $items[] = [

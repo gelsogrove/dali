@@ -1,0 +1,12 @@
+/* Green switch style for toggles */
+.switch-green[role="switch"][aria-checked="true"] {
+  background-color: #22c55e !important;
+}
+
+.switch-green[role="switch"] {
+  transition: background-color 0.2s ease;
+}
+
+.switch-green[role="switch"]:hover {
+  opacity: 0.9;
+}

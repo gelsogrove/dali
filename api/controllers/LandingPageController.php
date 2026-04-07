@@ -149,9 +149,13 @@ class LandingPageController {
             $allowedFields = [
                 'title', 'subtitle', 'slug', 'description', 'content',
                 'seo_title', 'seo_description', 'seo_keywords',
-                'og_title', 'og_description', 'og_image',
+                'og_title', 'og_description',
                 'cover_image', 'cover_image_alt',
-                'is_active', 'is_home', 'display_order'
+                'is_active', 'is_home', 'display_order',
+                'content_block_1_title', 'content_block_1_description', 'content_block_1_image',
+                'content_block_2_title', 'content_block_2_description', 'content_block_2_image',
+                'content_block_3_title', 'content_block_3_description', 'content_block_3_image',
+                'content_block_4_title', 'content_block_4_description', 'content_block_4_image',
             ];
 
             $columns = [];
@@ -181,6 +185,14 @@ class LandingPageController {
 
             if (empty($columns)) {
                 return $this->errorResponse('No valid fields provided', 400);
+            }
+
+            // Auto-set og_image = cover_image
+            if (array_key_exists('cover_image', $data)) {
+                $columns[] = 'og_image';
+                $placeholders[] = '?';
+                $params[] = $data['cover_image'];
+                $types .= 's';
             }
 
             $columnsStr = implode(', ', $columns);
@@ -245,9 +257,13 @@ class LandingPageController {
             $allowedFields = [
                 'title', 'subtitle', 'slug', 'description', 'content',
                 'seo_title', 'seo_description', 'seo_keywords',
-                'og_title', 'og_description', 'og_image',
+                'og_title', 'og_description',
                 'cover_image', 'cover_image_alt',
-                'is_active', 'is_home', 'display_order'
+                'is_active', 'is_home', 'display_order',
+                'content_block_1_title', 'content_block_1_description', 'content_block_1_image',
+                'content_block_2_title', 'content_block_2_description', 'content_block_2_image',
+                'content_block_3_title', 'content_block_3_description', 'content_block_3_image',
+                'content_block_4_title', 'content_block_4_description', 'content_block_4_image',
             ];
 
             $updates = [];
@@ -265,6 +281,13 @@ class LandingPageController {
                         $types .= 's';
                     }
                 }
+            }
+
+            // Auto-set og_image = cover_image
+            if (array_key_exists('cover_image', $data)) {
+                $updates[] = "og_image = ?";
+                $params[] = $data['cover_image'];
+                $types .= 's';
             }
 
             if (empty($updates)) {

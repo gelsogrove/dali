@@ -24,10 +24,21 @@ type LandingPageForm = {
   seoKeywords: string
   ogTitle: string
   ogDescription: string
-  ogImage: string
   is_active: number
   is_home: number
   display_order: number
+  content_block_1_title: string
+  content_block_1_description: string
+  content_block_1_image: string
+  content_block_2_title: string
+  content_block_2_description: string
+  content_block_2_image: string
+  content_block_3_title: string
+  content_block_3_description: string
+  content_block_3_image: string
+  content_block_4_title: string
+  content_block_4_description: string
+  content_block_4_image: string
 }
 
 const emptyForm: LandingPageForm = {
@@ -43,10 +54,21 @@ const emptyForm: LandingPageForm = {
   seoKeywords: '',
   ogTitle: '',
   ogDescription: '',
-  ogImage: '',
   is_active: 1,
   is_home: 0,
   display_order: 0,
+  content_block_1_title: '',
+  content_block_1_description: '',
+  content_block_1_image: '',
+  content_block_2_title: '',
+  content_block_2_description: '',
+  content_block_2_image: '',
+  content_block_3_title: '',
+  content_block_3_description: '',
+  content_block_3_image: '',
+  content_block_4_title: '',
+  content_block_4_description: '',
+  content_block_4_image: '',
 }
 
 export default function LandingPageFormPage() {
@@ -90,10 +112,21 @@ export default function LandingPageFormPage() {
       seoKeywords: page.seoKeywords || '',
       ogTitle: page.ogTitle || '',
       ogDescription: page.ogDescription || '',
-      ogImage: page.ogImage || '',
       is_active: page.is_active ? 1 : 0,
       is_home: page.is_home ? 1 : 0,
       display_order: page.display_order || 0,
+      content_block_1_title: page.content_block_1_title || '',
+      content_block_1_description: page.content_block_1_description || '',
+      content_block_1_image: page.content_block_1_image || '',
+      content_block_2_title: page.content_block_2_title || '',
+      content_block_2_description: page.content_block_2_description || '',
+      content_block_2_image: page.content_block_2_image || '',
+      content_block_3_title: page.content_block_3_title || '',
+      content_block_3_description: page.content_block_3_description || '',
+      content_block_3_image: page.content_block_3_image || '',
+      content_block_4_title: page.content_block_4_title || '',
+      content_block_4_description: page.content_block_4_description || '',
+      content_block_4_image: page.content_block_4_image || '',
     })
   }, [pageQuery.data])
 
@@ -333,6 +366,47 @@ export default function LandingPageFormPage() {
           </CardContent>
         </Card>
 
+        {/* Content Blocks */}
+        {[1, 2, 3, 4].map((blockNum) => (
+          <Card key={`block-${blockNum}`}>
+            <CardHeader>
+              <CardTitle>Content Block {blockNum}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Title</label>
+                <Input
+                  name={`content_block_${blockNum}_title`}
+                  value={(formData as any)[`content_block_${blockNum}_title`]}
+                  onChange={handleChange}
+                  placeholder={`Block ${blockNum} title`}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Description</label>
+                <Textarea
+                  name={`content_block_${blockNum}_description`}
+                  value={(formData as any)[`content_block_${blockNum}_description`]}
+                  onChange={handleChange}
+                  rows={4}
+                  placeholder={`Block ${blockNum} description`}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Image</label>
+                <Input
+                  name={`content_block_${blockNum}_image`}
+                  value={(formData as any)[`content_block_${blockNum}_image`]}
+                  onChange={handleChange}
+                  placeholder={`/path/to/image-${blockNum}.jpg`}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
         {/* SEO Fields */}
         <Card>
           <CardHeader>
@@ -440,16 +514,6 @@ export default function LandingPageFormPage() {
                 onChange={handleChange}
                 placeholder="Description for social sharing"
                 rows={2}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">OG Image URL (Social Media)</label>
-              <Input
-                name="ogImage"
-                value={formData.ogImage}
-                onChange={handleChange}
-                placeholder="Image URL for social sharing"
               />
             </div>
           </CardContent>

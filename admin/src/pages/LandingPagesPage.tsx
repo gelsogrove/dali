@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { ArrowLeft, Plus, Trash, Edit } from 'lucide-react'
+import './LandingPagesPage.css'
 
 type LandingPage = {
   id: number
@@ -152,7 +153,7 @@ export default function LandingPagesPage() {
                           onCheckedChange={(checked) =>
                             toggleActive.mutate({ id: page.id, value: checked })
                           }
-                          disabled={toggleActive.isPending}
+                          className="switch-green"
                         />
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -162,21 +163,22 @@ export default function LandingPagesPage() {
                             toggleFeatured.mutate({ id: page.id, value: checked })
                           }
                           disabled={toggleFeatured.isPending}
+                          className="switch-green"
+                          disabled={toggleFeatured.isPending}
                         />
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex justify-end gap-2">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
                             onClick={() => navigate(`/landing-pages/${page.id}`)}
-                            className="gap-1"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="mr-2 h-4 w-4" />
                             Edit
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="destructive"
                             size="sm"
                             onClick={() => {
                               if (confirm('Delete this landing page?')) {
@@ -184,9 +186,8 @@ export default function LandingPagesPage() {
                               }
                             }}
                             disabled={deletePage.isPending}
-                            className="text-red-600 hover:text-red-700 gap-1"
                           >
-                            <Trash className="h-4 w-4" />
+                            <Trash className="mr-2 h-4 w-4" />
                             Delete
                           </Button>
                         </div>

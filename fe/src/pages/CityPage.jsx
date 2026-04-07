@@ -134,8 +134,13 @@ export default function CityPage() {
 
       <section className="community-detail">
         <div className="community-detail-wrapper">
-          <div className="community-split">
-            <div className="community-hero">
+          <div className="community-header community-header--left">
+            <h1 className="community-page-title">{city.title}</h1>
+            {city.subtitle && <p className="community-page-subtitle">{city.subtitle}</p>}
+          </div>
+
+          <div className="community-copy community-copy-wrap">
+            <div className="community-float-image">
               {city.cover_image ? (
                 <SafeImage
                   src={toAbsoluteUrl(city.cover_image)}
@@ -150,29 +155,24 @@ export default function CityPage() {
               )}
             </div>
 
-            <div className="community-copy">
-              <div className="community-header community-header--left">
-                <h1 className="community-page-title">{city.title}</h1>
-                {city.subtitle && <p className="community-page-subtitle">{city.subtitle}</p>}
-              </div>
+            {city.fullContent && (
+              <div
+                className="community-content"
+                dangerouslySetInnerHTML={{ __html: city.fullContent }}
+              />
+            )}
 
-              {city.fullContent && (
-                <div
-                  className="community-content"
-                  dangerouslySetInnerHTML={{ __html: city.fullContent }}
+            {city.content_image ? (
+              <div className="community-content-image">
+                <SafeImage
+                  src={toAbsoluteUrl(city.content_image)}
+                  alt={city.content_image_alt || city.title}
+                  placeholder="gradient"
+                  style={{ width: '100%', borderRadius: '8px' }}
                 />
-              )}
-              {city.content_image ? (
-                <div className="community-content-image">
-                  <SafeImage
-                    src={toAbsoluteUrl(city.content_image)}
-                    alt={city.content_image_alt || city.title}
-                    placeholder="gradient"
-                    style={{ width: '100%', borderRadius: '8px' }}
-                  />
-                </div>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
+            <div className="community-clear" />
           </div>
         </div>
       </section>

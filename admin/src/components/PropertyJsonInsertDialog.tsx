@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { REALTOR_PROMPT } from '@/lib/prompts'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -572,6 +573,14 @@ export default function PropertyJsonInsertDialog({
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([])
   const [serverValid, setServerValid] = useState<any>(null)
   const [copied, setCopied] = useState(false)
+  const [copiedPrompt, setCopiedPrompt] = useState(false)
+
+  const handleCopyPrompt = useCallback(() => {
+    navigator.clipboard.writeText(REALTOR_PROMPT).then(() => {
+      setCopiedPrompt(true)
+      setTimeout(() => setCopiedPrompt(false), 2000)
+    })
+  }, [])
 
   const errorCount = validationErrors.filter((e) => e.severity === 'error').length
   const warningCount = validationErrors.filter((e) => e.severity === 'warning').length
@@ -750,6 +759,18 @@ export default function PropertyJsonInsertDialog({
                   </span>
                 </button>
               ))}
+              
+              {/* COPY PROMPT BOX */}
+              <button
+                onClick={handleCopyPrompt}
+                className="flex flex-col items-center justify-center gap-3 p-6 rounded-lg border-2 border-dashed border-green-300 hover:border-green-500 hover:bg-green-50 transition-all hover:scale-105 active:scale-95"
+                type="button"
+              >
+                <span className="text-4xl">{copiedPrompt ? '✓' : '📋'}</span>
+                <span className="font-medium text-sm text-center text-green-700">
+                  {copiedPrompt ? 'Copied!' : 'Copy Prompt'}
+                </span>
+              </button>
             </div>
             <div className="text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-lg p-4">
               <p className="font-medium text-amber-900 mb-1">⚠️ Important:</p>

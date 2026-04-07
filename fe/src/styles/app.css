@@ -6142,6 +6142,32 @@ html::-webkit-scrollbar {
   margin: 16px 0;
   line-height: 1.6;
   color: #3c3c3c;
+  font-family: var(--font-family-default);
+}
+
+.community-content p {
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+
+.community-content h2,
+.community-content h3,
+.community-content h4 {
+  font-family: var(--font-family-title);
+  color: var(--color-primary);
+  margin: 24px 0 12px;
+  letter-spacing: 0.6px;
+  font-weight: var(--font-weight-medium);
+}
+
+.community-content ul,
+.community-content ol {
+  margin: 0 0 16px;
+  padding-left: 18px;
+}
+
+.community-content li {
+  margin-bottom: 8px;
 }
 
 .community-content-image img {

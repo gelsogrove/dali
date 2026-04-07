@@ -557,10 +557,11 @@
 
 .price-value {
   font-family: var(--font-family-title);
-  font-size: 32px;
+  font-size: clamp(20px, 2.2vw, 32px);
   color: var(--color-primary);
   font-weight: var(--font-weight-medium);
   margin-bottom: 16px;
+  white-space: nowrap;
 }
 
 /* Price Controls Wrapper */

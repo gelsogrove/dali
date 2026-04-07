@@ -1377,7 +1377,7 @@ export default function PropertyFormPage() {
           
           {isActiveLike ? (
             <div>
-              <Label>Bathrooms</Label>
+              <Label>Bathrooms (Single)</Label>
               <Select value={formData.bathrooms} onValueChange={(v) => handleSelectChange('bathrooms', v)}>
                 <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
@@ -1389,10 +1389,10 @@ export default function PropertyFormPage() {
             </div>
           ) : (
             <div>
-              <Label className="text-sm font-medium mb-2">Bathrooms Range</Label>
+              <Label className="text-sm font-medium mb-2">Bathrooms Range (Min–Max)</Label>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs text-gray-600">From</Label>
+                  <Label className="text-xs text-gray-600">Min</Label>
                   <Select value={formData.bathrooms_min} onValueChange={(v) => handleSelectChange('bathrooms_min', v)}>
                     <SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger>
                     <SelectContent>
@@ -1403,7 +1403,7 @@ export default function PropertyFormPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">To</Label>
+                  <Label className="text-xs text-gray-600">Max</Label>
                   <Select value={formData.bathrooms_max} onValueChange={(v) => handleSelectChange('bathrooms_max', v)}>
                     <SelectTrigger><SelectValue placeholder="Max" /></SelectTrigger>
                     <SelectContent>

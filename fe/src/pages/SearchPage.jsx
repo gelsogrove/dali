@@ -359,9 +359,9 @@ export default function SearchPage() {
                         priceTo = property.price_to_usd;
                         symbol = '$';
                       } else if (selectedCurrency === 'MXN') {
-                        price = property.price_mxn;
-                        priceFrom = property.price_from_mxn;
-                        priceTo = property.price_to_mxn;
+                        price = property.price_mxn ? Math.round(Number(property.price_mxn)) : null;
+                        priceFrom = property.price_from_mxn ? Math.round(Number(property.price_from_mxn)) : null;
+                        priceTo = property.price_to_mxn ? Math.round(Number(property.price_to_mxn)) : null;
                         symbol = '$';
                       } else if (selectedCurrency === 'EUR') {
                         price = property.price_eur;

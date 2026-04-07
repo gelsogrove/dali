@@ -297,7 +297,7 @@ function normalizeJsonData(input: any): any {
   data.bathrooms_max = normalizeBathrooms(data.bathrooms_max)
 
   // Remove excluded/auto fields
-  const autoFields = ['slug', 'property_id_reference', 'seo_keywords', 'latitude', 'longitude',
+  const autoFields = ['property_id_reference', 'seo_keywords', 'latitude', 'longitude',
     'is_active', 'show_in_home', 'order', 'views_count', 'internal_notes', 'exchange_rate']
   autoFields.forEach((f) => delete data[f])
 

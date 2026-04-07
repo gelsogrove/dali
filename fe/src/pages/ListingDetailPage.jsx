@@ -598,8 +598,8 @@ export default function ListingDetailPage() {
         priceTo = property.price_to_usd;
         symbol = '$';
       } else if (selectedCurrency === 'MXN' && property.price_from_mxn && property.price_to_mxn) {
-        priceFrom = property.price_from_mxn;
-        priceTo = property.price_to_mxn;
+        priceFrom = Math.round(Number(property.price_from_mxn));
+        priceTo = Math.round(Number(property.price_to_mxn));
         symbol = '$';
       } else if (selectedCurrency === 'EUR' && property.price_from_eur && property.price_to_eur) {
         priceFrom = property.price_from_eur;
@@ -620,7 +620,7 @@ export default function ListingDetailPage() {
       price = property.price_usd;
       symbol = '$';
     } else if (selectedCurrency === 'MXN' && property.price_mxn) {
-      price = property.price_mxn;
+      price = Math.round(Number(property.price_mxn));
       symbol = '$';
     } else if (selectedCurrency === 'EUR' && property.price_eur) {
       price = property.price_eur;

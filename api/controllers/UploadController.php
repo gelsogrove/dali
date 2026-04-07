@@ -29,7 +29,7 @@ class UploadController
 
         // Create upload directories if they don't exist
         $legacyDirs = ['properties', 'videos', 'galleries', 'temp', 'blogs', 'attachments'];
-        $imageDirs = ['images', 'images/blog', 'images/video', 'images/properties', 'images/city', 'images/area', 'images/editor'];
+        $imageDirs = ['images', 'images/blog', 'images/video', 'images/properties', 'images/city', 'images/area', 'images/editor', 'images/landing'];
         $dirs = array_merge($legacyDirs, $imageDirs);
         foreach ($dirs as $dir) {
             $this->ensureDirectory($dir);
@@ -518,6 +518,14 @@ class UploadController
     public function uploadEditorImage($file)
     {
         return $this->uploadGenericImage($file, 'editor');
+    }
+
+    /**
+     * Upload landing page image (content blocks, covers)
+     */
+    public function uploadLandingPageImage($file)
+    {
+        return $this->uploadGenericImage($file, 'landing');
     }
 
     /**

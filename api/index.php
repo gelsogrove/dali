@@ -42,6 +42,7 @@ require_once __DIR__ . '/controllers/TestimonialController.php';
 require_once __DIR__ . '/controllers/CityController.php';
 require_once __DIR__ . '/controllers/AreaController.php';
 require_once __DIR__ . '/controllers/LandingPageController.php';
+require_once __DIR__ . '/controllers/LandingPageContentBlockController.php';
 require_once __DIR__ . '/controllers/ExchangeRateController.php';
 require_once __DIR__ . '/controllers/ContactController.php';
 require_once __DIR__ . '/controllers/AccessRequestController.php';
@@ -121,6 +122,10 @@ try {
 
         case 'landing-pages':
             handleLandingPageRoutes($segments, $method);
+            break;
+
+        case 'landing-page-blocks':
+            handleLandingPageBlockRoutes($segments, $method);
             break;
 
         case 'exchange-rate':
@@ -433,6 +438,11 @@ function handleUploadRoutes($segments, $method) {
 
             case 'area-image':
                 $result = $controller->uploadAreaImage($_FILES['image'] ?? null);
+                echo json_encode($result);
+                break;
+
+            case 'landing-page-image':
+                $result = $controller->uploadLandingPageImage($_FILES['image'] ?? null);
                 echo json_encode($result);
                 break;
 
@@ -1462,6 +1472,66 @@ function handleLandingPageRoutes($segments, $method) {
 }
 
 /**
+ * Handle landing page content block routes
+ */
+function handleLandingPageBlockRoutes($segments, $method) {
+    $controller = new LandingPageContentBlockController();
+    $auth = new AuthMiddleware();
+
+    switch ($method) {
+        case 'GET':
+            // GET /landing-page-blocks/:landingPageId
+            if (isset($segments[1]) && is_numeric($segments[1])) {
+                $result = $controller->getByLandingPageId($segments[1]);
+            } else {
+                http_response_code(400);
+                $result = ['success' => false, 'error' => 'Landing page ID required'];
+            }
+            echo json_encode($result);
+            break;
+
+        case 'POST':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                if (isset($segments[1]) && $segments[1] === 'reorder') {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $result = $controller->reorder($data['order'] ?? []);
+                } else {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $result = $controller->create($data);
+                }
+                echo json_encode($result);
+            }
+            break;
+
+        case 'PUT':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                if (isset($segments[1]) && is_numeric($segments[1])) {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $result = $controller->update($segments[1], $data);
+                    echo json_encode($result);
+                }
+            }
+            break;
+
+        case 'DELETE':
+            $user = $auth->authenticate();
+            if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                if (isset($segments[1]) && is_numeric($segments[1])) {
+                    $result = $controller->delete($segments[1]);
+                    echo json_encode($result);
+                }
+            }
+            break;
+
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    }
+}
+
+/**
  * Handle contact routes
  */
 function handleContactRoutes($segments, $method) {
@@ -1564,6 +1634,25 @@ function handleDashboardRoutes($segments, $method) {
                 'success' => false,
                 'error' => 'Failed to fetch dashboard stats: ' . $e->getMessage()
             ]);
+            return;
+        }
+    }
+
+    // GET /api/dashboard/property-types
+    if ($method === 'GET' && isset($segments[1]) && $segments[1] === 'property-types') {
+        try {
+            $result = $conn->query("SELECT property_type, COUNT(*) as count FROM properties WHERE is_active = 1 AND deleted_at IS NULL GROUP BY property_type ORDER BY count DESC");
+            $types = [];
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    $types[] = $row;
+                }
+            }
+            echo json_encode(['success' => true, 'data' => ['types' => $types]]);
+            return;
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
             return;
         }
     }

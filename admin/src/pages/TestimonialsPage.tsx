@@ -183,13 +183,11 @@ export default function TestimonialsPage() {
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" asChild>
                         <Link to={`/testimonials/${item.id}/edit`}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
+                          <Edit className="h-4 w-4" />
                         </Link>
                       </Button>
                       <Button variant="destructive" size="sm" onClick={() => setDeleteId(item.id)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

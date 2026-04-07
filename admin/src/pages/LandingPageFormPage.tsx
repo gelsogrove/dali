@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowLeft, Upload, X, Lock, Unlock } from 'lucide-react'
+import { ArrowLeft, Upload, X, Lock, Unlock, Plus, Trash2, GripVertical } from 'lucide-react'
 import api from '@/lib/api'
 import TrixEditor from '@/components/TrixEditor'
 import './LandingPageFormPage.css'
@@ -27,22 +27,17 @@ type LandingPageForm = {
   is_active: number
   is_home: number
   display_order: number
-  content_block_1_title: string
-  content_block_1_subtitle: string
-  content_block_1_description: string
-  content_block_1_image: string
-  content_block_2_title: string
-  content_block_2_subtitle: string
-  content_block_2_description: string
-  content_block_2_image: string
-  content_block_3_title: string
-  content_block_3_subtitle: string
-  content_block_3_description: string
-  content_block_3_image: string
-  content_block_4_title: string
-  content_block_4_subtitle: string
-  content_block_4_description: string
-  content_block_4_image: string
+}
+
+type ContentBlock = {
+  id?: number
+  landing_page_id?: number
+  title: string
+  subtitle: string
+  description: string
+  image: string
+  display_order: number
+  _isNew?: boolean
 }
 
 const emptyForm: LandingPageForm = {
@@ -61,22 +56,6 @@ const emptyForm: LandingPageForm = {
   is_active: 1,
   is_home: 0,
   display_order: 0,
-  content_block_1_title: '',
-  content_block_1_subtitle: '',
-  content_block_1_description: '',
-  content_block_1_image: '',
-  content_block_2_title: '',
-  content_block_2_subtitle: '',
-  content_block_2_description: '',
-  content_block_2_image: '',
-  content_block_3_title: '',
-  content_block_3_subtitle: '',
-  content_block_3_description: '',
-  content_block_3_image: '',
-  content_block_4_title: '',
-  content_block_4_subtitle: '',
-  content_block_4_description: '',
-  content_block_4_image: '',
 }
 
 export default function LandingPageFormPage() {
@@ -85,12 +64,14 @@ export default function LandingPageFormPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [formData, setFormData] = useState<LandingPageForm>(emptyForm)
+  const [blocks, setBlocks] = useState<ContentBlock[]>([])
+  const [deletedBlockIds, setDeletedBlockIds] = useState<number[]>([])
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
   const [isSlugEditable, setIsSlugEditable] = useState(true)
   const [uploadingBlock, setUploadingBlock] = useState<number | null>(null)
   const [blockImageErrors, setBlockImageErrors] = useState<Record<number, boolean>>({})
   const blockImageRefs = useRef<Record<number, HTMLInputElement | null>>({})
-
+  const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null)
 
   const apiBase = import.meta.env.VITE_API_URL || '/api'
   const assetBase = useMemo(() => apiBase.replace(/\/api$/, ''), [apiBase])
@@ -124,23 +105,19 @@ export default function LandingPageFormPage() {
       is_active: page.is_active ? 1 : 0,
       is_home: page.is_home ? 1 : 0,
       display_order: page.display_order || 0,
-      content_block_1_title: page.content_block_1_title || '',
-      content_block_1_subtitle: page.content_block_1_subtitle || '',
-      content_block_1_description: page.content_block_1_description || '',
-      content_block_1_image: page.content_block_1_image || '',
-      content_block_2_title: page.content_block_2_title || '',
-      content_block_2_subtitle: page.content_block_2_subtitle || '',
-      content_block_2_description: page.content_block_2_description || '',
-      content_block_2_image: page.content_block_2_image || '',
-      content_block_3_title: page.content_block_3_title || '',
-      content_block_3_subtitle: page.content_block_3_subtitle || '',
-      content_block_3_description: page.content_block_3_description || '',
-      content_block_3_image: page.content_block_3_image || '',
-      content_block_4_title: page.content_block_4_title || '',
-      content_block_4_subtitle: page.content_block_4_subtitle || '',
-      content_block_4_description: page.content_block_4_description || '',
-      content_block_4_image: page.content_block_4_image || '',
     })
+    // Load dynamic blocks
+    if (page.blocks && page.blocks.length > 0) {
+      setBlocks(page.blocks.map((b: any) => ({
+        id: b.id,
+        landing_page_id: b.landing_page_id,
+        title: b.title || '',
+        subtitle: b.subtitle || '',
+        description: b.description || '',
+        image: b.image || '',
+        display_order: b.display_order || 0,
+      })))
+    }
   }, [pageQuery.data])
 
   const mutation = useMutation({
@@ -149,9 +126,41 @@ export default function LandingPageFormPage() {
         ...payload,
         is_active: payload.is_active ? 1 : 0,
         is_home: payload.is_home ? 1 : 0,
+        ogTitle: payload.seoTitle || payload.title,
+        ogDescription: payload.seoDescription || payload.description,
       }
-      if (isEdit) return api.put(`/landing-pages/${id}`, body)
-      return api.post('/landing-pages', body)
+      let pageId: number
+      if (isEdit) {
+        await api.put(`/landing-pages/${id}`, body)
+        pageId = Number(id)
+      } else {
+        const res = await api.post('/landing-pages', body)
+        pageId = res.data?.data?.id
+      }
+
+      // Save blocks
+      // Delete removed blocks
+      for (const blockId of deletedBlockIds) {
+        await api.delete(`/landing-page-blocks/${blockId}`)
+      }
+
+      // Create or update blocks
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i]
+        const blockData = {
+          landing_page_id: pageId,
+          title: block.title,
+          subtitle: block.subtitle,
+          description: block.description,
+          image: block.image,
+          display_order: i + 1,
+        }
+        if (block.id && !block._isNew) {
+          await api.put(`/landing-page-blocks/${block.id}`, blockData)
+        } else {
+          await api.post('/landing-page-blocks', blockData)
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['landing-pages'] })
@@ -191,7 +200,7 @@ export default function LandingPageFormPage() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'landing-page'
 
-  const uploadBlockImage = async (blockNum: number, file: File) => {
+  const uploadBlockImage = async (blockIndex: number, file: File) => {
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file')
       return
@@ -200,7 +209,7 @@ export default function LandingPageFormPage() {
       alert('Image must be smaller than 10MB')
       return
     }
-    setUploadingBlock(blockNum)
+    setUploadingBlock(blockIndex)
     try {
       const form = new FormData()
       form.append('image', file)
@@ -209,10 +218,7 @@ export default function LandingPageFormPage() {
       })
       const url = res.data?.data?.url
       if (url) {
-        setFormData((prev) => ({ 
-          ...prev, 
-          [`content_block_${blockNum}_image`]: url 
-        }))
+        setBlocks((prev) => prev.map((b, i) => i === blockIndex ? { ...b, image: url } : b))
       }
     } catch (err) {
       console.error(err)
@@ -222,8 +228,8 @@ export default function LandingPageFormPage() {
     }
   }
 
-  const removeBlockImage = async (blockNum: number) => {
-    const current = (formData as any)[`content_block_${blockNum}_image`]
+  const removeBlockImage = async (blockIndex: number) => {
+    const current = blocks[blockIndex]?.image
     if (!current) return
     if (!confirm('Remove this image?')) return
     try {
@@ -231,10 +237,52 @@ export default function LandingPageFormPage() {
     } catch (err) {
       console.error(err)
     }
-    setFormData((prev) => ({
+    setBlocks((prev) => prev.map((b, i) => i === blockIndex ? { ...b, image: '' } : b))
+  }
+
+  const addBlock = () => {
+    setBlocks((prev) => [
       ...prev,
-      [`content_block_${blockNum}_image`]: '',
-    }))
+      {
+        title: '',
+        subtitle: '',
+        description: '',
+        image: '',
+        display_order: prev.length + 1,
+        _isNew: true,
+      },
+    ])
+  }
+
+  const removeBlock = (index: number) => {
+    const block = blocks[index]
+    if (block.id && !block._isNew) {
+      setDeletedBlockIds((prev) => [...prev, block.id!])
+    }
+    setBlocks((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const updateBlock = (index: number, field: keyof ContentBlock, value: string) => {
+    setBlocks((prev) => prev.map((b, i) => i === index ? { ...b, [field]: value } : b))
+  }
+
+  const handleBlockDragStart = (index: number) => {
+    setDraggedBlockIndex(index)
+  }
+
+  const handleBlockDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+  }
+
+  const handleBlockDrop = (targetIndex: number) => {
+    if (draggedBlockIndex === null || draggedBlockIndex === targetIndex) return
+    setBlocks((prev) => {
+      const newBlocks = [...prev]
+      const [removed] = newBlocks.splice(draggedBlockIndex, 1)
+      newBlocks.splice(targetIndex, 0, removed)
+      return newBlocks
+    })
+    setDraggedBlockIndex(null)
   }
 
   return (
@@ -278,17 +326,6 @@ export default function LandingPageFormPage() {
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium">Short Description</label>
-                <Textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Brief description for previews"
-                />
-              </div>
-
               <div className="flex items-center gap-3">
                 <Switch
                   checked={!!formData.is_active}
@@ -301,121 +338,135 @@ export default function LandingPageFormPage() {
           </CardContent>
         </Card>
 
-        {/* Cover Image - REMOVED: Using content_block_1_image as cover instead */}
-        {/* <Card>
-          <CardHeader>
-            <CardTitle>Cover Image</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            ...
-          </CardContent>
-        </Card> */}
-
-        {/* Content Editor */}
+        {/* Content Blocks - Dynamic */}
         <Card>
           <CardHeader>
-            <CardTitle>Content</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Content Blocks ({blocks.length})</CardTitle>
+              <Button type="button" variant="outline" size="sm" onClick={addBlock}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Block
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Rich Text Content</label>
-              <TrixEditor
-                value={formData.content}
-                onChange={(html) => setFormData((prev) => ({ ...prev, content: html }))}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Content Blocks */}
-        {[1, 2, 3, 4].map((blockNum) => {
-          const blockImage = (formData as any)[`content_block_${blockNum}_image`]
-          const hasImageError = blockImageErrors[blockNum]
-          
-          return (
-            <Card key={`block-${blockNum}`}>
-              <CardHeader>
-                <CardTitle>Content Block {blockNum}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Title</label>
-                  <Input
-                    name={`content_block_${blockNum}_title`}
-                    value={(formData as any)[`content_block_${blockNum}_title`]}
-                    onChange={handleChange}
-                    placeholder={`Block ${blockNum} title`}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Subtitle</label>
-                  <Input
-                    name={`content_block_${blockNum}_subtitle`}
-                    value={(formData as any)[`content_block_${blockNum}_subtitle`]}
-                    onChange={handleChange}
-                    placeholder={`Block ${blockNum} subtitle`}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Description (Rich Text)</label>
-                  <TrixEditor
-                    value={(formData as any)[`content_block_${blockNum}_description`]}
-                    onChange={(html) => setFormData((prev) => ({ 
-                      ...prev, 
-                      [`content_block_${blockNum}_description`]: html 
-                    }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Image</label>
-                  {blockImage && !hasImageError ? (
-                    <div className="relative inline-block">
-                      <img
-                        src={toAbsoluteUrl(blockImage)}
-                        alt={`Block ${blockNum}`}
-                        className="object-cover rounded-lg border"
-                        style={{ width: '100%', maxWidth: 400, height: 240 }}
-                        onError={() => setBlockImageErrors((prev) => ({ ...prev, [blockNum]: true }))}
-                      />
+            {blocks.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No content blocks yet. Click "Add Block" to create one.
+              </p>
+            )}
+            {blocks.map((block, index) => {
+              const hasImageError = blockImageErrors[index]
+              return (
+                <Card
+                  key={block.id || `new-${index}`}
+                  className="border-2"
+                  draggable
+                  onDragStart={() => handleBlockDragStart(index)}
+                  onDragOver={handleBlockDragOver}
+                  onDrop={() => handleBlockDrop(index)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
+                        <span className="font-medium">Block {index + 1}</span>
+                      </div>
                       <Button
                         type="button"
-                        variant="destructive"
+                        variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={() => removeBlockImage(blockNum)}
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => removeBlock(index)}
                       >
-                        <X className="h-4 w-4 mr-1" />
-                        Remove
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  ) : (
-                    <div
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition"
-                      onClick={() => blockImageRefs.current[blockNum]?.click()}
-                    >
-                      <Upload className="h-10 w-10 mx-auto text-gray-400 mb-3" />
-                      <p className="text-sm font-medium text-gray-700">Upload image for Block {blockNum}</p>
-                      <input
-                        ref={(el) => (blockImageRefs.current[blockNum] = el)}
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) uploadBlockImage(blockNum, e.target.files[0])
-                        }}
-                        disabled={uploadingBlock === blockNum}
-                        className="hidden"
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Title</label>
+                      <Input
+                        value={block.title}
+                        onChange={(e) => updateBlock(index, 'title', e.target.value)}
+                        placeholder={`Block ${index + 1} title`}
                       />
-                      {uploadingBlock === blockNum && <p className="text-sm text-primary mt-2">Uploading...</p>}
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Subtitle</label>
+                      <Input
+                        value={block.subtitle}
+                        onChange={(e) => updateBlock(index, 'subtitle', e.target.value)}
+                        placeholder={`Block ${index + 1} subtitle`}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Description (Rich Text)</label>
+                      <TrixEditor
+                        value={block.description}
+                        onChange={(html) => updateBlock(index, 'description', html)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Image</label>
+                      {block.image && !hasImageError ? (
+                        <div className="relative inline-block">
+                          <img
+                            src={toAbsoluteUrl(block.image)}
+                            alt={`Block ${index + 1}`}
+                            className="object-cover rounded-lg border"
+                            style={{ width: '100%', maxWidth: 400, height: 240 }}
+                            onError={() => setBlockImageErrors((prev) => ({ ...prev, [index]: true }))}
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2"
+                            onClick={() => removeBlockImage(index)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <div
+                          className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition"
+                          onClick={() => blockImageRefs.current[index]?.click()}
+                        >
+                          <Upload className="h-10 w-10 mx-auto text-gray-400 mb-3" />
+                          <p className="text-sm font-medium text-gray-700">Upload image for Block {index + 1}</p>
+                          <input
+                            ref={(el) => (blockImageRefs.current[index] = el)}
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) uploadBlockImage(index, e.target.files[0])
+                            }}
+                            disabled={uploadingBlock === index}
+                            className="hidden"
+                          />
+                          {uploadingBlock === index && <p className="text-sm text-primary mt-2">Uploading...</p>}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+            {blocks.length > 0 && (
+              <div className="flex justify-center pt-2">
+                <Button type="button" variant="outline" size="sm" onClick={addBlock}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Block
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* SEO Fields */}
         <Card>
@@ -461,10 +512,6 @@ export default function LandingPageFormPage() {
                   placeholder="landing-page-slug"
                   required
                 />
-                <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded border">
-                  <span className="font-medium">Public URL:</span><br />
-                  <code>/{formData.slug}</code>
-                </div>
               </div>
             </div>
 
@@ -506,26 +553,8 @@ export default function LandingPageFormPage() {
               />
             </div>
 
-            <div className="space-y-2 pt-4 border-t">
-              <label className="text-sm font-medium">OG Title (Social Media)</label>
-              <Input
-                name="ogTitle"
-                value={formData.ogTitle}
-                onChange={handleChange}
-                placeholder="Title for social sharing"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">OG Description (Social Media)</label>
-              <Textarea
-                name="ogDescription"
-                value={formData.ogDescription}
-                onChange={handleChange}
-                placeholder="Description for social sharing"
-                rows={2}
-              />
-            </div>
+            <input type="hidden" name="ogTitle" value={formData.seoTitle || formData.title} />
+            <input type="hidden" name="ogDescription" value={formData.seoDescription || formData.description} />
           </CardContent>
         </Card>
 

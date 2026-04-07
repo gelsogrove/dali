@@ -324,14 +324,6 @@ export default function PropertyFormPage() {
         focusField('seo_description')
         return
       }
-      if (!formData.og_title.trim()) {
-        focusField('og_title')
-        return
-      }
-      if (!formData.og_description.trim()) {
-        focusField('og_description')
-        return
-      }
     }
     
     // Validations for EDIT (all required fields)
@@ -369,14 +361,6 @@ export default function PropertyFormPage() {
       }
       if (!formData.seo_description.trim()) {
         focusField('seo_description')
-        return
-      }
-      if (!formData.og_title.trim()) {
-        focusField('og_title')
-        return
-      }
-      if (!formData.og_description.trim()) {
-        focusField('og_description')
         return
       }
     }
@@ -436,6 +420,8 @@ export default function PropertyFormPage() {
       seo_title: formData.seo_title,
       seo_description: formData.seo_description,
       seo_keywords: formData.seo_keywords,
+      og_title: formData.seo_title || formData.title,
+      og_description: formData.seo_description || formData.description,
       og_image: formData.og_image,
     };
 
@@ -805,28 +791,7 @@ export default function PropertyFormPage() {
 
         {/* SEO FIELDS */}
         <div className="border-t pt-6 mt-6">
-          <h3 className="text-lg font-semibold mb-2">SEO & Social Media</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            These fields control how your property appears in Google search results and when shared on social media platforms.
-          </p>
-          
-          {/* Info Box for SEO vs OG */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold text-sm text-blue-900 mb-2">🔍 SEO Fields (Google Search)</h4>
-                <p className="text-xs text-blue-800">
-                  Controls what users see when they search for properties on Google, Bing, and other search engines.
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold text-sm text-green-900 mb-2">📱 OG Fields (Social Sharing)</h4>
-                <p className="text-xs text-green-800">
-                  Controls the preview card when someone shares the property link on WhatsApp, Facebook, LinkedIn, or Twitter.
-                </p>
-              </div>
-            </div>
-          </div>
+          <h3 className="text-lg font-semibold mb-4">SEO</h3>
           
           <div className="space-y-4">
             <div>
@@ -855,80 +820,8 @@ export default function PropertyFormPage() {
             </div>
             
             <div>
-              <Label>OG Title (Facebook/LinkedIn) <span className="text-red-500">*</span></Label>
-              <Input 
-                name="og_title" 
-                value={formData.og_title} 
-                onChange={handleChange} 
-                maxLength={160}
-                className={getFieldClass('og_title')}
-              />
-            </div>
-            
-            <div>
-              <Label>OG Description (Facebook/LinkedIn) <span className="text-red-500">*</span></Label>
-              <Textarea 
-                name="og_description" 
-                value={formData.og_description} 
-                onChange={handleChange} 
-                maxLength={320} 
-                rows={3}
-                className={getFieldClass('og_description')}
-              />
-              <p className="text-xs text-muted-foreground mt-1">{formData.og_description.length}/320 characters</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>OG Image (1200×630)</Label>
-              <div className="flex items-start gap-3">
-                {formData.og_image && !ogImageError ? (
-                  <div className="relative">
-                    <img
-                      src={formData.og_image}
-                      alt="OG preview"
-                      className="w-48 h-28 object-cover rounded-md border"
-                      onError={() => setOgImageError(true)}
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={removeOgImage}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed rounded-md p-4 text-center w-48 h-28 flex flex-col items-center justify-center bg-muted/30">
-                    <p className="text-xs text-muted-foreground">Upload OG image</p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      onClick={() => ogFileInputRef.current?.click()}
-                      disabled={uploadingOg}
-                    >
-                      {uploadingOg ? 'Uploading...' : 'Select file'}
-                    </Button>
-                  </div>
-                )}
-                <input
-                  ref={ogFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) uploadOgImage(file)
-                  }}
-                />
-                <div className="text-xs text-muted-foreground flex-1">
-                  Raccomandato: JPG/WebP 1200×630 &lt;300KB. Se vuoto, useremo l’immagine di default.
-                </div>
-              </div>
-            </div>
+              <input type="hidden" name="og_title" value={formData.seo_title || formData.title} />
+            <input type="hidden" name="og_description" value={formData.seo_description || formData.description} />
           </div>
           
           {/* Summary Box */}

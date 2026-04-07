@@ -154,12 +154,6 @@ export default function VideosPage() {
         </Link>
       </div>
 
-      <Input
-        placeholder="Search videos..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-
       {list.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">

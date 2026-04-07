@@ -87,10 +87,15 @@ export default function BlogFormPage() {
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
+      const body = {
+        ...data,
+        ogTitle: data.seoTitle || data.title,
+        ogDescription: data.seoDescription || data.description || '',
+      }
       if (isEdit) {
-        return api.put(`/blogs/${id}`, data)
+        return api.put(`/blogs/${id}`, body)
       } else {
-        return api.post('/blogs', data)
+        return api.post('/blogs', body)
       }
     },
     onSuccess: () => {
@@ -104,8 +109,8 @@ export default function BlogFormPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const slug = formData.slug?.trim() || slugify(formData.title)
-    if (!formData.seoTitle.trim() || !formData.seoDescription.trim() || !formData.ogTitle.trim() || !formData.ogDescription.trim()) {
-      alert('SEO fields (title, meta description, OG title, OG description) are required')
+    if (!formData.seoTitle.trim() || !formData.seoDescription.trim()) {
+      alert('SEO fields (title, meta description) are required')
       return
     }
     if (formData.featured_image && !formData.featured_image_alt.trim()) {
@@ -470,25 +475,8 @@ export default function BlogFormPage() {
                     maxLength={320}
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">OG Title  (meta=&quot;og:title&quot;)</label>
-                  <Input
-                    name="ogTitle"
-                    value={formData.ogTitle}
-                    onChange={handleChange}
-                    maxLength={160}
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">OG Description  (meta=&quot;og:description&quot;)</label>
-                  <Textarea
-                    name="ogDescription"
-                    value={formData.ogDescription}
-                    onChange={handleChange}
-                    rows={3}
-                    maxLength={320}
-                  />
-                </div>
+                <input type="hidden" name="ogTitle" value={formData.seoTitle || formData.title} />
+                <input type="hidden" name="ogDescription" value={formData.seoDescription || formData.description || ''} />
               </div>
             </div>
 

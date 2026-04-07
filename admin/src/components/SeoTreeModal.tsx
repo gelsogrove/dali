@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -118,15 +119,17 @@ export default function SeoTreeModal() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="lg" className="w-full h-auto bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 border-blue-200 py-6">
-          <div className="text-left">
-            <div className="flex items-center gap-2 mb-1">
-              <Map className="h-5 w-5 text-blue-600" />
-              <span className="font-semibold text-blue-900">SEO & Structure</span>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+          <CardContent className="p-6 flex flex-col items-center justify-center h-full gap-3">
+            <div className="p-3 rounded-full bg-blue-50">
+              <Map className="h-6 w-6 text-blue-600" />
             </div>
-            <p className="text-xs text-blue-700">View site structure, URLs & SEO settings</p>
-          </div>
-        </Button>
+            <div className="text-center">
+              <p className="font-semibold text-lg">SEO & Structure</p>
+              <p className="text-xs text-muted-foreground mt-1">View site structure & URLs</p>
+            </div>
+          </CardContent>
+        </Card>
       </DialogTrigger>
 
       <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto">

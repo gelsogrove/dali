@@ -156,11 +156,11 @@ export default function AreasPage() {
                   <img
                     src={toAbsoluteUrl(area.cover_image)}
                     alt={area.cover_image_alt || area.title}
-                    className="w-40 h-32 md:w-48 md:h-48 object-cover my-4 ml-1 mr-3 rounded-lg"
+                    className="w-32 h-24 object-cover my-4 ml-1 mr-3 rounded-lg"
                     onError={() => setThumbErrors((prev) => ({ ...prev, [area.id]: true }))}
                   />
                 ) : (
-                  <div className="w-40 h-32 md:w-48 md:h-48 flex items-center justify-center flex-shrink-0 my-4 ml-1 mr-3 rounded-lg border border-dashed border-gray-300 bg-gradient-to-br from-amber-50 to-rose-50">
+                  <div className="w-32 h-24 flex items-center justify-center flex-shrink-0 my-4 ml-1 mr-3 rounded-lg border border-dashed border-gray-300 bg-gradient-to-br from-amber-50 to-rose-50">
                     <div className="placeholder-box w-full h-full rounded-md"></div>
                   </div>
                 )}
@@ -199,8 +199,7 @@ export default function AreasPage() {
                       
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => navigate(`/areas/${area.id}/edit`)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="destructive"
@@ -209,8 +208,7 @@ export default function AreasPage() {
                             if (confirm('Delete this area?')) deleteArea.mutate(area.id)
                           }}
                         >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
+                          <Trash className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>

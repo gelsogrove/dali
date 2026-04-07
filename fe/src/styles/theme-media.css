@@ -313,6 +313,11 @@
 		justify-content: center;
 	}
 
+	.footer-services {
+		align-items: center;
+		margin-bottom: 40px;
+	}
+
 	#pojo-a11y-toolbar {
 		display: none;
 	}

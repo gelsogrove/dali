@@ -109,7 +109,13 @@ export default function AreaFormPage() {
 
   const mutation = useMutation({
     mutationFn: async (payload: AreaForm) => {
-      const body = { ...payload, is_home: payload.is_home ? 1 : 0, city_id: Number(payload.city_id) }
+      const body = {
+        ...payload,
+        is_home: payload.is_home ? 1 : 0,
+        city_id: Number(payload.city_id),
+        ogTitle: payload.seoTitle || payload.title,
+        ogDescription: payload.seoDescription || payload.subtitle || '',
+      }
       if (isEdit) return api.put(`/areas/${id}`, body)
       return api.post('/areas', body)
     },
@@ -132,8 +138,6 @@ export default function AreaFormPage() {
     if (!formData.slug.trim()) errors.push('URL is required')
     if (!formData.seoTitle.trim()) errors.push('Title tag is required')
     if (!formData.seoDescription.trim()) errors.push('Meta description is required')
-    if (!formData.ogTitle.trim()) errors.push('OG Title is required')
-    if (!formData.ogDescription.trim()) errors.push('OG Description is required')
     if (formData.cover_image && !formData.cover_image_alt.trim()) errors.push('Alt text is required for cover image')
     if (formData.content_image && !formData.content_image_alt.trim()) errors.push('Alt text is required for content image')
     if (errors.length) {
@@ -435,12 +439,6 @@ export default function AreaFormPage() {
                     className={isEdit && !isSlugEditable ? 'bg-gray-50 cursor-not-allowed' : ''}
                     required
                   />
-                  {formData.city_id && (
-                    <div className="text-sm text-muted-foreground bg-gray-50 p-2 rounded border">
-                      <span className="font-medium">Public URL:</span><br />
-                      <code>/community/{cities.find((c: City) => c.id === formData.city_id)?.slug}/{formData.slug}</code>
-                    </div>
-                  )}
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Title tag (&lt;title&gt;)</label>
@@ -450,14 +448,8 @@ export default function AreaFormPage() {
                 <label className="text-sm font-medium">Meta description (meta=&quot;description&quot;)</label>
                 <Textarea name="seoDescription" value={formData.seoDescription} onChange={handleChange} rows={3} maxLength={320} />
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium">OG Title (meta=&quot;og:title&quot;)</label>
-                <Input name="ogTitle" value={formData.ogTitle} onChange={handleChange} maxLength={160} />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium">OG Description (meta=&quot;og:description&quot;)</label>
-                <Textarea name="ogDescription" value={formData.ogDescription} onChange={handleChange} rows={3} maxLength={320} />
-              </div>
+              <input type="hidden" name="ogTitle" value={formData.seoTitle || formData.title} />
+              <input type="hidden" name="ogDescription" value={formData.seoDescription || formData.subtitle || ''} />
             </div>
             </div>
           </CardContent>

@@ -12,8 +12,8 @@ export default function FeaturedLandingPages() {
     const fetchPages = async () => {
       try {
         const res = await api.get('/landing-pages?is_active=1');
-        const allPages = res.data?.data?.landing_pages || res.data?.data || [];
-        console.log('FeaturedLandingPages: Fetched', allPages.length, 'pages');
+        const allPages = res.data?.landing_pages || [];
+        console.log('FeaturedLandingPages: Fetched', allPages.length, 'pages', res);
         setPages(allPages);
       } catch (error) {
         console.error('Error fetching landing pages:', error);
@@ -35,8 +35,11 @@ export default function FeaturedLandingPages() {
 
   return (
     <section className="featured-landing-pages">
-      <div className="container">
-        <h2 className="section-title">Explore Our Services</h2>
+      <div className="flp-container">
+        <div className="flp-title section-title" data-aos="fade-down" data-aos-duration="1000" data-aos-delay="300">
+          <h3>Explore Our</h3>
+          <h2>Services</h2>
+        </div>
         <div className="landing-pages-grid">
           {allPages.map((page) => (
             <div 

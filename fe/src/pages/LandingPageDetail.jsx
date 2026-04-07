@@ -21,11 +21,11 @@ export default function LandingPageDetail() {
         setIsLoading(true)
         // Fetch landing page
         const pageRes = await api.get(`/landing-pages/slug/${slug}`)
-        setPage(pageRes.data?.data)
+        setPage(pageRes.data)
 
         // Fetch latest 6 properties
         const propsRes = await api.get('/properties?is_active=1&per_page=6&page=1')
-        setLatestProperties(propsRes.data?.data?.properties || [])
+        setLatestProperties(propsRes.data?.properties || [])
       } catch (err) {
         console.error('Error fetching data:', err)
         setError(err)
@@ -52,61 +52,59 @@ export default function LandingPageDetail() {
     return <Navigate to="/" replace />
   }
 
-  // Use content_block_1_image as cover if cover_image not set
-  const coverImage = page.content_block_1_image || page.cover_image
+  // Use first block image as cover, or cover_image
+  const firstBlockImage = page.blocks?.[0]?.image
+  const coverImage = firstBlockImage || page.cover_image
 
-  // Collect all content blocks
-  const contentBlocks = []
-  for (let i = 1; i <= 4; i++) {
-    const title = page[`content_block_${i}_title`]
-    const subtitle = page[`content_block_${i}_subtitle`]
-    const description = page[`content_block_${i}_description`]
-    const image = page[`content_block_${i}_image`]
-    
-    if (title || description || image) {
-      contentBlocks.push({
-        num: i,
-        title,
-        subtitle,
-        description,
-        image,
-      })
-    }
-  }
+  // Use dynamic blocks from the API
+  const contentBlocks = page.blocks || []
 
   return (
     <>
       <Helmet>
         <title>{page.seoTitle || page.title}</title>
-        <meta name="description" content={page.seoDescription || page.description} />
+        <meta name="description" content={page.seoDescription || page.description || ''} />
         {page.seoKeywords && <meta name="keywords" content={page.seoKeywords} />}
+        <link rel="canonical" href={`https://buywithdali.com/${page.slug}`} />
         
         {/* Open Graph */}
         <meta property="og:title" content={page.ogTitle || page.seoTitle || page.title} />
-        <meta property="og:description" content={page.ogDescription || page.seoDescription || page.description} />
+        <meta property="og:description" content={page.ogDescription || page.seoDescription || page.description || ''} />
         {coverImage && <meta property="og:image" content={coverImage} />}
-        <meta property="og:url" content={window.location.href} />
+        <meta property="og:url" content={`https://buywithdali.com/${page.slug}`} />
         <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Buy With Dali" />
 
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={page.ogTitle || page.seoTitle || page.title} />
-        <meta name="twitter:description" content={page.ogDescription || page.seoDescription || page.description} />
+        <meta name="twitter:description" content={page.ogDescription || page.seoDescription || page.description || ''} />
         {coverImage && <meta name="twitter:image" content={coverImage} />}
+
+        {/* JSON-LD Structured Data */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            name: page.seoTitle || page.title,
+            description: page.seoDescription || page.description || '',
+            url: `https://buywithdali.com/${page.slug}`,
+            ...(coverImage ? { image: coverImage } : {}),
+            publisher: {
+              '@type': 'Organization',
+              name: 'Buy With Dali',
+              url: 'https://buywithdali.com'
+            }
+          })}
+        </script>
       </Helmet>
 
       {/* Header with Cover Image */}
       {coverImage && (
-        <div
-          className="h-96 w-full bg-cover bg-center relative"
-          style={{ backgroundImage: `url(${coverImage})` }}
-        >
-          <div className="absolute inset-0 bg-black/40"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">{page.title}</h1>
-              {page.subtitle && <p className="text-xl text-gray-100">{page.subtitle}</p>}
-            </div>
+        <div className="landing-page-header" style={{ backgroundImage: `url(${coverImage})` }}>
+          <div className="landing-page-header-content">
+            <h1>{page.title}</h1>
+            {page.subtitle && <p>{page.subtitle}</p>}
           </div>
         </div>
       )}
@@ -116,19 +114,12 @@ export default function LandingPageDetail() {
       )}
 
       {/* Main Content */}
-      <div className="py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Description */}
-          {page.description && (
-            <div className="prose prose-lg max-w-none mb-12 text-center">
-              <p className="text-lg text-gray-600 leading-relaxed">{page.description}</p>
-            </div>
-          )}
-
+      <div className="landing-page-content">
+        <div className="landing-page-content-wrapper">
           {/* Rich Content */}
           {page.content && (
             <div
-              className="prose prose-lg max-w-none mb-16"
+              className="landing-page-prose"
               dangerouslySetInnerHTML={{ __html: page.content }}
             ></div>
           )}
@@ -136,27 +127,26 @@ export default function LandingPageDetail() {
           {/* Content Blocks */}
           {contentBlocks.map((block, index) => (
             <div 
-              key={block.num} 
-              className={`content-block mb-16 ${index % 2 === 0 ? 'block-even' : 'block-odd'}`}
+              key={block.id || index} 
+              className={`content-block ${index % 2 === 0 ? 'block-even' : 'block-odd'}`}
             >
-              <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div className="content-block-grid">
                 {/* Image on left for even, right for odd */}
                 {index % 2 === 0 && block.image && (
                   <div className="block-image">
                     <img 
                       src={block.image} 
-                      alt={block.title || `Content block ${block.num}`} 
-                      className="rounded-lg shadow-lg w-full h-auto"
+                      alt={block.title || `Content block ${index + 1}`} 
                     />
                   </div>
                 )}
                 
                 <div className="block-content">
-                  {block.title && <h2 className="text-3xl font-bold mb-4">{block.title}</h2>}
-                  {block.subtitle && <h3 className="text-xl text-gray-600 mb-4">{block.subtitle}</h3>}
+                  {block.title && <h2>{block.title}</h2>}
+                  {block.subtitle && <h3>{block.subtitle}</h3>}
                   {block.description && (
                     <div 
-                      className="prose max-w-none"
+                      className="prose"
                       dangerouslySetInnerHTML={{ __html: block.description }}
                     ></div>
                   )}
@@ -166,8 +156,7 @@ export default function LandingPageDetail() {
                   <div className="block-image">
                     <img 
                       src={block.image} 
-                      alt={block.title || `Content block ${block.num}`} 
-                      className="rounded-lg shadow-lg w-full h-auto"
+                      alt={block.title || `Content block ${index + 1}`} 
                     />
                   </div>
                 )}
@@ -178,25 +167,20 @@ export default function LandingPageDetail() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gray-50 py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
-          <p className="text-gray-600 mb-8 text-lg">Contact us today to learn more about our services.</p>
-          <a
-            href="/contact-us"
-            className="inline-block bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition"
-          >
-            Get in Touch
-          </a>
+      <div className="landing-page-cta">
+        <div className="landing-page-cta-inner">
+          <h2>Ready to Get Started?</h2>
+          <p>Contact us today to learn more about our services.</p>
+          <a href="/contact-us">Get in Touch</a>
         </div>
       </div>
 
       {/* Latest Properties */}
       {latestProperties.length > 0 && (
-        <div className="py-16 px-4 bg-white">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-3xl font-bold mb-8 text-center">Latest Properties</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="landing-page-content landing-page-properties">
+          <div className="landing-page-properties-grid-wrapper">
+            <h2 className="landing-page-properties-title">Latest Properties</h2>
+            <div className="landing-page-properties-grid">
               {latestProperties.map((property) => (
                 <PropertyCard key={property.id} property={property} />
               ))}

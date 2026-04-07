@@ -100,7 +100,7 @@ class LandingPageController {
                 return $this->errorResponse('Landing page not found', 404);
             }
             $page = $result->fetch_assoc();
-            return $this->successResponse($this->formatLandingPage($page));
+            return $this->successResponse($this->formatLandingPage($page, true));
         } catch (Exception $e) {
             error_log("Error fetching landing page: " . $e->getMessage());
             return $this->errorResponse('An error occurred');
@@ -118,7 +118,7 @@ class LandingPageController {
                 return $this->errorResponse('Landing page not found', 404);
             }
             $page = $result->fetch_assoc();
-            return $this->successResponse($this->formatLandingPage($page));
+            return $this->successResponse($this->formatLandingPage($page, true));
         } catch (Exception $e) {
             error_log("Error fetching landing page by slug: " . $e->getMessage());
             return $this->errorResponse('An error occurred');
@@ -374,8 +374,8 @@ class LandingPageController {
     /**
      * Format landing page data
      */
-    private function formatLandingPage($row) {
-        return [
+    private function formatLandingPage($row, $includeBlocks = false) {
+        $data = [
             'id' => (int)$row['id'],
             'title' => $row['title'] ?? '',
             'slug' => $row['slug'] ?? '',
@@ -395,7 +395,61 @@ class LandingPageController {
             'display_order' => (int)$row['display_order'],
             'created_at' => $row['created_at'] ?? '',
             'updated_at' => $row['updated_at'] ?? '',
+            // Legacy content block columns (for backward compat)
+            'content_block_1_title' => $row['content_block_1_title'] ?? '',
+            'content_block_1_subtitle' => $row['content_block_1_subtitle'] ?? '',
+            'content_block_1_description' => $row['content_block_1_description'] ?? '',
+            'content_block_1_image' => $row['content_block_1_image'] ?? '',
+            'content_block_2_title' => $row['content_block_2_title'] ?? '',
+            'content_block_2_subtitle' => $row['content_block_2_subtitle'] ?? '',
+            'content_block_2_description' => $row['content_block_2_description'] ?? '',
+            'content_block_2_image' => $row['content_block_2_image'] ?? '',
+            'content_block_3_title' => $row['content_block_3_title'] ?? '',
+            'content_block_3_subtitle' => $row['content_block_3_subtitle'] ?? '',
+            'content_block_3_description' => $row['content_block_3_description'] ?? '',
+            'content_block_3_image' => $row['content_block_3_image'] ?? '',
+            'content_block_4_title' => $row['content_block_4_title'] ?? '',
+            'content_block_4_subtitle' => $row['content_block_4_subtitle'] ?? '',
+            'content_block_4_description' => $row['content_block_4_description'] ?? '',
+            'content_block_4_image' => $row['content_block_4_image'] ?? '',
         ];
+
+        if ($includeBlocks) {
+            $data['blocks'] = $this->getBlocksForPage((int)$row['id']);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Get content blocks from the dynamic blocks table
+     */
+    private function getBlocksForPage($landingPageId) {
+        try {
+            $query = "SELECT * FROM landing_page_content_blocks WHERE landing_page_id = ? ORDER BY display_order ASC";
+            $result = $this->db->executePrepared($query, [$landingPageId], 'i');
+            
+            if (!$result) return [];
+
+            $blocks = [];
+            while ($row = $result->fetch_assoc()) {
+                $blocks[] = [
+                    'id' => (int)$row['id'],
+                    'landing_page_id' => (int)$row['landing_page_id'],
+                    'title' => $row['title'],
+                    'subtitle' => $row['subtitle'],
+                    'description' => $row['description'],
+                    'image' => $row['image'],
+                    'display_order' => (int)$row['display_order'],
+                    'created_at' => $row['created_at'],
+                    'updated_at' => $row['updated_at'],
+                ];
+            }
+            return $blocks;
+        } catch (Exception $e) {
+            error_log("Error fetching blocks for page $landingPageId: " . $e->getMessage());
+            return [];
+        }
     }
 
     /**

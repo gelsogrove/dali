@@ -139,11 +139,11 @@ export default function CitiesPage() {
                 <img
                   src={toAbsoluteUrl(city.cover_image)}
                   alt={city.cover_image_alt || city.title}
-                  className="w-40 h-32 md:w-48 md:h-48 object-cover my-4 ml-1 mr-3 rounded-lg"
+                  className="w-32 h-24 object-cover my-4 ml-1 mr-3 rounded-lg"
                   onError={() => setThumbErrors((prev) => ({ ...prev, [city.id]: true }))}
                 />
               ) : (
-                <div className="w-40 h-32 md:w-48 md:h-48 flex items-center justify-center flex-shrink-0 my-4 ml-1 mr-3 rounded-lg border border-dashed border-gray-300 bg-gradient-to-br from-amber-50 to-rose-50">
+                <div className="w-32 h-24 flex items-center justify-center flex-shrink-0 my-4 ml-1 mr-3 rounded-lg border border-dashed border-gray-300 bg-gradient-to-br from-amber-50 to-rose-50">
                   <div className="placeholder-box w-full h-full rounded-md"></div>
                 </div>
               )}
@@ -187,8 +187,7 @@ export default function CitiesPage() {
                     
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => navigate(`/cities/${city.id}/edit`)}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="destructive"
@@ -197,8 +196,7 @@ export default function CitiesPage() {
                           if (confirm('Delete this city?')) deleteCity.mutate(city.id)
                         }}
                       >
-                        <Trash className="mr-2 h-4 w-4" />
-                        Delete
+                        <Trash className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

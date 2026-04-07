@@ -23,7 +23,7 @@
 .privacy-policy-content h1 {
   font-family: var(--font-family-title);
   font-size: 36px;
-  color: #c19280;
+  color: var(--color-primary);
   margin: 0 0 12px;
   font-weight: 600;
   letter-spacing: 1px;

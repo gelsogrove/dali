@@ -55,7 +55,7 @@
   font-weight: var(--font-weight-bold);
   font-size: 12px;
   color: #c0b4af;
-  font-family: var(--font-family-heading);
+  font-family: var(--font-family-default);
 }
 
 .communities-city-title-link {
@@ -63,7 +63,7 @@
 }
 
 .communities-city-title-link:hover {
-  color: var(--color-accent);
+  color: var(--color-primary-dark);
 }
 
 .communities-city-title-link h3 {
@@ -77,7 +77,7 @@
 }
 
 .communities-city-title-link:hover h3 {
-  color: var(--color-accent);
+  color: var(--color-primary-dark);
 }
 
 .communities-count {
@@ -112,7 +112,7 @@
 .community-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-large);
-  border-color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
 .community-card-image {
@@ -161,8 +161,8 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 1.6px;
-  color: var(--color-accent);
-  font-family: var(--font-family-heading);
+  color: var(--color-primary);
+  font-family: var(--font-family-default);
   font-weight: var(--font-weight-semibold);
 }
 

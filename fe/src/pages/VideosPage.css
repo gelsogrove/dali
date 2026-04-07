@@ -3,7 +3,7 @@
 
 /* ===== Video Listing Section ===== */
 .video-listing {
-  padding: calc(var(--section-padding) - 15px) var(--section-padding) var(--section-padding);
+  padding: var(--section-padding);
   background: var(--color-bg-white);
   font-family: var(--font-family-default);
   font-size: var(--font-size-body);

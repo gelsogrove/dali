@@ -67,7 +67,7 @@
     font-size: 40px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #c19280;
+    color: var(--color-primary);
     font-family: var(--font-family-title);
     text-align: center;
     flex-shrink: 0;

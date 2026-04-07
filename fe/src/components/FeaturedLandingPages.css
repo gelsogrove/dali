@@ -22,7 +22,7 @@
 .landing-pages-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
+  gap: 32px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -78,66 +78,66 @@
 }
 
 .landing-page-card-content {
-  padding: 2rem;
+  padding: 32px;
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
 .landing-page-card-content h3 {
-  font-family: var(--font-family-title, 'quincy-cf', serif);
-  font-size: 1.75rem;
-  font-weight: var(--font-weight-medium, 500);
-  margin-bottom: 0.5rem;
-  color: #000;
-  line-height: 1.2;
+  font-family: var(--font-family-title);
+  font-size: var(--font-size-accent-title-mobile);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: 8px;
+  color: var(--color-primary);
+  line-height: var(--line-height-tight);
 }
 
 .landing-page-card-content .subtitle {
-  font-family: var(--font-family-default, 'Glacial Indifference', sans-serif);
-  font-size: 0.95rem;
-  color: var(--color-primary, #c19280);
-  font-weight: 600;
-  margin-bottom: 1rem;
+  font-family: var(--font-family-default);
+  font-size: 15px;
+  color: var(--color-text-lighter);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: 16px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .landing-page-card-content .description {
-  font-family: var(--font-family-default, 'Glacial Indifference', sans-serif);
-  font-size: var(--font-size-body-small, 16px);
-  color: #555;
+  font-family: var(--font-family-default);
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-tertiary);
   line-height: 1.7;
   margin-bottom: auto;
-  padding-bottom: 1.5rem;
+  padding-bottom: 24px;
 }
 
 .cta-button {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  background: var(--color-primary, #c19280);
+  gap: 8px;
+  background: var(--color-primary);
   color: white;
-  padding: 0.75rem 1.5rem;
+  padding: 12px 24px;
   border-radius: 0;
   border: none;
-  font-family: var(--font-family-default, 'Glacial Indifference', sans-serif);
-  font-weight: 600;
+  font-family: var(--font-family-default);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition-normal);
   align-self: flex-start;
-  font-size: 0.95rem;
+  font-size: 15px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .cta-button:hover {
-  background: #a87a6a;
-  gap: 0.75rem;
+  background: var(--color-primary-dark);
+  gap: 12px;
 }
 
 .cta-button .arrow {
-  transition: transform 0.3s ease;
+  transition: transform var(--transition-normal);
 }
 
 .cta-button:hover .arrow {
@@ -146,21 +146,21 @@
 
 @media (max-width: 768px) {
   .featured-landing-pages {
-    padding: 3rem 1rem;
+    padding: 48px 16px;
   }
 
   .featured-landing-pages .section-title {
-    font-size: var(--font-size-accent-title-mobile, 42px);
-    margin-bottom: 2rem;
+    font-size: var(--font-size-accent-title-mobile);
+    margin-bottom: 32px;
   }
 
   .landing-pages-grid {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 24px;
   }
 
   .landing-page-card-content h3 {
-    font-size: 1.5rem;
+    font-size: 28px;
   }
 
   .landing-page-card-image {

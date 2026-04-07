@@ -72,8 +72,8 @@
   
   /* ===== Spacing ===== */
   /* Section Padding */
-  --section-padding: 30px 5%;
-  --section-padding-small: 60px 5%;
+  --section-padding: 60px 5%;
+  --section-padding-small: 40px 5%;
   --section-padding-large: 100px 5%;
   
   /* Component Margins */

@@ -3,11 +3,9 @@ import { useParams, Link } from 'react-router-dom';
 import PageHero from '../components/PageHero';
 import ContactWithCta from '../components/ContactWithCta';
 import SEO from '../components/SEO';
-import ImageWithOverlay from '../components/ImageWithOverlay';
+import PropertyGrid from '../components/PropertyGrid';
 import SafeImage from '../components/SafeImage';
-import TitleHeader from '../components/TitleHeader';
 import { api, endpoints } from '../config/api';
-import { formatPrice, formatBedrooms, formatBathrooms, getShortSize } from '../utils/propertyFormatters';
 
 export default function CityPage() {
   const { citySlug } = useParams();
@@ -136,94 +134,56 @@ export default function CityPage() {
 
       <section className="community-detail">
         <div className="community-detail-wrapper">
-          <div className="community-header">
-            <h1 className="community-page-title">{city.title}</h1>
-            {city.subtitle && <p className="community-page-subtitle">{city.subtitle}</p>}
-          </div>
-
-          <div className="community-hero">
-            {city.cover_image ? (
-              <SafeImage
-                src={toAbsoluteUrl(city.cover_image)}
-                alt={city.cover_image_alt || city.title}
-                placeholder="gradient"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <div className="blog-placeholder">
-                <div className="placeholder-box" aria-hidden="true" />
-              </div>
-            )}
-          </div>
-          <div className="community-copy">
-            {city.fullContent && (
-              <div
-                className="community-content"
-                dangerouslySetInnerHTML={{ __html: city.fullContent }}
-              />
-            )}
-            {city.content_image ? (
-              <div className="community-content-image">
+          <div className="community-split">
+            <div className="community-hero">
+              {city.cover_image ? (
                 <SafeImage
-                  src={toAbsoluteUrl(city.content_image)}
-                  alt={city.content_image_alt || city.title}
+                  src={toAbsoluteUrl(city.cover_image)}
+                  alt={city.cover_image_alt || city.title}
                   placeholder="gradient"
-                  style={{ width: '100%', borderRadius: '8px' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
+              ) : (
+                <div className="blog-placeholder">
+                  <div className="placeholder-box" aria-hidden="true" />
+                </div>
+              )}
+            </div>
+
+            <div className="community-copy">
+              <div className="community-header community-header--left">
+                <h1 className="community-page-title">{city.title}</h1>
+                {city.subtitle && <p className="community-page-subtitle">{city.subtitle}</p>}
               </div>
-            ) : null}
+
+              {city.fullContent && (
+                <div
+                  className="community-content"
+                  dangerouslySetInnerHTML={{ __html: city.fullContent }}
+                />
+              )}
+              {city.content_image ? (
+                <div className="community-content-image">
+                  <SafeImage
+                    src={toAbsoluteUrl(city.content_image)}
+                    alt={city.content_image_alt || city.title}
+                    placeholder="gradient"
+                    style={{ width: '100%', borderRadius: '8px' }}
+                  />
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="featured-properties" className="community-properties">
-        <div className="fp-container">
-          <TitleHeader kicker={city.title} title="Featured Properties" className="fp-title" />
-
-          {loadingProperties ? (
-            <div style={{ textAlign: 'center', padding: '60px 0' }}>
-              <p>Loading properties...</p>
-            </div>
-          ) : properties.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 0' }}>
-              <p>No properties available in this area yet.</p>
-            </div>
-          ) : (
-            <div className="fp-grid">
-              {properties.map((property) => {
-                const link = `/listings/${property.slug}/`;
-                const coverImage = property.cover_image_url;
-                const priceLabel = formatPrice(property);
-                const statusLabel = property.status === 'sold' ? 'SOLD' : property.status === 'reserved' ? 'RESERVED' : 'FOR SALE';
-
-                return (
-                  <div className="fp-list" key={property.id}>
-                    <a href={link}>
-                      <ImageWithOverlay
-                        src={coverImage}
-                        alt={property.title}
-                        className="fp-list-item-image"
-                        beds={formatBedrooms(property)}
-                        baths={formatBathrooms(property)}
-                        size={getShortSize(property)}
-                        status={statusLabel}
-                        location={[property.neighborhood, property.city].filter(Boolean).join(', ')}
-                      >
-                        <div className="fp-item-price">
-                          <h3>{priceLabel}</h3>
-                        </div>
-                        <div className="fp-item-address">
-                          <h4>{property.title}</h4>
-                        </div>
-                      </ImageWithOverlay>
-                    </a>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
+      {!loadingProperties && properties.length > 0 && (
+        <PropertyGrid
+          properties={properties}
+          title="Featured Properties"
+          subtitle={`Explore properties in ${city.title}`}
+        />
+      )}
 
       <ContactWithCta />
     </>

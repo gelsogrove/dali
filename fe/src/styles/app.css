@@ -6054,9 +6054,21 @@ html::-webkit-scrollbar {
   padding: 0 5%;
 }
 
+.community-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
 .community-header {
   text-align: center;
   margin-bottom: 40px;
+}
+
+.community-header--left {
+  text-align: left;
+  margin-bottom: 24px;
 }
 
 .community-page-title {
@@ -6122,6 +6134,21 @@ html::-webkit-scrollbar {
   height: auto;
   border-radius: 12px;
   object-fit: cover;
+}
+
+@media (max-width: 900px) {
+  .community-split {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .community-header--left {
+    text-align: center;
+  }
+
+  .community-copy {
+    margin-top: 0;
+  }
 }
 
 .community-properties {

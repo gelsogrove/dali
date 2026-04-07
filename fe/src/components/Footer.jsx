@@ -60,16 +60,13 @@ export default function Footer() {
         <div className="footer-services">
           <h4 className="footer-services-title">services</h4>
           <ul className="footernav">
-            <li className="menu-item">
-              <a href="/developers-services" data-title="Developers Services">
-                Developers Services
-              </a>
-            </li>
-            <li className="menu-item">
-              <a href="/investment-hub" data-title="Investment Hub">
-                Investment Hub
-              </a>
-            </li>
+            {landingPages.map((page) => (
+              <li key={page.id} className="menu-item">
+                <a href={`/${page.slug}`} data-title={page.title}>
+                  {page.title}
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
         <div className="footer-services">

@@ -15,8 +15,9 @@ class PropertyController
     {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
-        $this->sitemapService = new SitemapService($this->conn);
-        $this->redirectService = new RedirectService($this->conn);
+        // Temporarily disable SitemapService and RedirectService to debug
+        //$this->sitemapService = new SitemapService($this->conn);
+        //$this->redirectService = new RedirectService($this->conn);
     }
 
     /**
@@ -27,6 +28,11 @@ class PropertyController
     public function getAll($filters = [])
     {
         try {
+            // Check database connection
+            if (!$this->conn) {
+                throw new Exception('Database connection failed');
+            }
+
             $where = [];
             $params = [];
             $types = '';
@@ -236,10 +242,15 @@ class PropertyController
             // Get total count
             $countQuery = "SELECT COUNT(*) as total FROM properties WHERE $whereClause";
             $countParams = array_slice($params, 0, -2);
-            $countTypes = substr($types, 0, -2);
+            $countTypes = substr($types, 0, -2) ?: '';
             $countResult = empty($countParams)
                 ? $this->conn->query($countQuery)
                 : $this->db->executePrepared($countQuery, $countParams, $countTypes);
+
+            if (!$countResult) {
+                error_log("Count query failed: WHERE clause = '$whereClause', params = " . json_encode($countParams) . ", types = '$countTypes'");
+                return $this->errorResponse('Failed to fetch total');
+            }
 
             $total = $countResult->fetch_assoc()['total'];
 

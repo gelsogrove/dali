@@ -2,7 +2,7 @@ import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Repeat, Mail, Shield, ListChecks, Database } from 'lucide-react'
+import { FileText, LogOut, Menu, BookOpen, Video, MessageSquare, MapPin, Repeat, Mail, Shield, ListChecks, Database, Home } from 'lucide-react'
 import { useState } from 'react'
 import { api } from '@/lib/api'
 
@@ -54,7 +54,18 @@ export default function DashboardLayout() {
         } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}
       >
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          {sidebarOpen && <h1 className="text-xl font-bold text-primary">Dalila Admin</h1>}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/')}
+              title="Go to Dashboard"
+              className="hover:bg-primary hover:text-white"
+            >
+              <Home className="h-5 w-5" />
+            </Button>
+            {sidebarOpen && <h1 className="text-xl font-bold text-primary">Dalila Admin</h1>}
+          </div>
           <Button
             variant="ghost"
             size="icon"

@@ -152,10 +152,10 @@ class LandingPageController {
                 'og_title', 'og_description',
                 'cover_image', 'cover_image_alt',
                 'is_active', 'is_home', 'display_order',
-                'content_block_1_title', 'content_block_1_description', 'content_block_1_image',
-                'content_block_2_title', 'content_block_2_description', 'content_block_2_image',
-                'content_block_3_title', 'content_block_3_description', 'content_block_3_image',
-                'content_block_4_title', 'content_block_4_description', 'content_block_4_image',
+                'content_block_1_title', 'content_block_1_subtitle', 'content_block_1_description', 'content_block_1_image',
+                'content_block_2_title', 'content_block_2_subtitle', 'content_block_2_description', 'content_block_2_image',
+                'content_block_3_title', 'content_block_3_subtitle', 'content_block_3_description', 'content_block_3_image',
+                'content_block_4_title', 'content_block_4_subtitle', 'content_block_4_description', 'content_block_4_image',
             ];
 
             $columns = [];
@@ -260,10 +260,10 @@ class LandingPageController {
                 'og_title', 'og_description',
                 'cover_image', 'cover_image_alt',
                 'is_active', 'is_home', 'display_order',
-                'content_block_1_title', 'content_block_1_description', 'content_block_1_image',
-                'content_block_2_title', 'content_block_2_description', 'content_block_2_image',
-                'content_block_3_title', 'content_block_3_description', 'content_block_3_image',
-                'content_block_4_title', 'content_block_4_description', 'content_block_4_image',
+                'content_block_1_title', 'content_block_1_subtitle', 'content_block_1_description', 'content_block_1_image',
+                'content_block_2_title', 'content_block_2_subtitle', 'content_block_2_description', 'content_block_2_image',
+                'content_block_3_title', 'content_block_3_subtitle', 'content_block_3_description', 'content_block_3_image',
+                'content_block_4_title', 'content_block_4_subtitle', 'content_block_4_description', 'content_block_4_image',
             ];
 
             $updates = [];
@@ -342,6 +342,31 @@ class LandingPageController {
             return $this->successResponse(['message' => 'Landing page deleted successfully']);
         } catch (Exception $e) {
             error_log("Error deleting landing page: " . $e->getMessage());
+            return $this->errorResponse('An error occurred', 500);
+        }
+    }
+
+    /**
+     * Reorder landing pages
+     */
+    public function reorder($order) {
+        try {
+            if (!is_array($order) || empty($order)) {
+                return $this->errorResponse('Invalid order data', 400);
+            }
+
+            foreach ($order as $item) {
+                if (!isset($item['id']) || !isset($item['display_order'])) {
+                    continue;
+                }
+                
+                $query = "UPDATE landing_pages SET display_order = ? WHERE id = ?";
+                $this->db->executePrepared($query, [$item['display_order'], $item['id']], 'ii');
+            }
+
+            return $this->successResponse(['message' => 'Landing pages reordered successfully']);
+        } catch (Exception $e) {
+            error_log("Error reordering landing pages: " . $e->getMessage());
             return $this->errorResponse('An error occurred', 500);
         }
     }

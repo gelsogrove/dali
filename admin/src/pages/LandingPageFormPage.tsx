@@ -28,15 +28,19 @@ type LandingPageForm = {
   is_home: number
   display_order: number
   content_block_1_title: string
+  content_block_1_subtitle: string
   content_block_1_description: string
   content_block_1_image: string
   content_block_2_title: string
+  content_block_2_subtitle: string
   content_block_2_description: string
   content_block_2_image: string
   content_block_3_title: string
+  content_block_3_subtitle: string
   content_block_3_description: string
   content_block_3_image: string
   content_block_4_title: string
+  content_block_4_subtitle: string
   content_block_4_description: string
   content_block_4_image: string
 }
@@ -58,15 +62,19 @@ const emptyForm: LandingPageForm = {
   is_home: 0,
   display_order: 0,
   content_block_1_title: '',
+  content_block_1_subtitle: '',
   content_block_1_description: '',
   content_block_1_image: '',
   content_block_2_title: '',
+  content_block_2_subtitle: '',
   content_block_2_description: '',
   content_block_2_image: '',
   content_block_3_title: '',
+  content_block_3_subtitle: '',
   content_block_3_description: '',
   content_block_3_image: '',
   content_block_4_title: '',
+  content_block_4_subtitle: '',
   content_block_4_description: '',
   content_block_4_image: '',
 }
@@ -116,15 +124,19 @@ export default function LandingPageFormPage() {
       is_home: page.is_home ? 1 : 0,
       display_order: page.display_order || 0,
       content_block_1_title: page.content_block_1_title || '',
+      content_block_1_subtitle: page.content_block_1_subtitle || '',
       content_block_1_description: page.content_block_1_description || '',
       content_block_1_image: page.content_block_1_image || '',
       content_block_2_title: page.content_block_2_title || '',
+      content_block_2_subtitle: page.content_block_2_subtitle || '',
       content_block_2_description: page.content_block_2_description || '',
       content_block_2_image: page.content_block_2_image || '',
       content_block_3_title: page.content_block_3_title || '',
+      content_block_3_subtitle: page.content_block_3_subtitle || '',
       content_block_3_description: page.content_block_3_description || '',
       content_block_3_image: page.content_block_3_image || '',
       content_block_4_title: page.content_block_4_title || '',
+      content_block_4_subtitle: page.content_block_4_subtitle || '',
       content_block_4_description: page.content_block_4_description || '',
       content_block_4_image: page.content_block_4_image || '',
     })
@@ -278,15 +290,6 @@ export default function LandingPageFormPage() {
                   onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked ? 1 : 0 }))}
                 />
                 <span className="text-sm font-medium">Active (Published)</span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Switch
-                  className="switch-green"
-                  checked={!!formData.is_home}
-                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_home: checked ? 1 : 0 }))}
-                />
-                <span className="text-sm font-medium">Show in Homepage</span>
               </div>
             </div>
           </CardContent>

@@ -1419,6 +1419,15 @@ function handleLandingPageRoutes($segments, $method) {
         case 'POST':
             $user = $auth->authenticate();
             if ($user && $auth->checkRole($user, ['admin', 'editor'])) {
+                // POST /landing-pages/reorder - Reorder landing pages
+                if (isset($segments[1]) && $segments[1] === 'reorder') {
+                    $data = json_decode(file_get_contents('php://input'), true);
+                    $result = $controller->reorder($data['order'] ?? []);
+                    echo json_encode($result);
+                    break;
+                }
+                
+                // POST /landing-pages - Create new landing page
                 $data = json_decode(file_get_contents('php://input'), true);
                 $result = $controller->create($data);
                 echo json_encode($result);

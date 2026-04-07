@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ArrowLeft, Upload, CheckCircle, XCircle, FileJson } from 'lucide-react'
+import PromptBox from '@/components/PromptBox'
 
 export default function PropertyJsonImportPage() {
   const navigate = useNavigate()
@@ -119,6 +120,9 @@ export default function PropertyJsonImportPage() {
           </p>
         </div>
       </div>
+
+      {/* OpenAI Realtor Prompt */}
+      <PromptBox />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Import Area */}

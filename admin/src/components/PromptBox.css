@@ -1,0 +1,137 @@
+.prompt-box {
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  background: #f8f9fa;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.prompt-header {
+  display: flex;
+  items-align: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.prompt-header h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.prompt-header p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.prompt-header button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.prompt-container {
+  flex: 1;
+  overflow: auto;
+  background: #f8f9fa;
+  position: relative;
+}
+
+.prompt-pre {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  margin: 0;
+  padding: 1.5rem;
+  color: #2c3e50;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: transparent;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.prompt-pre::-webkit-scrollbar {
+  width: 8px;
+}
+
+.prompt-pre::-webkit-scrollbar-track {
+  background: #e9ecef;
+}
+
+.prompt-pre::-webkit-scrollbar-thumb {
+  background: #adb5bd;
+  border-radius: 4px;
+}
+
+.prompt-pre::-webkit-scrollbar-thumb:hover {
+  background: #868e96;
+}
+
+.prompt-footer {
+  padding: 1rem 1.5rem;
+  background: #e7f5ff;
+  border-top: 1px solid #b3d9ff;
+  font-size: 0.875rem;
+  color: #1971c2;
+}
+
+.prompt-footer p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.prompt-footer strong {
+  color: #1864ab;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .prompt-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .prompt-header button {
+    align-self: flex-end;
+  }
+
+  .prompt-pre {
+    font-size: 0.75rem;
+    max-height: 400px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .prompt-box {
+    background: #1a1a1a;
+  }
+
+  .prompt-header {
+    background: #2a2a2a;
+  }
+
+  .prompt-container {
+    background: #1a1a1a;
+  }
+
+  .prompt-pre {
+    color: #e0e0e0;
+  }
+
+  .prompt-footer {
+    background: #0d3d56;
+    border-top-color: #1a5f7a;
+    color: #5dade2;
+  }
+
+  .prompt-footer strong {
+    color: #7fb3d5;
+  }
+}

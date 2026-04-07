@@ -9,7 +9,9 @@ export default function Footer() {
     const fetchLandingPages = async () => {
       try {
         const res = await api.get('/landing-pages?is_active=1');
-        setLandingPages(res.data?.data?.landing_pages || res.data?.data || []);
+        const allPages = res.data?.data?.landing_pages || res.data?.data || [];
+        console.log('Footer: Fetched', allPages.length, 'landing pages');
+        setLandingPages(allPages);
       } catch (error) {
         console.error('Error fetching landing pages:', error);
       }

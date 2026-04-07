@@ -11,8 +11,10 @@ export default function FeaturedLandingPages() {
   useEffect(() => {
     const fetchPages = async () => {
       try {
-        const res = await api.get('/landing-pages?is_home=1&is_active=1');
-        setPages(res.data?.data?.landing_pages || res.data?.data || []);
+        const res = await api.get('/landing-pages?is_active=1');
+        const allPages = res.data?.data?.landing_pages || res.data?.data || [];
+        console.log('FeaturedLandingPages: Fetched', allPages.length, 'pages');
+        setPages(allPages);
       } catch (error) {
         console.error('Error fetching landing pages:', error);
       } finally {

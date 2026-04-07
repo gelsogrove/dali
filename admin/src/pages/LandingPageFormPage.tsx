@@ -297,15 +297,6 @@ export default function LandingPageFormPage() {
                 />
                 <span className="text-sm font-medium">Active (Published)</span>
               </div>
-
-              <div className="flex items-center gap-3">
-                <Switch
-                  checked={!!formData.is_home}
-                  onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_home: checked ? 1 : 0 }))}
-                  className="switch-green"
-                />
-                <span className="text-sm font-medium">Show in Homepage</span>
-              </div>
             </div>
           </CardContent>
         </Card>

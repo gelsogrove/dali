@@ -99,11 +99,11 @@ export default function LandingPageFormPage() {
       content: page.content || '',
       cover_image: page.cover_image || '',
       cover_image_alt: page.cover_image_alt || '',
-      seoTitle: page.seoTitle || '',
-      seoDescription: page.seoDescription || '',
-      seoKeywords: page.seoKeywords || '',
-      ogTitle: page.ogTitle || '',
-      ogDescription: page.ogDescription || '',
+      seoTitle: page.seoTitle || page.seo_title || '',
+      seoDescription: page.seoDescription || page.seo_description || '',
+      seoKeywords: page.seoKeywords || page.seo_keywords || '',
+      ogTitle: page.ogTitle || page.og_title || '',
+      ogDescription: page.ogDescription || page.og_description || '',
       is_active: page.is_active ? 1 : 0,
       is_home: page.is_home ? 1 : 0,
       display_order: page.display_order || 0,
@@ -130,6 +130,11 @@ export default function LandingPageFormPage() {
         is_home: payload.is_home ? 1 : 0,
         ogTitle: payload.seoTitle || payload.title,
         ogDescription: payload.seoDescription || payload.description,
+        seo_title: payload.seoTitle,
+        seo_description: payload.seoDescription,
+        seo_keywords: payload.seoKeywords,
+        og_title: payload.seoTitle || payload.title,
+        og_description: payload.seoDescription || payload.description,
       }
       let pageId: number
       if (isEdit) {

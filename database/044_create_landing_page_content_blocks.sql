@@ -3,8 +3,8 @@
 
 -- Create new content blocks table
 CREATE TABLE IF NOT EXISTS landing_page_content_blocks (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  landing_page_id INT NOT NULL,
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  landing_page_id INT UNSIGNED NOT NULL,
   title VARCHAR(255) NULL,
   subtitle VARCHAR(255) NULL,
   description TEXT NULL,

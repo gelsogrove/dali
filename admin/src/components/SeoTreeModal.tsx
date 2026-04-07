@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -30,6 +30,10 @@ export default function SeoTreeModal() {
   const generateTree = () => {
     if (!treeQuery.data) return ''
 
+    if (typeof treeQuery.data === 'string') {
+      return treeQuery.data
+    }
+
     const activePaths: string[] = []
     const collectActivePaths = (node: any) => {
       if (node?.path && node.is_active) {
@@ -40,8 +44,12 @@ export default function SeoTreeModal() {
       }
     }
 
-    if (treeQuery.data.children) {
+    if (Array.isArray(treeQuery.data)) {
+      treeQuery.data.forEach((node: any) => collectActivePaths(node))
+    } else if (treeQuery.data.children) {
       treeQuery.data.children.forEach((node: any) => collectActivePaths(node))
+    } else {
+      collectActivePaths(treeQuery.data)
     }
 
     const uniquePaths = Array.from(new Set(activePaths)).sort((a, b) => a.localeCompare(b))
@@ -49,15 +57,15 @@ export default function SeoTreeModal() {
     type TreeNode = {
       segment: string
       fullPath: string
-      children: Map<string, TreeNode>
+      children: Record<string, TreeNode>
     }
 
-    const root: TreeNode = { segment: '', fullPath: '', children: new (Map as any)() }
+    const root: TreeNode = { segment: '', fullPath: '', children: {} }
 
     const insertPath = (path: string) => {
       if (path === '/' || path === '') {
-        if (!root.children.has('/')) {
-          root.children.set('/', { segment: '/', fullPath: '/', children: new (Map as any)() })
+        if (!root.children['/']) {
+          root.children['/'] = { segment: '/', fullPath: '/', children: {} }
         }
         return
       }
@@ -67,10 +75,10 @@ export default function SeoTreeModal() {
       let currentPath = ''
       for (const segment of parts) {
         currentPath += '/' + segment
-        if (!current.children.has(segment)) {
-          current.children.set(segment, { segment, fullPath: currentPath, children: new (Map as any)() })
+        if (!current.children[segment]) {
+          current.children[segment] = { segment, fullPath: currentPath, children: {} }
         }
-        current = current.children.get(segment)!
+        current = current.children[segment]
       }
     }
 
@@ -81,9 +89,7 @@ export default function SeoTreeModal() {
       const connector = isLast ? '└── ' : '├── '
       ascii += prefix + connector + node.fullPath + '\n'
 
-      const children = Array.from(node.children.values()).sort((a, b) =>
-        a.fullPath.localeCompare(b.fullPath)
-      )
+      const children = Object.values(node.children).sort((a, b) => a.fullPath.localeCompare(b.fullPath))
       if (children.length > 0) {
         const newPrefix = prefix + (isLast ? '    ' : '│   ')
         children.forEach((child, idx) => {
@@ -93,9 +99,7 @@ export default function SeoTreeModal() {
       }
     }
 
-    const topLevel = Array.from(root.children.values()).sort((a, b) =>
-      a.fullPath.localeCompare(b.fullPath)
-    )
+    const topLevel = Object.values(root.children).sort((a, b) => a.fullPath.localeCompare(b.fullPath))
     topLevel.forEach((node, idx) => {
       const isLast = idx === topLevel.length - 1
       printNode(node, '', isLast)
@@ -111,10 +115,12 @@ export default function SeoTreeModal() {
     }
   }
 
-  // Generate tree when query finishes loading
-  if (treeQuery.isFetched && !asciiTree && treeQuery.data) {
-    setAsciiTree(generateTree())
-  }
+  useEffect(() => {
+    if (!open) return
+    if (treeQuery.data) {
+      setAsciiTree(generateTree())
+    }
+  }, [open, treeQuery.data])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import PropertyCard from '../components/PropertyCard'
+import PropertyGrid from '../components/PropertyGrid'
 import TitleHeader from '../components/TitleHeader'
+import LoadingSpinner from '../components/LoadingSpinner'
 import { api } from '../config/api'
 import './LandingPageDetail.css'
 
@@ -38,14 +39,7 @@ export default function LandingPageDetail() {
   }, [slug])
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   if (error || !page) {
@@ -56,8 +50,20 @@ export default function LandingPageDetail() {
   const firstBlockImage = page.blocks?.[0]?.image
   const coverImage = firstBlockImage || page.cover_image
 
-  // Use dynamic blocks from the API
-  const contentBlocks = page.blocks || []
+  // Use dynamic blocks from the API, fallback to old content_block columns
+  let contentBlocks = page.blocks || []
+  if (contentBlocks.length === 0) {
+    // Fallback: build blocks from old content_block_X_ columns
+    for (let i = 1; i <= 4; i++) {
+      const title = page[`content_block_${i}_title`]
+      const subtitle = page[`content_block_${i}_subtitle`]
+      const description = page[`content_block_${i}_description`]
+      const image = page[`content_block_${i}_image`]
+      if (title || subtitle || description || image) {
+        contentBlocks.push({ id: `fallback-${i}`, title, subtitle, description, image })
+      }
+    }
+  }
 
   return (
     <>
@@ -177,16 +183,11 @@ export default function LandingPageDetail() {
 
       {/* Latest Properties */}
       {latestProperties.length > 0 && (
-        <div className="landing-page-content landing-page-properties">
-          <div className="landing-page-properties-grid-wrapper">
-            <h2 className="landing-page-properties-title">Latest Properties</h2>
-            <div className="landing-page-properties-grid">
-              {latestProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
-          </div>
-        </div>
+        <PropertyGrid
+          properties={latestProperties}
+          title="Latest Properties"
+          subtitle="Explore our most recent listings"
+        />
       )}
     </>
   )

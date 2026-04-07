@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
@@ -34,7 +34,7 @@ export default function LandingPagesPage() {
     return `${assetBase}/${url}`
   }
   const [thumbErrors, setThumbErrors] = useState<Record<string, boolean>>({})
-  const [draggedId, setDraggedId] = useState<number | null>(null)
+  const [list, setList] = useState<LandingPage[]>([])
 
   const { data, isLoading } = useQuery({
     queryKey: ['landing-pages'],
@@ -58,31 +58,23 @@ export default function LandingPagesPage() {
     },
   })
 
-  const handleDragStart = (id: number) => {
-    setDraggedId(id)
-  }
+  useEffect(() => {
+    setList(pages.map((p, i) => ({ ...p, display_order: p.display_order ?? i + 1 })))
+  }, [pages])
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-  }
-
-  const handleDrop = (targetId: number) => {
-    if (!draggedId || draggedId === targetId) return
-
-    const newPages = [...pages]
-    const draggedIndex = newPages.findIndex((p) => p.id === draggedId)
-    const targetIndex = newPages.findIndex((p) => p.id === targetId)
-
-    const [removed] = newPages.splice(draggedIndex, 1)
-    newPages.splice(targetIndex, 0, removed)
-
-    const order = newPages.map((p, idx) => ({
-      id: p.id,
-      display_order: idx,
-    }))
-
-    reorderMutation.mutate(order)
-    setDraggedId(null)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const handleDrop = (targetIndex: number) => {
+    if (dragIndex === null || dragIndex === targetIndex) {
+      setDragIndex(null)
+      return
+    }
+    const updated = [...list]
+    const [moved] = updated.splice(dragIndex, 1)
+    updated.splice(targetIndex, 0, moved)
+    const ordered = updated.map((p, i) => ({ ...p, display_order: i + 1 }))
+    setList(ordered)
+    setDragIndex(null)
+    reorderMutation.mutate(ordered.map((p, i) => ({ id: p.id, display_order: i + 1 })))
   }
 
   const toggleActive = useMutation({
@@ -122,96 +114,91 @@ export default function LandingPagesPage() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8">Loading...</div>
-          ) : pages.length === 0 ? (
+          ) : list.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No landing pages found</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="w-12"></th>
-                    <th className="text-left py-3 px-4 font-medium">Title</th>
-                    <th className="text-left py-3 px-4 font-medium">Slug (URL)</th>
-                    <th className="text-center py-3 px-4 font-medium">Active</th>
-                    <th className="text-right py-3 px-4 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pages.map((page) => {
-                    const coverImg = page.content_block_1_image || page.cover_image
-                    return (
-                      <tr
-                        key={page.id}
-                        className="border-b hover:bg-gray-50 transition cursor-move"
-                        draggable
-                        onDragStart={() => handleDragStart(page.id)}
-                        onDragOver={handleDragOver}
-                        onDrop={() => handleDrop(page.id)}
-                      >
-                        <td className="py-3 px-4 w-12">
-                          <GripVertical className="h-5 w-5 text-gray-400" />
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            {coverImg && !thumbErrors[page.id] ? (
-                              <img
-                                src={toAbsoluteUrl(coverImg)}
-                                alt={page.cover_image_alt || page.title}
-                                className="w-20 h-20 object-cover rounded"
-                                onError={() => setThumbErrors((prev) => ({ ...prev, [page.id]: true }))}
-                              />
-                            ) : (
-                              <div className="w-20 h-20 bg-gray-300 rounded flex items-center justify-center">
-                                <span className="text-gray-500 text-xs">No Image</span>
-                              </div>
+            <div className="space-y-3">
+              {list.map((page, index) => {
+                const coverImg = page.content_block_1_image || page.cover_image
+                return (
+                  <Card
+                    key={page.id}
+                    className={`flex gap-4 items-start ${dragIndex === index ? 'opacity-60 border-dashed' : ''}`}
+                    draggable
+                    onDragStart={() => setDragIndex(index)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => handleDrop(index)}
+                    onDragEnd={() => setDragIndex(null)}
+                  >
+                    <div className="p-3 text-muted-foreground flex flex-col items-center justify-start cursor-grab">
+                      <GripVertical className="h-5 w-5" />
+                      <span className="text-2xs text-muted-foreground mt-1">#{index + 1}</span>
+                    </div>
+
+                    {coverImg && !thumbErrors[page.id] ? (
+                      <img
+                        src={toAbsoluteUrl(coverImg)}
+                        alt={page.cover_image_alt || page.title}
+                        className="w-32 h-24 object-cover my-4 ml-1 mr-3 rounded-lg"
+                        onError={() => setThumbErrors((prev) => ({ ...prev, [page.id]: true }))}
+                      />
+                    ) : (
+                      <div className="w-32 h-24 flex items-center justify-center flex-shrink-0 my-4 ml-1 mr-3 rounded-lg border border-dashed border-gray-300 bg-gradient-to-br from-amber-50 to-rose-50">
+                        <div className="placeholder-box w-full h-full rounded-md"></div>
+                      </div>
+                    )}
+
+                    <div className="flex-1 py-4 pr-4">
+                      <CardHeader className="p-0 pb-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <CardTitle className="line-clamp-1">{page.title}</CardTitle>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              <span className="break-all">/{page.slug}</span>
+                            </p>
+                            {page.subtitle && (
+                              <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{page.subtitle}</p>
                             )}
-                            <div>
-                              <div className="font-medium">{page.title}</div>
-                              {page.subtitle && <div className="text-xs text-muted-foreground">{page.subtitle}</div>}
-                            </div>
                           </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <code className="bg-gray-100 px-2 py-1 rounded text-xs">/{page.slug}</code>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <Switch
-                            checked={!!page.is_active}
-                            onCheckedChange={(checked) =>
-                              toggleActive.mutate({ id: page.id, value: checked })
-                            }
-                            disabled={toggleActive.isPending}
-                            className="switch-green"
-                          />
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/landing-pages/${page.id}`)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                if (confirm('Delete this landing page?')) {
-                                  deletePage.mutate(page.id)
-                                }
-                              }}
-                              disabled={deletePage.isPending}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
+                          <div className="flex items-center gap-2 ml-2">
+                            <span className="text-xs text-muted-foreground">Active</span>
+                            <Switch
+                              checked={!!page.is_active}
+                              onCheckedChange={(checked) => toggleActive.mutate({ id: page.id, value: checked })}
+                              disabled={toggleActive.isPending}
+                              className="switch-green"
+                            />
                           </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="p-0">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/landing-pages/${page.id}`)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm('Delete this landing page?')) {
+                                deletePage.mutate(page.id)
+                              }
+                            }}
+                            disabled={deletePage.isPending}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </div>
+                  </Card>
+                )
+              })}
             </div>
           )}
         </CardContent>

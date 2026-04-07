@@ -4,14 +4,13 @@ import { Link } from 'react-router-dom'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Plus, Edit, Trash2, GripVertical } from 'lucide-react'
 import SafeImage from '@/components/SafeImage'
 
 export default function VideosPage() {
   const queryClient = useQueryClient()
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm] = useState('')
   const [list, setList] = useState<any[]>([])
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [deleteId, setDeleteId] = useState<number | null>(null)

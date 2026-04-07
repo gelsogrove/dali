@@ -1,0 +1,43 @@
+/* Shared PropertyGrid styles */
+.property-grid-section {
+  padding: 80px 5%;
+  background-color: var(--color-bg-light, #faf6f4);
+  border-top: 1px solid var(--color-border-light, #e6d6ce);
+}
+
+.property-grid-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.property-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 48px;
+}
+
+.property-grid-item a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+@media (max-width: 991px) {
+  .property-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .property-grid-section {
+    padding: 60px 5%;
+  }
+
+  .property-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-top: 32px;
+  }
+}

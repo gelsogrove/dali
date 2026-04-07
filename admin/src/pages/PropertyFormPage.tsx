@@ -819,8 +819,7 @@ export default function PropertyFormPage() {
               <p className="text-xs text-muted-foreground mt-1">{formData.seo_description.length}/320 characters</p>
             </div>
             
-            <div>
-              <input type="hidden" name="og_title" value={formData.seo_title || formData.title} />
+            <input type="hidden" name="og_title" value={formData.seo_title || formData.title} />
             <input type="hidden" name="og_description" value={formData.seo_description || formData.description} />
           </div>
           

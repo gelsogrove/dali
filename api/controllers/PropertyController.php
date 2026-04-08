@@ -1151,42 +1151,7 @@ class PropertyController
             }
             $property = $fetch->fetch_assoc();
 
-            // Calculate time difference
-            $createdAt = new DateTime($property['created_at']);
-            $now = new DateTime();
-            $hoursDiff = ($now->getTimestamp() - $createdAt->getTimestamp()) / 3600;
-
-            // If created < 24 hours ago, allow direct delete without redirect
-            if ($hoursDiff < 24) {
-                $query = "DELETE FROM properties WHERE id = ?";
-                $result = $this->db->executePrepared($query, [$id], 'i');
-
-                if (!$result) {
-                    return $this->errorResponse('Failed to delete property');
-                }
-
-                $this->logActivity($userId, 'delete', 'property', $id, "Deleted property ID: $id (created < 24h)");
-
-                // Regenerate sitemap
-                $this->sitemapService->generateSitemap();
-
-                return $this->successResponse(['message' => 'Property deleted permanently (created < 24h)']);
-            }
-
-            // If created > 24 hours ago, require redirect
-            $urlOld = '/properties/' . $property['slug'];
-
-            // Check if redirect already exists
-            $existingRedirect = $this->redirectService->findByUrlOld($urlOld);
-            if (!$existingRedirect) {
-                // Create redirect placeholder with empty urlNew
-                $redirectResult = $this->redirectService->create($urlOld, '');
-                if (!$redirectResult['success']) {
-                    return $this->errorResponse('Failed to create redirect placeholder. Please add redirect manually before deleting.', 400);
-                }
-            }
-
-            // Now delete the property
+            // Delete the property
             $query = "DELETE FROM properties WHERE id = ?";
             $result = $this->db->executePrepared($query, [$id], 'i');
 
@@ -1194,15 +1159,12 @@ class PropertyController
                 return $this->errorResponse('Failed to delete property');
             }
 
-            $this->logActivity($userId, 'delete', 'property', $id, "Deleted property ID: $id and created redirect placeholder");
+            $this->logActivity($userId, 'delete', 'property', $id, "Deleted property ID: $id");
 
             // Regenerate sitemap
             $this->sitemapService->generateSitemap();
 
-            return $this->successResponse([
-                'message' => 'Property deleted. A redirect entry was created; please set the destination in Redirects section.',
-                'redirect_required' => true
-            ]);
+            return $this->successResponse(['message' => 'Property deleted successfully']);
 
         } catch (Exception $e) {
             error_log("Error deleting property: " . $e->getMessage());

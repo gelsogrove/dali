@@ -325,102 +325,31 @@ class BlogController {
             }
             $blog = $fetch->fetch_assoc();
 
-            if (!empty($blog['deleted_at'])) {
-                // If it's already archived, hard delete and keep/ensure redirect placeholder
-                $urlOld = '/blog/' . $blog['slug'];
-                try {
-                    $existingRule = $this->redirectService->findByUrlOld($urlOld);
-                    if (!$existingRule) {
-                        $this->redirectService->create($urlOld, '');
-                    }
-                } catch (Exception $ex) {
-                    return $this->errorResponse('Redirect creation failed: ' . $ex->getMessage());
-                }
-
-                $query = "DELETE FROM blogs WHERE id = ?";
-                $result = $this->db->executePrepared($query, [$id], 'i');
-                if (!$result) {
-                    return $this->errorResponse('Failed to delete blog');
-                }
-
-                // Delete assets if present
-                if (!empty($blog['featured_image']) || !empty($blog['content_image'])) {
-                    require_once __DIR__ . '/UploadController.php';
-                    $uploader = new UploadController();
-                    if (!empty($blog['featured_image'])) {
-                        $uploader->deleteFile($blog['featured_image']);
-                    }
-                    if (!empty($blog['content_image'])) {
-                        $uploader->deleteFile($blog['content_image']);
-                    }
-                }
-
-                $this->logActivity($userId, 'delete', 'blog', $id, "Deleted archived blog ID: $id");
-                
-                // Regenerate sitemap
-                $this->sitemapService->generateSitemap();
-                
-                return $this->successResponse(['message' => 'Blog deleted (was already archived); redirect placeholder kept/ensured']);
+            // Delete the blog
+            $query = "DELETE FROM blogs WHERE id = ?";
+            $result = $this->db->executePrepared($query, [$id], 'i');
+            if (!$result) {
+                return $this->errorResponse('Failed to delete blog');
             }
 
-            $createdAt = new DateTime($blog['created_at']);
-            $now = new DateTime();
-            $hoursDiff = ($now->getTimestamp() - $createdAt->getTimestamp()) / 3600;
-
-            if ($hoursDiff < 24) {
-                $query = "DELETE FROM blogs WHERE id = ?";
-                $result = $this->db->executePrepared($query, [$id], 'i');
-
-                if (!$result) {
-                    return $this->errorResponse('Failed to delete blog');
+            // Delete assets if present
+            if (!empty($blog['featured_image']) || !empty($blog['content_image'])) {
+                require_once __DIR__ . '/UploadController.php';
+                $uploader = new UploadController();
+                if (!empty($blog['featured_image'])) {
+                    $uploader->deleteFile($blog['featured_image']);
                 }
-
-                // Delete assets if present
-                if (!empty($blog['featured_image']) || !empty($blog['content_image'])) {
-                    require_once __DIR__ . '/UploadController.php';
-                    $uploader = new UploadController();
-                    if (!empty($blog['featured_image'])) {
-                        $uploader->deleteFile($blog['featured_image']);
-                    }
-                    if (!empty($blog['content_image'])) {
-                        $uploader->deleteFile($blog['content_image']);
-                    }
+                if (!empty($blog['content_image'])) {
+                    $uploader->deleteFile($blog['content_image']);
                 }
-
-                $this->logActivity($userId, 'delete', 'blog', $id, "Deleted blog ID: $id");
-                
-                // Regenerate sitemap
-                $this->sitemapService->generateSitemap();
-                
-                return $this->successResponse(['message' => 'Blog deleted permanently (created < 24h)']);
             }
 
-            // Soft delete: keep row, hide from lists, create redirect placeholder
-            $stmt = $this->conn->prepare("UPDATE blogs SET deleted_at = NOW() WHERE id = ?");
-            $stmt->bind_param('i', $id);
-            $stmt->execute();
-            $stmt->close();
-
-            $urlOld = '/blog/' . $blog['slug'];
-            try {
-                $existingRule = $this->redirectService->findByUrlOld($urlOld);
-                if (!$existingRule) {
-                    $this->redirectService->create($urlOld, '');
-                }
-            } catch (Exception $ex) {
-                // Rollback soft delete if redirect fails
-                $this->conn->query("UPDATE blogs SET deleted_at = NULL WHERE id = " . (int)$id);
-                return $this->errorResponse('Redirect creation failed: ' . $ex->getMessage());
-            }
-
-            $this->logActivity($userId, 'archive', 'blog', $id, "Archived blog ID: $id and created redirect placeholder");
-
+            $this->logActivity($userId, 'delete', 'blog', $id, "Deleted blog ID: $id");
+            
             // Regenerate sitemap
             $this->sitemapService->generateSitemap();
-
-            return $this->successResponse([
-                'message' => 'Blog archived for SEO. A redirect entry was created with empty urlNew; please set the destination.'
-            ]);
+            
+            return $this->successResponse(['message' => 'Blog deleted successfully']);
 
         } catch (Exception $e) {
             error_log("Error deleting blog: " . $e->getMessage());

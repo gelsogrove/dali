@@ -28,6 +28,10 @@ export default function DashboardLayout() {
     navigate('/login')
   }
 
+  /**
+   * Main navigation menu items
+   * Displays the primary content management sections
+   */
   const navigation = [
     { name: 'Properties', href: '/properties', icon: FileText },
     { name: 'Blogs', href: '/blogs', icon: BookOpen },
@@ -37,10 +41,22 @@ export default function DashboardLayout() {
     { name: 'Cities', href: '/cities', icon: MapPin, nested: true },
   ]
 
+  /**
+   * Utility navigation menu items
+   * Secondary actions and maintenance features below the main navigation
+   * Includes:
+   * - TODO: Task management for admins
+   * - Access Requests: Manage property access request approvals (shows badge with unviewed count)
+   * - Off Market Invites: Manage off-market property invitations
+   * - Redirects: SEO 301 redirect management for old URLs (database-driven redirects)
+   * - Backups: Database backup management and restoration
+   */
   const utilityNav = [
     { name: 'TODO', href: '/todo', icon: ListChecks },
     { name: 'Access Requests', href: '/access-requests', icon: Mail, badge: unviewedCount },
     { name: 'Off Market Invites', href: '/off-market-invites', icon: Shield },
+    // Redirects menu: Manages 301 SEO redirects for migrated/renamed URLs
+    // Allows tracking old URLs and their redirect targets for analytics
     { name: 'Redirects', href: '/redirects', icon: Repeat },
     { name: 'Backups', href: '/backups', icon: Database },
   ]

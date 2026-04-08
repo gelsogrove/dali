@@ -296,57 +296,24 @@ class VideoController {
             }
             $row = $fetch->fetch_assoc();
 
-            $createdAt = new DateTime($row['created_at']);
-            $now = new DateTime();
-            $hoursDiff = ($now->getTimestamp() - $createdAt->getTimestamp()) / 3600;
-
-            // Se già archiviato O creato < 24h fa, facciamo hard delete
-            if (!empty($row['deleted_at']) || $hoursDiff < 24) {
-                $result = $this->db->executePrepared("DELETE FROM videos WHERE id = ?", [$id], 'i');
-                if (!$result) {
-                    return $this->errorResponse('Failed to delete video');
-                }
-
-                if (!empty($row['thumbnail_url'])) {
-                    require_once __DIR__ . '/UploadController.php';
-                    $uploader = new UploadController();
-                    $uploader->deleteFile($row['thumbnail_url']);
-                }
-
-                $this->logActivity($userId, 'delete', 'video', $id, "Deleted video ID: $id");
-                
-                // Regenerate sitemap
-                $this->sitemapService->generateSitemap();
-                
-                $reason = !empty($row['deleted_at']) ? 'already archived' : 'created < 24h';
-                return $this->successResponse(['message' => "Video deleted permanently ($reason)"]);
+            // Delete the video
+            $result = $this->db->executePrepared("DELETE FROM videos WHERE id = ?", [$id], 'i');
+            if (!$result) {
+                return $this->errorResponse('Failed to delete video');
             }
 
-            // Soft delete + redirect placeholder
-            $stmt = $this->conn->prepare("UPDATE videos SET deleted_at = NOW() WHERE id = ?");
-            $stmt->bind_param('i', $id);
-            $stmt->execute();
-            $stmt->close();
-
-            $urlOld = '/videos/' . $id;
-            try {
-                $existingRule = $this->redirectService->findByUrlOld($urlOld);
-                if (!$existingRule) {
-                    $this->redirectService->create($urlOld, '');
-                }
-            } catch (Exception $ex) {
-                $this->conn->query("UPDATE videos SET deleted_at = NULL WHERE id = " . (int)$id);
-                return $this->errorResponse('Redirect creation failed: ' . $ex->getMessage());
+            if (!empty($row['thumbnail_url'])) {
+                require_once __DIR__ . '/UploadController.php';
+                $uploader = new UploadController();
+                $uploader->deleteFile($row['thumbnail_url']);
             }
 
-            $this->logActivity($userId, 'archive', 'video', $id, "Archived video ID: $id and created redirect placeholder");
+            $this->logActivity($userId, 'delete', 'video', $id, "Deleted video ID: $id");
             
             // Regenerate sitemap
             $this->sitemapService->generateSitemap();
             
-            return $this->successResponse([
-                'message' => 'Video archived for SEO. A redirect entry was created with empty urlNew; please set the destination.'
-            ]);
+            return $this->successResponse(['message' => 'Video deleted successfully']);
         } catch (Exception $e) {
             error_log("Error deleting video: " . $e->getMessage());
             return $this->errorResponse('An error occurred');

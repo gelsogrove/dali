@@ -15,9 +15,8 @@ class PropertyController
     {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
-        // Temporarily disable SitemapService and RedirectService to debug
-        //$this->sitemapService = new SitemapService($this->conn);
-        //$this->redirectService = new RedirectService($this->conn);
+        $this->sitemapService = new SitemapService($this->conn);
+        $this->redirectService = new RedirectService($this->conn);
     }
 
     /**
